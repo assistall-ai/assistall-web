@@ -1,0 +1,20 @@
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Nothing here should ever be secret, but be explicit
+.env
+*.pem
+*.key
+
+# Local preview server artifacts
+preview*.log
+preview.pid
+
+# Tooling scratch - contains session tokens
+.superpowers/
+
+# Local preview server output
+*.log

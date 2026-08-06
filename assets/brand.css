@@ -1,0 +1,109 @@
+/* Assistall AI brand tokens.
+   Authoritative source: assistall-app/branding/assistall_brand_tokens.json
+   Do not invent colours. If something is missing here, ask before adding. */
+
+:root {
+  /* Palette */
+  --teal:       #0E3A3D;  /* deep teal   - primary, headings, dark sections */
+  --limestone:  #F4EFE4;  /* pale limestone - section backgrounds */
+  --ivory:      #FFFDF8;  /* warm ivory  - page background */
+  --brass:      #C8A25D;  /* muted brass - accents, rules, one CTA */
+  --charcoal:   #172A2C;  /* body text */
+  --white:      #FFFFFF;
+
+  /* Derived, kept deliberately few */
+  --teal-soft:  color-mix(in srgb, var(--teal) 8%, var(--ivory));
+  --rule:       color-mix(in srgb, var(--charcoal) 14%, transparent);
+  --muted:      color-mix(in srgb, var(--charcoal) 66%, var(--ivory));
+
+  /* Typography — matches the application shell */
+  --font: "Aptos", "Segoe UI", Arial, sans-serif;
+
+  /* Scale. Only these steps; do not add intermediate sizes. */
+  --step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.9rem);
+  --step-0:  clamp(1rem, 0.96rem + 0.2vw, 1.09rem);
+  --step-1:  clamp(1.2rem, 1.1rem + 0.5vw, 1.5rem);
+  --step-2:  clamp(1.5rem, 1.3rem + 1vw, 2.1rem);
+  --step-3:  clamp(1.9rem, 1.5rem + 2vw, 3rem);
+  --step-4:  clamp(2.3rem, 1.7rem + 3.2vw, 4rem);
+
+  /* Rhythm */
+  --gutter: clamp(1.25rem, 4vw, 3rem);
+  --section-y: clamp(3.5rem, 8vw, 7rem);
+  --measure: 62ch;      /* never let body copy run wider */
+  --page-max: 1180px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  color: var(--charcoal);
+  background: var(--ivory);
+}
+
+h1, h2, h3 { color: var(--teal); line-height: 1.15; text-wrap: balance; margin: 0 0 0.5em; }
+h1 { font-size: var(--step-4); font-weight: 600; }
+h2 { font-size: var(--step-3); font-weight: 600; }
+h3 { font-size: var(--step-1); font-weight: 600; }
+p  { margin: 0 0 1em; max-width: var(--measure); }
+
+a { color: var(--teal); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--brass);
+  outline-offset: 2px;
+}
+
+img, svg { max-width: 100%; height: auto; }
+
+/* Layout ------------------------------------------------------------------ */
+.wrap { width: min(100% - (var(--gutter) * 2), var(--page-max)); margin-inline: auto; }
+.section { padding-block: var(--section-y); }
+.section--limestone { background: var(--limestone); }
+.section--teal { background: var(--teal); color: var(--limestone); }
+.section--teal h2, .section--teal h3 { color: var(--ivory); }
+
+/* Buttons ----------------------------------------------------------------- */
+.button {
+  display: inline-block;
+  padding: 0.8em 1.6em;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.button--primary { color: var(--ivory); background: var(--teal); border-color: var(--teal); }
+.button--primary:hover { background: color-mix(in srgb, var(--teal) 88%, var(--white)); }
+.button--quiet { color: var(--teal); background: transparent; border-color: var(--brass); }
+.button--quiet:hover { background: color-mix(in srgb, var(--brass) 12%, transparent); }
+
+/* Small helpers ----------------------------------------------------------- */
+.eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: var(--step--1);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.lede { font-size: var(--step-1); color: var(--muted); }
+.rule { border: 0; border-top: 1px solid var(--rule); margin-block: var(--section-y); }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+.skip-link {
+  position: absolute; inset-inline-start: 0; top: -3rem;
+  padding: 0.75rem 1rem; background: var(--teal); color: var(--ivory);
+}
+.skip-link:focus { top: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

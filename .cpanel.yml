@@ -1,0 +1,12 @@
+---
+deployment:
+  tasks:
+    # cPanel runs these as shell commands, as your cPanel user, on Deploy.
+    # $HOME avoids hardcoding the account name into a public repository.
+    # If a deploy ever lands in the wrong place, replace $HOME with the absolute
+    # path shown in cPanel (for example /home/youraccount) and redeploy.
+    - export DEPLOYPATH=$HOME/public_html/
+    - /bin/mkdir -p $DEPLOYPATH/assets
+    - /bin/cp index.html $DEPLOYPATH
+    - /bin/cp -R assets/. $DEPLOYPATH/assets/
+    # Repository-only files are deliberately not copied: README.md, .cpanel.yml
