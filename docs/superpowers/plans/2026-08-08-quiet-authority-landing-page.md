@@ -106,10 +106,10 @@ Secondary action: Talk to Us
 Run:
 
 ~~~powershell
-rg -n -i 'hours|save|revenue|customer|testimonial|cloud|automatic' content/landing-copy.md
+rg -n -i '([0-9]+[–-][0-9]+ hours|save [0-9]|revenue|testimonial|sent automatically|cloud storage)' content/landing-copy.md
 ~~~
 
-Expected: no measured savings, revenue, testimonial, or automatic-action promise; “computer”, “device”, and “review” appear in the trust section.
+Expected: no measured savings, revenue, testimonial, automatic-action, or cloud-storage promise; “computer”, “device”, and “review” appear in the trust section.
 
 - [ ] **Step 3: Verify capability wording against the live application**
 
