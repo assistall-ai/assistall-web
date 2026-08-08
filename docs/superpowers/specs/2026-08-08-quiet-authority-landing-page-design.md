@@ -1,6 +1,6 @@
 # Assistall AI landing page — quiet authority direction
 
-**Status:** approved direction, awaiting review of this written specification before implementation.
+**Status:** approved for implementation.
 
 ## Purpose
 
@@ -30,6 +30,16 @@ One product section will show that the actual desktop application lets a workspa
 - Cobalt is evidence of in-product personalisation only; it is not a second marketing palette and will be contained inside the screenshot surface.
 - At narrow widths the two views will stack in a fixed order, with no horizontal carousel or clipped content.
 - Captures will use a temporary, isolated account and contain no customer, email, or live business records. The capture crop will avoid exposing the temporary account name.
+
+### Scrolling workspace comparison clip
+
+The theme section will also include a short, silent looping comparison clip made from the actual desktop workspace.
+
+- The left half shows the workspace in Assistall Limestone and the right half shows the same workspace in Cobalt Blue.
+- Both halves follow the same gentle vertical scroll through the overview, so a visitor can compare the change without needing to imagine it.
+- The clip begins with the full workspace view, pauses briefly, scrolls through the shared workflow layout, and ends with both theme names visible. It will run for approximately 10 seconds at a calm pace.
+- The clip will be captured from the isolated local workspace, cropped before the temporary profile area, and encoded as a local muted MP4 asset. It will not be uploaded to a third party.
+- A static side-by-side comparison image will be the poster and no-motion fallback. The page remains understandable if video cannot autoplay or if reduced motion is enabled.
 
 ## Copy approach
 
@@ -61,6 +71,7 @@ Motion will communicate hierarchy, not simulate an AI effect.
 - Hero product surface enters with a short fade-and-rise.
 - The four-step story reveals one stage at a time as it enters the viewport.
 - Theme comparison uses a subtle divider movement or cross-fade to signal a change of appearance, while both screenshots remain visible and understandable with motion disabled.
+- The scrolling workspace comparison clip is muted, looped, and optional. It is replaced by the static comparison under `prefers-reduced-motion`.
 - Buttons and cards receive only a small hover lift and colour transition.
 - No gradients, particle fields, parallax, glowing blobs, spinning 3D objects, or automatic carousels.
 - All transitions will be disabled under `prefers-reduced-motion`.
@@ -82,4 +93,3 @@ Motion will communicate hierarchy, not simulate an AI effect.
 - Keep all product screenshots as local static assets after capture and review.
 - Validate HTML, search source for unintended colours and external requests, and inspect the final page visually in the browser at all four required widths.
 - Check that no temporary account name, customer data, email address, or unverified metric reaches the public site.
-
