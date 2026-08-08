@@ -11,7 +11,9 @@ Static HTML and CSS. No build step, no framework, no dependencies.
 | `index.html` | The page |
 | `assets/brand.css` | Brand tokens: palette, type scale, spacing, buttons |
 | `assets/page.css` | Page-specific layout |
+| `assets/media/` | Reviewed local workspace screenshots and the optional scrolling comparison video |
 | `assets/` | Favicons and web manifest |
+| `tools/verify-site.ps1` | Basic offline page checks |
 | `.cpanel.yml` | Deployment tasks |
 
 ## Deploying
@@ -40,6 +42,12 @@ Open `index.html` in a browser, or serve the folder:
 python -m http.server 8080
 ```
 
+Before handing the page over, run the offline checks:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/verify-site.ps1
+```
+
 ## Known gaps
 
 - `/privacy.html` is linked from the footer but not yet written.
@@ -47,6 +55,9 @@ python -m http.server 8080
 
 ## What changed
 
+- **2026-08-08** — Rebuilt the landing page around the approved plain-English copy,
+  real Assistall workspace captures, local theme comparison video, responsive layouts,
+  and a reduced-motion poster fallback.
 - **2026-08-06** — First landing page build: all sections, responsive layout,
   page-specific CSS, favicons.
 - **2026-08-04** — Repository created with brand tokens and deployment config.
