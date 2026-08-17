@@ -60,3 +60,9 @@ test('motion=on visibly overrides an operating-system reduced-motion setting for
   assert.match(pageCss, /data-motion-preview=["']on["'].*hero-motion__stage/s);
   assert.match(pageCss, /data-motion-preview=["']on["'].*workspace-video-stage video/s);
 });
+
+test('workflow rotation keeps pointer and focus pauses independent', () => {
+  assert.match(siteScript, /let pointerPaused = false;/);
+  assert.match(siteScript, /let focusPaused = false;/);
+  assert.match(siteScript, /interactionPaused: pointerPaused \|\| focusPaused/);
+});

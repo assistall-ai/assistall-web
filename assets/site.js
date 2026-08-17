@@ -278,7 +278,8 @@ function enableWorkflowEvidence() {
 
   let activeId = tabs.find((tab) => tab.getAttribute('aria-selected') === 'true')?.dataset.workflowTab ?? WORKFLOW_IDS[0];
   let visible = false;
-  let interactionPaused = false;
+  let pointerPaused = false;
+  let focusPaused = false;
   let timerId;
 
   const clearTimer = () => {
@@ -307,7 +308,7 @@ function enableWorkflowEvidence() {
 
   schedule = () => {
     clearTimer();
-    if (!shouldRotateWorkflow({ visible, reducedMotion: prefersReducedMotion(), interactionPaused })) return;
+    if (!shouldRotateWorkflow({ visible, reducedMotion: prefersReducedMotion(), interactionPaused: pointerPaused || focusPaused })) return;
     timerId = window.setTimeout(() => {
       const nextIndex = (WORKFLOW_IDS.indexOf(activeId) + 1) % WORKFLOW_IDS.length;
       activate(WORKFLOW_IDS[nextIndex], { resetTimer: false });
@@ -325,12 +326,12 @@ function enableWorkflowEvidence() {
     });
   });
 
-  root.addEventListener('mouseenter', () => { interactionPaused = true; schedule(); });
-  root.addEventListener('mouseleave', () => { interactionPaused = false; schedule(); });
-  root.addEventListener('focusin', () => { interactionPaused = true; schedule(); });
+  root.addEventListener('mouseenter', () => { pointerPaused = true; schedule(); });
+  root.addEventListener('mouseleave', () => { pointerPaused = false; schedule(); });
+  root.addEventListener('focusin', () => { focusPaused = true; schedule(); });
   root.addEventListener('focusout', (event) => {
     if (event.relatedTarget && root.contains(event.relatedTarget)) return;
-    interactionPaused = false;
+    focusPaused = false;
     schedule();
   });
 
