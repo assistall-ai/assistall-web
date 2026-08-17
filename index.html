@@ -128,15 +128,45 @@
           <h2 id="connections-title">Bring the tools your business already uses.</h2>
           <p>Every connector says how it works: live connection, imported source or setup-dependent.</p>
         </header>
-        <div class="connector-grid" data-reveal>
-          <article><i aria-hidden="true"></i><h3>Microsoft 365 and Outlook</h3><p>Setup-dependent</p></article>
-          <article><i aria-hidden="true"></i><h3>Gmail and business email</h3><p>Setup-dependent</p></article>
-          <article class="is-imported"><i aria-hidden="true"></i><h3>WhatsApp exports</h3><p>Imported source</p></article>
-          <article><i aria-hidden="true"></i><h3>Odoo</h3><p>Setup-dependent</p></article>
-          <article><i aria-hidden="true"></i><h3>Zoho Books</h3><p>Setup-dependent</p></article>
-          <article class="is-imported"><i aria-hidden="true"></i><h3>Local folders and selected files</h3><p>Imported source</p></article>
-          <article class="is-imported"><i aria-hidden="true"></i><h3>Outlook and calendar files</h3><p>Imported source</p></article>
-          <article class="is-imported"><i aria-hidden="true"></i><h3>PDF, Word, Excel, CSV and more</h3><p>Imported source</p></article>
+        <div class="connector-grid" data-reveal tabindex="0" aria-label="Tools and file types supported by Assistall">
+          <article class="connector-card">
+            <div class="connector-card__mark" aria-hidden="true"><span class="connector-card__fallback">MS</span><svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-microsoft"></use></svg></div>
+            <div class="connector-card__copy"><h3>Microsoft 365 and Outlook</h3><p>Setup-dependent</p></div>
+          </article>
+          <article class="connector-card">
+            <div class="connector-card__mark" aria-hidden="true"><span class="connector-card__fallback">GM</span><svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-gmail"></use></svg></div>
+            <div class="connector-card__copy"><h3>Gmail and business email</h3><p>Setup-dependent</p></div>
+          </article>
+          <article class="connector-card is-imported">
+            <div class="connector-card__mark" aria-hidden="true"><span class="connector-card__fallback">WA</span><svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-whatsapp"></use></svg></div>
+            <div class="connector-card__copy"><h3>WhatsApp exports</h3><p>Imported source</p></div>
+          </article>
+          <article class="connector-card">
+            <div class="connector-card__mark" aria-hidden="true"><span class="connector-card__fallback">OD</span><svg viewBox="0 0 48 32"><use href="assets/connector-icons.svg#connector-odoo"></use></svg></div>
+            <div class="connector-card__copy"><h3>Odoo</h3><p>Setup-dependent</p></div>
+          </article>
+          <article class="connector-card">
+            <div class="connector-card__mark" aria-hidden="true"><span class="connector-card__fallback">ZB</span><svg viewBox="0 0 48 32"><use href="assets/connector-icons.svg#connector-zoho"></use></svg></div>
+            <div class="connector-card__copy"><h3>Zoho Books</h3><p>Setup-dependent</p></div>
+          </article>
+          <article class="connector-card is-imported">
+            <div class="connector-card__mark" aria-hidden="true"><span class="connector-card__fallback">FILES</span><svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-folder"></use></svg></div>
+            <div class="connector-card__copy"><h3>Local folders and selected files</h3><p>Imported source</p></div>
+          </article>
+          <article class="connector-card is-imported">
+            <div class="connector-card__mark" aria-hidden="true"><span class="connector-card__fallback">CAL</span><svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-calendar"></use></svg></div>
+            <div class="connector-card__copy"><h3>Outlook and calendar files</h3><p>Imported source</p></div>
+          </article>
+          <article class="connector-card is-imported">
+            <div class="connector-card__mark" aria-hidden="true"><span class="connector-card__fallback">DOCS</span><svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-pdf"></use></svg></div>
+            <div class="connector-card__copy"><h3>PDF, Word, Excel, CSV and more</h3><p>Imported source</p></div>
+            <div class="connector-card__formats" aria-hidden="true">
+              <svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-pdf"></use></svg>
+              <svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-word"></use></svg>
+              <svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-excel"></use></svg>
+              <svg viewBox="0 0 32 32"><use href="assets/connector-icons.svg#connector-csv"></use></svg>
+            </div>
+          </article>
         </div>
         <p class="prepared-outputs" data-reveal><strong>Prepared outputs</strong><span>Excel · Word · PDF · PowerPoint reports</span></p>
       </div>

@@ -34,9 +34,19 @@ test('official Assistall mark is used across navigation, product story, and fina
   assert.ok((html.match(/assets\/apple-touch-icon\.png/g) ?? []).length >= 3);
 });
 
-test('real workspace evidence includes both responsive videos and static fallbacks', () => {
-  assert.match(html, /workspace-theme-comparison\.mp4/);
-  assert.match(html, /workspace-theme-comparison-mobile\.mp4/);
-  assert.match(html, /workspace-limestone\.png/);
-  assert.match(html, /workspace-cobalt\.png/);
+test('connector ecosystem uses local recognizable marks and honest capability labels', () => {
+  const connectorCards = html.match(/class="connector-card\b/g) ?? [];
+  assert.equal(connectorCards.length, 8);
+
+  for (const id of ['microsoft', 'gmail', 'whatsapp', 'odoo', 'zoho', 'folder', 'calendar']) {
+    assert.match(html, new RegExp(`connector-icons\\.svg#connector-${id}`));
+  }
+
+  for (const id of ['pdf', 'word', 'excel', 'csv']) {
+    assert.match(html, new RegExp(`connector-icons\\.svg#connector-${id}`));
+  }
+
+  assert.equal((html.match(/class="connector-card__fallback"/g) ?? []).length, 8);
+  assert.equal((html.match(/Setup-dependent/g) ?? []).length, 4);
+  assert.equal((html.match(/Imported source/g) ?? []).length, 4);
 });

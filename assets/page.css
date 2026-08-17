@@ -115,6 +115,8 @@ button, .button { border-radius: 10px; }
 .connector-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem; }
 .connector-grid article { min-width: 0; padding: 1.35rem; border: 1px solid rgba(23,42,44,.12); border-radius: var(--radius-sm); color: var(--charcoal); background: var(--limestone); transition: transform .24s ease, box-shadow .24s ease; }
 .connector-grid article:hover { transform: translateY(-5px); box-shadow: 0 18px 36px rgba(0,0,0,.18); }
+.connector-card__mark svg, .connector-card__formats svg { display: block; width: 32px; height: 32px; }
+.connector-card__fallback { display: none; }
 .connector-grid i, .trust-grid i { display: block; width: 28px; height: 4px; margin-bottom: 1rem; border-radius: 3px; background: color-mix(in srgb, var(--charcoal) 16%, transparent); }
 .connector-grid article.is-imported i { background: var(--teal); }
 .connector-grid h3 { margin: 0; color: var(--charcoal); font-size: 1.05rem; }
