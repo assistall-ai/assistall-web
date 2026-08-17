@@ -3,18 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Assistall AI — Keep your business moving</title>
-  <meta name="description" content="Assistall AI helps busy business teams organise repeat work, prepare the next step, and keep people in control.">
-  <meta property="og:title" content="Assistall AI — Keep your business moving">
-  <meta property="og:description" content="Bring everyday work into a clearer, safer flow.">
+  <title>Assistall AI — Clear the work that slows your business down</title>
+  <meta name="description" content="Assistall brings email, files, reports, contracts, shipments and business systems into one clear workspace. Your team checks every important next step.">
+  <meta property="og:title" content="Assistall AI — Clear the work that slows your business down">
+  <meta property="og:description" content="One clear workspace for everyday business work. AI prepares. People approve.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://assistall.ai/">
   <meta name="theme-color" content="#0E3A3D">
+  <!-- Public key only. Replace this value with the production Turnstile site key before launch. -->
+  <meta name="assistall-turnstile-sitekey" content="REPLACE_WITH_TURNSTILE_SITE_KEY">
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="assets/site.webmanifest">
-  <link rel="stylesheet" href="assets/brand.css">
-  <link rel="stylesheet" href="assets/page.css?v=20260808a">
+  <link rel="stylesheet" href="assets/brand.css?v=20260816a">
+  <link rel="stylesheet" href="assets/page.css?v=20260816a">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -22,195 +24,222 @@
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="wordmark" href="/" aria-label="Assistall AI home">
-        <img src="assets/apple-touch-icon.png" alt="" width="44" height="44">
+        <img src="assets/apple-touch-icon.png" alt="" width="42" height="42">
         <span>Assistall <b>AI</b></span>
       </a>
       <nav class="site-nav" aria-label="Primary navigation">
-        <a href="#how-it-works">How it works</a>
-        <a href="#capabilities">What it does</a>
-        <a href="#workspace">Workspace</a>
-        <a href="#trust">Trust</a>
+        <a href="#how-it-works" data-scroll-link>How it works</a>
+        <a href="#capabilities" data-scroll-link>Capabilities</a>
+        <a href="#connections" data-scroll-link>Connections</a>
+        <a href="#product" data-scroll-link>Product</a>
+        <a href="#trust" data-scroll-link>Trust</a>
       </nav>
-      <a class="button button--primary header-action" href="mailto:hello@assistall.ai?subject=Assistall%20AI%20demo">Book a demo</a>
+      <a class="button button--primary header-action" href="#demo" data-scroll-link>Book a demo</a>
     </div>
   </header>
 
   <main id="main">
-    <section class="hero" aria-labelledby="hero-title">
+    <section class="hero" data-hero-motion aria-labelledby="hero-title">
+      <figure class="hero-motion" aria-labelledby="hero-motion-caption">
+        <div class="hero-motion__stage" data-hero-motion-canvas aria-hidden="true"></div>
+        <div class="hero-motion__fallback" aria-hidden="true">
+          <span class="fallback-signal fallback-signal--one">Email</span>
+          <span class="fallback-signal fallback-signal--two">PDF</span>
+          <span class="fallback-signal fallback-signal--three">Odoo</span>
+          <span class="fallback-signal fallback-signal--four">XLSX</span>
+          <span class="fallback-signal fallback-signal--five">Contract</span>
+          <img src="assets/android-chrome-512x512.png" alt="" width="180" height="180">
+          <span class="fallback-result">Ready for review</span>
+        </div>
+        <figcaption id="hero-motion-caption" class="visually-hidden">Everyday business work moves into the Assistall workspace. One clear item comes out ready for a person to review.</figcaption>
+      </figure>
+      <div class="hero__film" aria-hidden="true"></div>
+
       <div class="wrap hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">For busy business teams</p>
-          <h1 id="hero-title">Keep your business moving.</h1>
-          <p class="lede">Assistall AI handles repeat work. It finds the important items, prepares the next step, and lets your team check it before anything is sent.</p>
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow">AI support for everyday business work</p>
+          <h1 id="hero-title">Clear the work that slows your business down.</h1>
+          <p class="hero-lede">Assistall brings your email, files, reports, contracts, shipments and business systems into one clear workspace. It prepares the next step. Your team checks it.</p>
           <div class="button-row" aria-label="Hero actions">
-            <a class="button button--primary" href="mailto:hello@assistall.ai?subject=Assistall%20AI%20demo">Book a demo</a>
-            <a class="button button--outline" href="#how-it-works">See how it works</a>
+            <a class="button button--primary" href="#demo" data-scroll-link>Book a demo</a>
+            <a class="button button--outline" href="#capabilities" data-scroll-link>See what Assistall can do</a>
           </div>
-          <p class="trust-line">Your files stay on your computer. Your team stays in control.</p>
+          <p class="trust-line"><span aria-hidden="true">●</span> Your data stays under your control. Nothing is sent without your approval.</p>
         </div>
+      </div>
+    </section>
 
-        <figure class="hero-product product-frame">
-          <figcaption class="product-frame__caption">
-            <span class="product-frame__brand"><img src="assets/apple-touch-icon.png" alt="" width="32" height="32"> Assistall AI</span>
-            <span>Workspace overview</span>
-          </figcaption>
-          <img src="assets/media/workspace-limestone.png" alt="Assistall AI workspace showing an overview, work areas and reports" width="1220" height="760">
+    <section id="how-it-works" class="story-section story-section--limestone" aria-labelledby="work-story-title">
+      <div class="operational-current" aria-hidden="true"></div>
+      <div class="wrap section-grid section-grid--workday">
+        <div class="section-copy" data-reveal>
+          <p class="eyebrow">One clear flow</p>
+          <h2 id="work-story-title">One clear flow for work coming from everywhere.</h2>
+          <ol class="workday-steps">
+            <li><span>01</span><div><strong>Connect the work</strong><p>Email, files, contracts and business systems.</p></div></li>
+            <li><span>02</span><div><strong>Find what matters</strong><p>Important changes and requests come forward.</p></div></li>
+            <li><span>03</span><div><strong>Prepare the next step</strong><p>Replies, reports and review work get ready.</p></div></li>
+            <li><span>04</span><div><strong>Your team decides</strong><p>People approve what moves forward.</p></div></li>
+          </ol>
+        </div>
+        <figure class="product-window product-window--sticky" data-reveal>
+          <figcaption><span>Assistall workspace · Overview</span><span class="live-dot">Live product</span></figcaption>
+          <img src="assets/media/workspace-limestone.png" alt="Assistall AI workspace overview showing reports, contracts, shipments and connected work" width="1220" height="760">
         </figure>
       </div>
     </section>
 
-    <section id="how-it-works" class="section work-story" aria-labelledby="work-story-title">
-      <div class="wrap story-grid">
-        <div class="story-intro">
-          <p class="eyebrow">How it works</p>
-          <h2 id="work-story-title">From incoming work to the next clear step.</h2>
-          <p>Assistall gives your team one simple place to see what needs attention.</p>
-        </div>
-        <ol class="story-steps">
-          <li>
-            <span class="step-number">01</span>
-            <div><h3>Work comes in</h3><p>Email, documents, reports, and requests arrive in different places.</p></div>
-          </li>
-          <li>
-            <span class="step-number">02</span>
-            <div><h3>Assistall reads it</h3><p>It pulls out the important details and puts the work in order.</p></div>
-          </li>
-          <li>
-            <span class="step-number">03</span>
-            <div><h3>Your team checks it</h3><p>You review the draft, report, or request before it moves.</p></div>
-          </li>
-          <li>
-            <span class="step-number">04</span>
-            <div><h3>The business keeps moving</h3><p>Less time chasing updates. More time for customers and decisions.</p></div>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <section id="capabilities" class="section capabilities section--limestone" aria-labelledby="capabilities-title">
-      <div class="wrap capability-heading">
-        <p class="eyebrow">What it does</p>
-        <h2 id="capabilities-title">Help with the work that slows your team down.</h2>
-      </div>
-      <div class="wrap capability-grid">
-        <article class="capability-card">
-          <p class="card-number">01</p>
-          <h3>Reports</h3>
-          <p>Read reports and find what matters.</p>
-        </article>
-        <article class="capability-card">
-          <p class="card-number">02</p>
-          <h3>Documents</h3>
-          <p>Bring important files and details into one place.</p>
-        </article>
-        <article class="capability-card">
-          <p class="card-number">03</p>
-          <h3>Approvals</h3>
-          <p>Prepare replies and approval work for a person to check.</p>
-        </article>
-        <article class="capability-card">
-          <p class="card-number">04</p>
-          <h3>Contracts and shipments</h3>
-          <p>Review contract and shipment information when those connected workflows are enabled.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="workspace" class="section workspace" aria-labelledby="workspace-title">
-      <div class="wrap workspace-intro">
-        <div>
-          <p class="eyebrow">Your workspace, your view</p>
-          <h2 id="workspace-title">Choose a look your team feels at home with.</h2>
-        </div>
-        <p>Assistall keeps the layout and the work the same. Choose a workspace colour theme that suits your team.</p>
-      </div>
+    <section id="capabilities" class="story-section capabilities" aria-labelledby="capabilities-title" data-capability-switcher>
+      <div class="operational-current" aria-hidden="true"></div>
       <div class="wrap">
-        <figure class="theme-comparison">
-          <div class="theme-comparison__labels" aria-hidden="true"><span>Assistall brand look</span><span>Cobalt Blue</span></div>
-          <img class="theme-comparison__poster" src="assets/media/workspace-theme-comparison.png" alt="Assistall AI workspace in the Assistall brand look and the Cobalt Blue theme" width="1536" height="390">
-          <video class="theme-comparison__video" autoplay muted loop playsinline poster="assets/media/workspace-theme-comparison.png" aria-label="A short scrolling view of the Assistall workspace in the Assistall brand look and Cobalt Blue theme">
-            <source src="assets/media/workspace-theme-comparison.mp4" type="video/mp4">
-          </video>
-          <figcaption>One workspace. A familiar view for every team.</figcaption>
+        <header class="section-heading" data-reveal>
+          <p class="eyebrow">What Assistall can do</p>
+          <h2 id="capabilities-title">See what Assistall can take off your team’s plate.</h2>
+        </header>
+        <div class="capability-experience">
+          <div class="capability-controls" role="tablist" aria-label="Assistall capabilities" data-reveal>
+            <button type="button" role="tab" data-capability-id="inbox"><strong>Inbox and controlled replies</strong><span>Messages in. Checked replies ready.</span></button>
+            <button type="button" role="tab" data-capability-id="files"><strong>Files, OCR and reports</strong><span>Documents read. Reports prepared.</span></button>
+            <button type="button" role="tab" data-capability-id="contracts"><strong>Contracts and renewals</strong><span>Changes, dates and review points surfaced.</span></button>
+            <button type="button" role="tab" data-capability-id="shipments"><strong>Shipments and delivery</strong><span>Status changes and records organised.</span></button>
+            <button type="button" role="tab" data-capability-id="clients"><strong>Clients and service requests</strong><span>Requests gathered and next steps prepared.</span></button>
+            <button type="button" role="tab" data-capability-id="booking"><strong>Booking and marketing</strong><span>Calendar and outreach work made clearer.</span></button>
+          </div>
+          <div class="capability-evidence" role="tabpanel" data-reveal>
+            <div class="product-window">
+              <div class="product-window__bar"><span>Real workspace</span><span data-capability-title>Inbox and controlled replies</span></div>
+              <img src="assets/media/workspace-limestone.png" alt="Real Assistall workspace used to demonstrate the selected capability" width="1220" height="760">
+            </div>
+            <dl class="capability-outcome">
+              <div><dt>Input</dt><dd data-capability-input>Email or business message</dd></div>
+              <div><dt>Assistall prepares</dt><dd data-capability-preparation>A clear reply draft</dd></div>
+              <div><dt>Your team approves</dt><dd data-capability-result>Nothing sends without you</dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="connections" class="story-section connections" aria-labelledby="connections-title">
+      <div class="operational-current" aria-hidden="true"></div>
+      <div class="wrap">
+        <header class="section-heading section-heading--dark" data-reveal>
+          <p class="eyebrow">Connections</p>
+          <h2 id="connections-title">Bring the tools your business already uses.</h2>
+          <p>Every connector says how it works: live connection, imported source or setup-dependent.</p>
+        </header>
+        <div class="connector-grid" data-reveal>
+          <article><i aria-hidden="true"></i><h3>Microsoft 365 and Outlook</h3><p>Setup-dependent</p></article>
+          <article><i aria-hidden="true"></i><h3>Gmail and business email</h3><p>Setup-dependent</p></article>
+          <article class="is-imported"><i aria-hidden="true"></i><h3>WhatsApp exports</h3><p>Imported source</p></article>
+          <article><i aria-hidden="true"></i><h3>Odoo</h3><p>Setup-dependent</p></article>
+          <article><i aria-hidden="true"></i><h3>Zoho Books</h3><p>Setup-dependent</p></article>
+          <article class="is-imported"><i aria-hidden="true"></i><h3>Local folders and selected files</h3><p>Imported source</p></article>
+          <article class="is-imported"><i aria-hidden="true"></i><h3>Outlook and calendar files</h3><p>Imported source</p></article>
+          <article class="is-imported"><i aria-hidden="true"></i><h3>PDF, Word, Excel, CSV and more</h3><p>Imported source</p></article>
+        </div>
+        <p class="prepared-outputs" data-reveal><strong>Prepared outputs</strong><span>Excel · Word · PDF · PowerPoint reports</span></p>
+      </div>
+    </section>
+
+    <section id="product" class="story-section product-evidence" aria-labelledby="product-title">
+      <div class="operational-current" aria-hidden="true"></div>
+      <div class="wrap">
+        <header class="section-heading" data-reveal>
+          <p class="eyebrow">Real product</p>
+          <h2 id="product-title">See the work, not just the promise.</h2>
+          <p>Review the same work in either Limestone or Cobalt. The interface changes. Your controls do not.</p>
+        </header>
+        <div class="theme-captures" data-reveal>
+          <figure><figcaption>Limestone</figcaption><img src="assets/media/workspace-limestone.png" alt="Assistall workspace in the Limestone theme" width="1220" height="760"></figure>
+          <figure><figcaption>Cobalt</figcaption><img src="assets/media/workspace-cobalt.png" alt="Assistall workspace in the Cobalt theme" width="1220" height="760"></figure>
+        </div>
+        <figure class="workspace-tour" data-workspace-tour data-reveal>
+          <div class="workspace-video-stage workspace-video-stage--desktop">
+            <img src="assets/media/workspace-theme-comparison.png" alt="Side-by-side Assistall Limestone and Cobalt workspace views" width="1536" height="390">
+            <video data-workspace-video muted loop playsinline preload="metadata" poster="assets/media/workspace-theme-comparison.png" aria-label="Scrolling tour of the Assistall Limestone and Cobalt workspaces">
+              <source src="assets/media/workspace-theme-comparison.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="workspace-video-stage workspace-video-stage--mobile">
+            <img src="assets/media/workspace-theme-comparison-mobile.png" alt="Stacked mobile Assistall Limestone and Cobalt workspace views" width="768" height="780">
+            <video data-workspace-video muted loop playsinline preload="metadata" poster="assets/media/workspace-theme-comparison-mobile.png" aria-label="Mobile scrolling tour of the Assistall workspaces">
+              <source src="assets/media/workspace-theme-comparison-mobile.mp4" type="video/mp4">
+            </video>
+          </div>
+          <figcaption class="workspace-tour__controls">
+            <span class="live-dot" data-video-status aria-live="polite">Real workspace tour playing.</span>
+            <button type="button" data-video-toggle aria-pressed="false">Pause workspace tour</button>
+          </figcaption>
         </figure>
-        <div class="theme-mobile-pair" aria-label="Assistall workspace themes">
-          <figure>
-            <figcaption>Assistall brand look</figcaption>
-            <img src="assets/media/workspace-limestone.png" alt="Assistall AI workspace in the Assistall brand look" width="1220" height="760">
-          </figure>
-          <figure>
-            <figcaption>Cobalt Blue</figcaption>
-            <img src="assets/media/workspace-cobalt.png" alt="Assistall AI workspace in the Cobalt Blue theme" width="1220" height="760">
-          </figure>
-          <p>One workspace. A familiar view for every team.</p>
+      </div>
+    </section>
+
+    <section id="human-value" class="story-section human-value" aria-labelledby="human-title">
+      <div class="operational-current" aria-hidden="true"></div>
+      <div class="wrap" data-reveal>
+        <header class="section-heading">
+          <p class="eyebrow">Why it matters</p>
+          <h2 id="human-title">Give people more time for people.</h2>
+          <p>Spend less time searching, copying and chasing updates. Spend more time with clients, building trust, finding sales and growing the business.</p>
+        </header>
+        <div class="workday-comparison" aria-label="Illustration of administrative work becoming shorter">
+          <article><p><strong>Before</strong> Search, copy and chase updates</p><span class="time-track"><i></i></span></article>
+          <article class="is-assisted"><p><strong>With Assistall</strong> Review work that is ready</p><span class="time-track"><i></i></span></article>
+        </div>
+        <ul class="human-work"><li>Client relationships</li><li>Sales</li><li>Outreach</li><li>Decisions</li></ul>
+        <p class="illustration-note">Illustrative workday — not a performance claim.</p>
+      </div>
+    </section>
+
+    <section id="trust" class="story-section trust" aria-labelledby="trust-title">
+      <div class="operational-current" aria-hidden="true"></div>
+      <div class="wrap">
+        <header class="section-heading" data-reveal>
+          <p class="eyebrow">Control and trust</p>
+          <h2 id="trust-title">AI prepares. People approve.</h2>
+          <p>Assistall works inside clear permission boundaries. Your team reviews important work before anything is sent or changed.</p>
+        </header>
+        <div class="trust-grid" data-reveal>
+          <article><i aria-hidden="true"></i><h3>Your data stays under your control.</h3><p>Choose what Assistall can access. Keep company work inside the boundaries you set.</p></article>
+          <article><i aria-hidden="true"></i><h3>Use local AI where it fits.</h3><p>Optional local AI and on-device speech can keep selected work on your own device.</p></article>
+          <article><i aria-hidden="true"></i><h3>Review before action.</h3><p>Assistall prepares the next step. Your team checks it before anything important happens.</p></article>
         </div>
       </div>
     </section>
 
-    <section class="section human-first" aria-labelledby="human-title">
-      <div class="wrap human-grid">
-        <div class="human-mark" aria-hidden="true"><img src="assets/apple-touch-icon.png" alt="" width="128" height="128"></div>
-        <div>
-          <p class="eyebrow">Human first</p>
-          <h2 id="human-title">More time for work only people can do.</h2>
-          <p class="lede">Spend less time chasing updates and copying information. Spend more time with customers, solving problems, and making good decisions.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="trust" class="section trust" aria-labelledby="trust-title">
-      <div class="wrap trust-heading">
-        <p class="eyebrow">Trust and control</p>
-        <h2 id="trust-title">Nothing important moves without your check.</h2>
-      </div>
-      <div class="wrap trust-grid" aria-label="How Assistall AI keeps your team in control">
-        <article>
-          <h3>Runs locally</h3>
-          <p>Assistall runs on your computer.</p>
-        </article>
-        <article>
-          <h3>On-device speech</h3>
-          <p>Speech recognition happens on the device.</p>
-        </article>
-        <article>
-          <h3>Human review</h3>
-          <p>You review actions before Assistall writes or sends them.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="company" class="section about section--limestone" aria-labelledby="about-title">
-      <div class="wrap narrow">
-        <p class="eyebrow">Why we built Assistall AI</p>
-        <h2 id="about-title">Clear repeat work out of the way.</h2>
-        <p class="lede">Your team should have more room for judgment, growth, and the work people do best.</p>
-      </div>
-    </section>
-
-    <section class="section final-cta" aria-labelledby="cta-title">
+    <section id="demo" class="story-section final-cta" aria-labelledby="cta-title">
+      <div class="operational-current" aria-hidden="true"></div>
       <div class="wrap final-cta-grid">
-        <div>
-          <img class="section-mark" src="assets/apple-touch-icon.png" alt="" width="64" height="64">
-          <p class="eyebrow">Book a demo</p>
-          <h2 id="cta-title">See Assistall at work.</h2>
-          <p>Bring your everyday work into a clearer, safer flow.</p>
+        <div class="final-cta-copy" data-reveal>
+          <a class="wordmark wordmark--footer" href="/" aria-label="Assistall AI home"><img src="assets/apple-touch-icon.png" alt="" width="52" height="52"><span>Assistall <b>AI</b></span></a>
+          <h2 id="cta-title">Ready to clear the work that holds your team back?</h2>
+          <p>Tell us what slows your team down. We will show you how Assistall can help.</p>
         </div>
-        <div class="button-row final-cta-actions">
-          <a class="button button--primary" href="mailto:hello@assistall.ai?subject=Assistall%20AI%20demo">Book a demo</a>
-          <a class="button button--outline" href="mailto:hello@assistall.ai?subject=Assistall%20AI%20question">Talk to us</a>
-        </div>
+        <form class="demo-form" action="demo-request.php" method="post" accept-charset="UTF-8" data-demo-form data-reveal>
+          <label>Name<input type="text" name="name" autocomplete="name" maxlength="100" required></label>
+          <label>Work email<input type="email" name="email" autocomplete="email" maxlength="254" required></label>
+          <label>Company<input type="text" name="company" autocomplete="organization" maxlength="160" required></label>
+          <label>What work slows your team down?<textarea name="work_need" rows="4" maxlength="2000" required></textarea></label>
+          <label class="honeypot" aria-hidden="true">Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+          <input type="hidden" name="started_at" value="">
+          <input type="hidden" name="cf-turnstile-response" value="">
+          <div class="turnstile-slot" data-turnstile-widget aria-label="Bot protection"></div>
+          <button class="button button--primary" type="submit">Book a demo</button>
+          <p class="form-status" data-form-status aria-live="polite"></p>
+          <p class="privacy-note">We will use these details only to reply about your demo. Read our <a href="privacy.html">privacy policy</a>.</p>
+        </form>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="wrap footer-inner">
-      <a class="footer-brand" href="/" aria-label="Assistall AI home"><img src="assets/apple-touch-icon.png" alt="" width="36" height="36"><span><strong>Assistall <b>AI</b></strong><br>Keep your business moving.</span></a>
-      <nav aria-label="Footer navigation">
-        <a href="/privacy.html">Privacy policy</a>
-        <a href="mailto:hello@assistall.ai">Contact</a>
-      </nav>
+      <a class="footer-brand" href="/" aria-label="Assistall AI home"><img src="assets/apple-touch-icon.png" alt="" width="38" height="38"><strong>Assistall <b>AI</b></strong></a>
+      <p>© 2026 Assistall AI</p>
+      <nav aria-label="Footer navigation"><a href="privacy.html">Privacy</a><a href=".well-known/security.txt">Security</a><a href="mailto:hello@assistall.ai">Contact</a></nav>
     </div>
   </footer>
+  <script type="module" src="assets/site.js?v=20260816a"></script>
 </body>
 </html>

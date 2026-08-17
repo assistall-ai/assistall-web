@@ -78,8 +78,8 @@ img, svg { max-width: 100%; height: auto; }
   border: 1px solid transparent;
   cursor: pointer;
 }
-.button--primary { color: var(--ivory); background: var(--teal); border-color: var(--teal); }
-.button--primary:hover { background: color-mix(in srgb, var(--teal) 88%, var(--white)); }
+.button--primary { color: var(--charcoal); background: var(--brass); border-color: var(--brass); }
+.button--primary:hover { background: color-mix(in srgb, var(--brass) 86%, var(--white)); }
 .button--quiet { color: var(--teal); background: transparent; border-color: var(--brass); }
 .button--quiet:hover { background: color-mix(in srgb, var(--brass) 12%, transparent); }
 

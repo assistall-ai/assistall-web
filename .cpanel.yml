@@ -7,6 +7,9 @@ deployment:
     # path shown in cPanel (for example /home/youraccount) and redeploy.
     - export DEPLOYPATH=$HOME/public_html/
     - /bin/mkdir -p $DEPLOYPATH/assets
+    - /bin/mkdir -p $DEPLOYPATH/.well-known
     - /bin/cp index.html $DEPLOYPATH
+    - /bin/cp privacy.html security.html demo-request.php .htaccess .user.ini $DEPLOYPATH
+    - /bin/cp .well-known/security.txt $DEPLOYPATH/.well-known/security.txt
     - /bin/cp -R assets/. $DEPLOYPATH/assets/
     # Repository-only files are deliberately not copied: README.md, .cpanel.yml

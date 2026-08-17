@@ -1,63 +1,73 @@
-# assistall.ai
+# Assistall AI website
 
-The public website for **Assistall AI** — operational AI for busy teams.
+The public landing page for **Assistall AI**. It uses semantic HTML, responsive CSS, a small progressive-enhancement JavaScript module, a hardened cPanel form handler and a private Supabase ingestion path.
 
-Static HTML and CSS. No build step, no framework, no dependencies.
+## Current experience
 
-## Layout
+The page tells one continuous story: work comes in, Assistall makes it clear, people approve the next step, and the business has more time for clients and growth.
+
+- Official Assistall branding and quiet-authority palette
+- Flat animated hero built from real work types
+- Slow, header-aware in-page navigation
+- Six interactive capability stories
+- Neutral connector ecosystem with honest capability labels
+- Real Limestone and Cobalt workspace captures and responsive videos
+- Reduced-motion and no-JavaScript fallbacks
+- Private demo-request flow protected by Turnstile, signed server-to-server ingestion and forced RLS
+
+## Project map
 
 | Path | Purpose |
 |---|---|
-| `index.html` | The page |
-| `assets/brand.css` | Brand tokens: palette, type scale, spacing, buttons |
-| `assets/page.css` | Page-specific layout |
-| `assets/media/` | Reviewed local workspace screenshots and the optional scrolling comparison video |
-| `assets/` | Favicons and web manifest |
-| `tools/verify-site.ps1` | Basic offline page checks |
-| `.cpanel.yml` | Deployment tasks |
-
-## Deploying
-
-Deployed via cPanel Git Version Control. `.cpanel.yml` copies `index.html` and `assets/`
-into `public_html`. Nothing else is published.
-
-## Constraints
-
-These are deliberate; please keep to them.
-
-- **No external requests.** No CDN, web fonts, analytics or trackers. The product's claim
-  is that customer data stays on the customer's machine — the website should not
-  contradict it.
-- **No build step.** Files are copied verbatim.
-- **Palette only:** deep teal `#0E3A3D`, pale limestone `#F4EFE4`, warm ivory `#FFFDF8`,
-  muted brass `#C8A25D`, charcoal `#172A2C`, white.
-- **Works without JavaScript.** Any script is progressive enhancement only.
-- **No unverified claims.** No invented metrics, customer names or testimonials.
+| `index.html` | Landing page and demo form |
+| `assets/brand.css` | Official brand variables and shared controls |
+| `assets/page.css` | Responsive layout and motion |
+| `assets/site.js` | Hero, section glide, capability tabs, video and form enhancement |
+| `assets/media/` | Local product captures and responsive workspace videos |
+| `demo-request.php` | cPanel validation, Turnstile verification and signed ingestion |
+| `privacy.html` / `security.html` | Public trust pages |
+| `supabase/migrations/` | Private lead tables, forced RLS and retention function |
+| `supabase/functions/demo-ingest/` | Signed Edge Function and validation helpers |
+| `config/assistall-secrets.example.php` | Example cPanel configuration; never add real values here |
+| `ops/emergency/demo-request.php` | Form-off endpoint for an incident |
+| `docs/LAUNCH_SECURITY.md` | Exact Cloudflare, Supabase and cPanel launch sequence |
+| `tools/verify-site.ps1` | Offline structural and security checks |
 
 ## Local preview
 
-Open `index.html` in a browser, or serve the folder:
-
-```bash
-python -m http.server 8080
-```
-
-Before handing the page over, run the offline checks:
+Serve this folder instead of opening `index.html` directly:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/verify-site.ps1
+python -m http.server 55264 --bind 127.0.0.1
 ```
 
-## Known gaps
+Open `http://127.0.0.1:55264/?motion=on`. Use `?motion=off` to verify the static reduced-motion experience. The local preview deliberately shows a Turnstile placeholder because the real widget is restricted to the production hostname.
 
-- `/privacy.html` is linked from the footer but not yet written.
-- No `og:image` for social sharing.
+## Verification
 
-## What changed
+```powershell
+node --test tests\*.test.mjs
+powershell -ExecutionPolicy Bypass -File tools\verify-site.ps1
+```
 
-- **2026-08-08** — Rebuilt the landing page around the approved plain-English copy,
-  real Assistall workspace captures, local theme comparison video, responsive layouts,
-  and a reduced-motion poster fallback.
-- **2026-08-06** — First landing page build: all sections, responsive layout,
-  page-specific CSS, favicons.
-- **2026-08-04** — Repository created with brand tokens and deployment config.
+The PHP endpoint requires PHP 8.1+ with cURL. PHP, Deno and the Supabase CLI are not currently installed in this Windows workspace, so their production-runtime checks remain launch gates.
+
+## Deployment
+
+cPanel Git deployment copies only the public website files. Real secrets live at `/home/YOUR_CPANEL_USER/.assistall-secrets.php`, outside `public_html` and outside Git. Follow [docs/LAUNCH_SECURITY.md](docs/LAUNCH_SECURITY.md) in order; the form intentionally fails closed until Turnstile, Supabase and the cPanel secret file are configured.
+
+## Non-negotiable rules
+
+- Do not place Supabase keys, Turnstile secrets or HMAC values in HTML, JavaScript or Git.
+- Do not publish invented savings figures, testimonials, customer names or capabilities.
+- Keep provider logos monochrome in marketing visuals; genuine product theme colour may remain inside real captures.
+- Do not enable HSTS until the apex and every required subdomain pass HTTPS checks.
+- Do not claim the website is unhackable or impossible to DDoS. Maintain defence in depth, monitoring and recovery.
+
+## Status
+
+- Website redesign: implemented locally
+- cPanel form hardening: implemented locally
+- Supabase migration and Edge Function: applied to project `utxjkathvjdwcermpbez`; forced-RLS access verified, Edge Function secrets still required
+- Cloudflare rules and production secrets: require account configuration
+- Figma visuals: paused by request
