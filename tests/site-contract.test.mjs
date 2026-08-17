@@ -53,9 +53,17 @@ test('connector ecosystem uses local recognizable marks and honest capability la
 
 test('product evidence is a semantic three-workflow queue without theme media', () => {
   assert.match(html, /data-workflow-evidence/);
+  const workflowEvidence = html.match(/<div[^>]*data-workflow-evidence[^>]*>/);
+  assert.ok(workflowEvidence);
+  assert.doesNotMatch(workflowEvidence[0], /data-reveal/);
+
   for (const id of ['contract', 'shipment', 'reply']) {
     assert.match(html, new RegExp(`data-workflow-tab=["']${id}["']`));
     assert.match(html, new RegExp(`data-workflow-panel=["']${id}["']`));
+
+    const workflowPanel = html.match(new RegExp(`<div[^>]*id=["']workflow-panel-${id}["'][^>]*>`));
+    assert.ok(workflowPanel);
+    assert.match(workflowPanel[0], /tabindex=["']0["']/);
   }
   assert.equal((html.match(/role="tab"/g) ?? []).length >= 3, true);
   assert.match(html, /Ready for review/);
