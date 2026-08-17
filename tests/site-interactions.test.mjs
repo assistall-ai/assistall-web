@@ -38,6 +38,16 @@ test('workflow keyboard navigation wraps and supports Home and End', () => {
   assert.equal(site.getWorkflowTabTarget(1, 'Enter', 3), 1);
 });
 
+test('connector keyboard scrolling advances one viewport and clamps at the row edges', () => {
+  assert.equal(site.getConnectorScrollTarget(0, 'ArrowRight', 306, 2094), 306);
+  assert.equal(site.getConnectorScrollTarget(1780, 'ArrowRight', 306, 2094), 1788);
+  assert.equal(site.getConnectorScrollTarget(400, 'ArrowLeft', 306, 2094), 94);
+  assert.equal(site.getConnectorScrollTarget(0, 'ArrowLeft', 306, 2094), 0);
+  assert.equal(site.getConnectorScrollTarget(400, 'Home', 306, 2094), 0);
+  assert.equal(site.getConnectorScrollTarget(400, 'End', 306, 2094), 1788);
+  assert.equal(site.getConnectorScrollTarget(400, 'Enter', 306, 2094), 400);
+});
+
 test('workflow rotation requires visibility, motion and no interaction pause', () => {
   assert.equal(site.shouldRotateWorkflow({ visible: true, reducedMotion: false, interactionPaused: false }), true);
   assert.equal(site.shouldRotateWorkflow({ visible: false, reducedMotion: false, interactionPaused: false }), false);

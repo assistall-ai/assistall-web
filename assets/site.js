@@ -87,6 +87,15 @@ export function getWorkflowTabTarget(currentIndex, key, total) {
   return currentIndex;
 }
 
+export function getConnectorScrollTarget(scrollLeft, key, clientWidth, scrollWidth) {
+  const maximum = Math.max(0, scrollWidth - clientWidth);
+  if (key === 'Home') return 0;
+  if (key === 'End') return maximum;
+  if (key === 'ArrowRight') return Math.min(maximum, scrollLeft + clientWidth);
+  if (key === 'ArrowLeft') return Math.max(0, scrollLeft - clientWidth);
+  return scrollLeft;
+}
+
 export function shouldRotateWorkflow({ visible, reducedMotion, interactionPaused }) {
   return Boolean(visible && !reducedMotion && !interactionPaused);
 }
@@ -359,6 +368,20 @@ async function enableConnectorIconFallback() {
   }
 }
 
+function enableConnectorKeyboardScroll() {
+  const row = document.querySelector('.connector-grid');
+  if (!row) return;
+  row.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    if (row.scrollWidth <= row.clientWidth) return;
+    event.preventDefault();
+    row.scrollTo({
+      left: getConnectorScrollTarget(row.scrollLeft, event.key, row.clientWidth, row.scrollWidth),
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  });
+}
+
 function enableRevealMotion() {
   const nodes = [...document.querySelectorAll('[data-reveal]')];
   if (!nodes.length || prefersReducedMotion() || !('IntersectionObserver' in window)) { nodes.forEach((node) => node.classList.add('is-visible')); return; }
@@ -438,6 +461,7 @@ function initialiseSite() {
   enableSectionGlide();
   enableHeroMotion();
   enableCapabilitySwitcher();
+  enableConnectorKeyboardScroll();
   enableConnectorIconFallback();
   enableWorkflowEvidence();
   enableRevealMotion();
