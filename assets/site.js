@@ -7,6 +7,9 @@ const HERO_INTAKE_X = 760;
 const HERO_INTAKE_DESKTOP_Y = 286;
 const HERO_INTAKE_MOBILE_Y = 282;
 
+export const WORKFLOW_ROTATION_MS = 7000;
+export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'reply']);
+
 export const HERO_MOTION_ITEMS = Object.freeze([
   { id: 'zoho', label: 'ZOHO', x: 338, y: 92, cx: 500, cy: 74, delay: 0.00 },
   { id: 'odoo', label: 'odoo', x: 548, y: 62, cx: 650, cy: 82, delay: 0.12 },
@@ -66,17 +69,26 @@ export function getTargetScrollTop(targetTop, headerHeight) {
   return Math.max(0, Math.round(targetTop - headerHeight - SECTION_GAP));
 }
 
-export function selectVisibleVideo(videos, isVisible) {
-  return videos.find(isVisible) ?? videos[0];
-}
-
 export function createCapabilityState(requestedId) {
   const activeId = CAPABILITIES.some(({ id }) => id === requestedId) ? requestedId : 'inbox';
   return { activeId, items: CAPABILITIES.map((item) => ({ ...item, active: item.id === activeId })) };
 }
 
-export function shouldAutoplayMedia({ visible, reducedMotion, userPaused }) {
-  return Boolean(visible && !reducedMotion && !userPaused);
+export function createWorkflowState(requestedId) {
+  const activeId = WORKFLOW_IDS.includes(requestedId) ? requestedId : WORKFLOW_IDS[0];
+  return { activeId, items: WORKFLOW_IDS.map((id) => ({ id, active: id === activeId })) };
+}
+
+export function getWorkflowTabTarget(currentIndex, key, total) {
+  if (key === 'Home') return 0;
+  if (key === 'End') return total - 1;
+  if (key === 'ArrowRight') return (currentIndex + 1) % total;
+  if (key === 'ArrowLeft') return (currentIndex - 1 + total) % total;
+  return currentIndex;
+}
+
+export function shouldRotateWorkflow({ visible, reducedMotion, interactionPaused }) {
+  return Boolean(visible && !reducedMotion && !interactionPaused);
 }
 
 export function buildDemoPayload(values = {}) {
@@ -257,26 +269,93 @@ function enableCapabilitySwitcher() {
   });
 }
 
-function enableWorkspaceTour() {
-  const tour = document.querySelector('[data-workspace-tour]');
-  if (!tour) return;
-  const videos = [...tour.querySelectorAll('[data-workspace-video]')];
-  const toggle = tour.querySelector('[data-video-toggle]');
-  const status = tour.querySelector('[data-video-status]');
+function enableWorkflowEvidence() {
+  const root = document.querySelector('[data-workflow-evidence]');
+  if (!root) return;
+  const tabs = [...root.querySelectorAll('[data-workflow-tab]')];
+  const panels = [...root.querySelectorAll('[data-workflow-panel]')];
+  if (!tabs.length || !panels.length) return;
+
+  let activeId = tabs.find((tab) => tab.getAttribute('aria-selected') === 'true')?.dataset.workflowTab ?? WORKFLOW_IDS[0];
   let visible = false;
-  let userPaused = false;
-  const activeVideo = () => selectVisibleVideo(videos, (video) => window.getComputedStyle(video.closest('.workspace-video-stage')).display !== 'none');
-  const sync = async () => {
-    const play = shouldAutoplayMedia({ visible, reducedMotion: prefersReducedMotion(), userPaused });
-    videos.forEach((video) => { if (video !== activeVideo() || !play) video.pause(); });
-    if (play) { try { await activeVideo()?.play(); } catch { userPaused = true; } }
-    tour.classList.toggle('is-playing', play && !userPaused);
-    toggle?.setAttribute('aria-pressed', String(userPaused));
-    if (toggle) toggle.textContent = userPaused ? 'Play workspace tour' : 'Pause workspace tour';
-    if (status) status.textContent = userPaused ? 'Workspace tour paused.' : 'Real workspace tour playing.';
+  let interactionPaused = false;
+  let timerId;
+
+  const clearTimer = () => {
+    if (timerId) window.clearTimeout(timerId);
+    timerId = undefined;
   };
-  toggle?.addEventListener('click', () => { userPaused = !userPaused; sync(); });
-  if ('IntersectionObserver' in window) new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }, { threshold: .3 }).observe(tour);
+
+  let schedule = () => {};
+  const activate = (requestedId, { focus = false, resetTimer = true } = {}) => {
+    activeId = createWorkflowState(requestedId).activeId;
+    tabs.forEach((tab) => {
+      const active = tab.dataset.workflowTab === activeId;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      if (focus && active) tab.focus();
+    });
+    panels.forEach((panel) => {
+      const active = panel.dataset.workflowPanel === activeId;
+      panel.hidden = !active;
+      if (active) panel.dataset.active = 'true';
+      else delete panel.dataset.active;
+    });
+    root.dataset.activeWorkflow = activeId;
+    if (resetTimer) schedule();
+  };
+
+  schedule = () => {
+    clearTimer();
+    if (!shouldRotateWorkflow({ visible, reducedMotion: prefersReducedMotion(), interactionPaused })) return;
+    timerId = window.setTimeout(() => {
+      const nextIndex = (WORKFLOW_IDS.indexOf(activeId) + 1) % WORKFLOW_IDS.length;
+      activate(WORKFLOW_IDS[nextIndex], { resetTimer: false });
+      schedule();
+    }, WORKFLOW_ROTATION_MS);
+  };
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activate(tab.dataset.workflowTab));
+    tab.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const target = getWorkflowTabTarget(index, event.key, tabs.length);
+      activate(tabs[target].dataset.workflowTab, { focus: true });
+    });
+  });
+
+  root.addEventListener('mouseenter', () => { interactionPaused = true; schedule(); });
+  root.addEventListener('mouseleave', () => { interactionPaused = false; schedule(); });
+  root.addEventListener('focusin', () => { interactionPaused = true; schedule(); });
+  root.addEventListener('focusout', (event) => {
+    if (event.relatedTarget && root.contains(event.relatedTarget)) return;
+    interactionPaused = false;
+    schedule();
+  });
+
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      schedule();
+    }, { threshold: 0.35 }).observe(root);
+  }
+
+  root.classList.add('is-enhanced');
+  activate(activeId, { resetTimer: false });
+}
+
+async function enableConnectorIconFallback() {
+  try {
+    const response = await fetch('assets/connector-icons.svg', { cache: 'force-cache' });
+    if (!response.ok) throw new Error('Connector sprite unavailable');
+    const source = await response.text();
+    const complete = ['microsoft', 'gmail', 'whatsapp', 'odoo', 'zoho', 'folder', 'calendar', 'pdf', 'word', 'excel', 'csv']
+      .every((id) => source.includes(`id="connector-${id}"`));
+    if (!complete) throw new Error('Connector sprite incomplete');
+  } catch {
+    document.documentElement.classList.add('connector-icons-unavailable');
+  }
 }
 
 function enableRevealMotion() {
@@ -358,7 +437,8 @@ function initialiseSite() {
   enableSectionGlide();
   enableHeroMotion();
   enableCapabilitySwitcher();
-  enableWorkspaceTour();
+  enableConnectorIconFallback();
+  enableWorkflowEvidence();
   enableRevealMotion();
   enableTurnstile();
   enableDemoForm();

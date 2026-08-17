@@ -22,13 +22,27 @@ test('unknown capability selection falls back to inbox work', () => {
   assert.equal(state.items.find((item) => item.active)?.input, 'Email or business message');
 });
 
-test('workspace media only autoplays while visible when motion is allowed and the user has not paused it', () => {
-  assert.equal(typeof site.shouldAutoplayMedia, 'function');
+test('workflow evidence keeps one valid active workflow', () => {
+  assert.deepEqual(site.WORKFLOW_IDS, ['contract', 'shipment', 'reply']);
+  assert.equal(site.WORKFLOW_ROTATION_MS, 7000);
+  assert.equal(site.createWorkflowState('shipment').activeId, 'shipment');
+  assert.equal(site.createWorkflowState('unknown').activeId, 'contract');
+});
 
-  assert.equal(site.shouldAutoplayMedia({ visible: true, reducedMotion: false, userPaused: false }), true);
-  assert.equal(site.shouldAutoplayMedia({ visible: false, reducedMotion: false, userPaused: false }), false);
-  assert.equal(site.shouldAutoplayMedia({ visible: true, reducedMotion: true, userPaused: false }), false);
-  assert.equal(site.shouldAutoplayMedia({ visible: true, reducedMotion: false, userPaused: true }), false);
+test('workflow keyboard navigation wraps and supports Home and End', () => {
+  assert.equal(site.getWorkflowTabTarget(0, 'ArrowRight', 3), 1);
+  assert.equal(site.getWorkflowTabTarget(2, 'ArrowRight', 3), 0);
+  assert.equal(site.getWorkflowTabTarget(0, 'ArrowLeft', 3), 2);
+  assert.equal(site.getWorkflowTabTarget(1, 'Home', 3), 0);
+  assert.equal(site.getWorkflowTabTarget(1, 'End', 3), 2);
+  assert.equal(site.getWorkflowTabTarget(1, 'Enter', 3), 1);
+});
+
+test('workflow rotation requires visibility, motion and no interaction pause', () => {
+  assert.equal(site.shouldRotateWorkflow({ visible: true, reducedMotion: false, interactionPaused: false }), true);
+  assert.equal(site.shouldRotateWorkflow({ visible: false, reducedMotion: false, interactionPaused: false }), false);
+  assert.equal(site.shouldRotateWorkflow({ visible: true, reducedMotion: true, interactionPaused: false }), false);
+  assert.equal(site.shouldRotateWorkflow({ visible: true, reducedMotion: false, interactionPaused: true }), false);
 });
 
 test('demo payload trims fields and keeps only the public form contract', () => {

@@ -8,7 +8,6 @@ import {
   createHeroMotionMarkup,
   easeInOutCubic,
   getTargetScrollTop,
-  selectVisibleVideo,
 } from '../assets/site.js';
 
 const pageCss = await readFile(new URL('../assets/page.css', import.meta.url), 'utf8');
@@ -30,13 +29,6 @@ test('section glide easing begins and ends exactly at its anchors', () => {
   assert.equal(easeInOutCubic(0), 0);
   assert.equal(easeInOutCubic(1), 1);
   assert.ok(easeInOutCubic(0.5) > 0.49 && easeInOutCubic(0.5) < 0.51);
-});
-
-test('workspace tour selects the video in the visible responsive stage', () => {
-  const desktop = { stage: 'desktop' };
-  const mobile = { stage: 'mobile' };
-  assert.equal(selectVisibleVideo([desktop, mobile], (video) => video.stage === 'mobile'), mobile);
-  assert.equal(selectVisibleVideo([desktop, mobile], () => false), desktop);
 });
 
 test('hero motion uses the approved set of real work inputs', () => {
