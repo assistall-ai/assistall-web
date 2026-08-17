@@ -6,6 +6,8 @@ Thumbs.db
 
 # Nothing here should ever be secret, but be explicit
 .env
+.env.*
+.assistall-secrets.php
 *.pem
 *.key
 
@@ -15,6 +17,7 @@ preview.pid
 
 # Tooling scratch - contains session tokens
 .superpowers/
+.worktrees/
 
 # Local preview server output
 *.log
