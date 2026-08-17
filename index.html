@@ -178,30 +178,78 @@
         <header class="section-heading" data-reveal>
           <p class="eyebrow">Real product</p>
           <h2 id="product-title">See the work, not just the promise.</h2>
-          <p>Review the same work in either Limestone or Cobalt. The interface changes. Your controls do not.</p>
+          <p>Follow real business work from the source to a clear next step your team can check.</p>
         </header>
-        <div class="theme-captures" data-reveal>
-          <figure><figcaption>Limestone</figcaption><img src="assets/media/workspace-limestone.png" alt="Assistall workspace in the Limestone theme" width="1220" height="760"></figure>
-          <figure><figcaption>Cobalt</figcaption><img src="assets/media/workspace-cobalt.png" alt="Assistall workspace in the Cobalt theme" width="1220" height="760"></figure>
+        <div class="workflow-evidence" data-workflow-evidence data-reveal>
+          <div class="workflow-tabs" role="tablist" aria-label="Assistall workflow examples">
+            <button id="workflow-tab-contract" type="button" role="tab" aria-selected="true" aria-controls="workflow-panel-contract" tabindex="0" data-workflow-tab="contract">Contract review</button>
+            <button id="workflow-tab-shipment" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel-shipment" tabindex="-1" data-workflow-tab="shipment">Shipment tracking</button>
+            <button id="workflow-tab-reply" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel-reply" tabindex="-1" data-workflow-tab="reply">Prepared reply</button>
+          </div>
+
+          <div id="workflow-panel-contract" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-contract" data-workflow-panel="contract">
+            <article class="workflow-stage">
+              <h3>Source received</h3>
+              <p><strong>Service_Agreement.pdf</strong> from Northstar Supplies.</p>
+              <p>Renewal: 30 September. Payment term changed from 30 to 45 days.</p>
+              <p>Evidence: source pages 1 and 8.</p>
+            </article>
+            <span class="workflow-current" aria-hidden="true"></span>
+            <article class="workflow-stage">
+              <h3>Assistall prepares</h3>
+              <p>Highlights the renewal date and changed payment term for comparison.</p>
+              <p>Links each finding back to the relevant source page.</p>
+            </article>
+            <span class="workflow-current" aria-hidden="true"></span>
+            <article class="workflow-stage">
+              <h3>Ready for review</h3>
+              <p>The contract changes are collected for a person to check.</p>
+              <span class="workflow-result">Review contract</span>
+            </article>
+          </div>
+
+          <div id="workflow-panel-shipment" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-shipment" data-workflow-panel="shipment" hidden>
+            <article class="workflow-stage">
+              <h3>Source received</h3>
+              <p><strong>Delivery 1842</strong> has a promised arrival of 18 August.</p>
+              <p>Evidence: carrier record.</p>
+            </article>
+            <span class="workflow-current" aria-hidden="true"></span>
+            <article class="workflow-stage">
+              <h3>Assistall prepares</h3>
+              <p>Detects that the carrier status changed to customs review.</p>
+              <p>Keeps the promised arrival and carrier record together.</p>
+            </article>
+            <span class="workflow-current" aria-hidden="true"></span>
+            <article class="workflow-stage">
+              <h3>Ready for review</h3>
+              <p>The delivery change is ready for a person to assess.</p>
+              <span class="workflow-result">Review delivery update</span>
+            </article>
+          </div>
+
+          <div id="workflow-panel-reply" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-reply" data-workflow-panel="reply" hidden>
+            <article class="workflow-stage">
+              <h3>Source received</h3>
+              <p>Email from Maya · Clear Route requesting revised delivery timing.</p>
+              <p>Evidence: shipment record for Delivery 1842.</p>
+            </article>
+            <span class="workflow-current" aria-hidden="true"></span>
+            <article class="workflow-stage">
+              <h3>Assistall prepares</h3>
+              <p>Hi Maya, the shipment record for Delivery 1842 now shows customs review. We are checking the revised arrival timing with the carrier.</p>
+              <p>We will update you when the carrier confirms the next delivery date. This proposed reply cites the shipment record as its evidence.</p>
+            </article>
+            <span class="workflow-current" aria-hidden="true"></span>
+            <article class="workflow-stage">
+              <h3>Ready for review</h3>
+              <p>A person approves the proposed reply; nothing is sent automatically.</p>
+              <span class="workflow-result">Approve reply</span>
+              <span class="workflow-result">Edit</span>
+              <span class="workflow-result">Reject</span>
+            </article>
+          </div>
         </div>
-        <figure class="workspace-tour" data-workspace-tour data-reveal>
-          <div class="workspace-video-stage workspace-video-stage--desktop">
-            <img src="assets/media/workspace-theme-comparison.png" alt="Side-by-side Assistall Limestone and Cobalt workspace views" width="1536" height="390">
-            <video data-workspace-video muted loop playsinline preload="metadata" poster="assets/media/workspace-theme-comparison.png" aria-label="Scrolling tour of the Assistall Limestone and Cobalt workspaces">
-              <source src="assets/media/workspace-theme-comparison.mp4" type="video/mp4">
-            </video>
-          </div>
-          <div class="workspace-video-stage workspace-video-stage--mobile">
-            <img src="assets/media/workspace-theme-comparison-mobile.png" alt="Stacked mobile Assistall Limestone and Cobalt workspace views" width="768" height="780">
-            <video data-workspace-video muted loop playsinline preload="metadata" poster="assets/media/workspace-theme-comparison-mobile.png" aria-label="Mobile scrolling tour of the Assistall workspaces">
-              <source src="assets/media/workspace-theme-comparison-mobile.mp4" type="video/mp4">
-            </video>
-          </div>
-          <figcaption class="workspace-tour__controls">
-            <span class="live-dot" data-video-status aria-live="polite">Real workspace tour playing.</span>
-            <button type="button" data-video-toggle aria-pressed="false">Pause workspace tour</button>
-          </figcaption>
-        </figure>
       </div>
     </section>
 

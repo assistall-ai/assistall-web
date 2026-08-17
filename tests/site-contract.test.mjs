@@ -50,3 +50,15 @@ test('connector ecosystem uses local recognizable marks and honest capability la
   assert.equal((html.match(/Setup-dependent/g) ?? []).length, 4);
   assert.equal((html.match(/Imported source/g) ?? []).length, 4);
 });
+
+test('product evidence is a semantic three-workflow queue without theme media', () => {
+  assert.match(html, /data-workflow-evidence/);
+  for (const id of ['contract', 'shipment', 'reply']) {
+    assert.match(html, new RegExp(`data-workflow-tab=["']${id}["']`));
+    assert.match(html, new RegExp(`data-workflow-panel=["']${id}["']`));
+  }
+  assert.equal((html.match(/role="tab"/g) ?? []).length >= 3, true);
+  assert.match(html, /Ready for review/);
+  assert.match(html, /Approve reply/);
+  assert.doesNotMatch(html, /workspace-theme-comparison|workspace-cobalt|data-workspace-video|data-video-toggle/);
+});
