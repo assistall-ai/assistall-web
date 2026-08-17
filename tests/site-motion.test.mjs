@@ -55,10 +55,11 @@ test('hero motion uses one flat branded workspace, one bottom-centred output, an
   assert.match(markup, /dur="5s"/);
 });
 
-test('motion=on visibly overrides an operating-system reduced-motion setting for QA', () => {
+test('motion preview and reduced motion explicitly control workflow movement', () => {
   assert.match(siteScript, /data-motion-preview/);
-  assert.match(pageCss, /data-motion-preview=["']on["'].*hero-motion__stage/s);
-  assert.match(pageCss, /data-motion-preview=["']on["'].*workspace-video-stage video/s);
+  assert.match(pageCss, /@keyframes workflow-current/);
+  assert.match(pageCss, /prefers-reduced-motion: reduce[\s\S]*workflow-current/);
+  assert.match(pageCss, /data-motion-preview="off"[\s\S]*workflow-current/);
 });
 
 test('workflow rotation keeps pointer and focus pauses independent', () => {
