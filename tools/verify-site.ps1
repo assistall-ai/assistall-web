@@ -25,6 +25,7 @@ $requiredFiles = @(
   'assets/media/workspace-theme-comparison.mp4',
   'assets/media/workspace-theme-comparison-mobile.png',
   'assets/media/workspace-theme-comparison-mobile.mp4',
+  'assets/connector-icons.svg',
   'assets/site.js',
   'demo-request.php',
   'privacy.html',
@@ -47,8 +48,12 @@ Assert-True (-not [regex]::IsMatch($html, $externalSource)) 'Unexpected third-pa
 foreach ($id in @('how-it-works', 'capabilities', 'connections', 'product', 'human-value', 'trust', 'demo')) {
   Assert-True ($html -match ('id=["'']' + [regex]::Escape($id) + '["'']')) "Missing continuous-story section: $id"
 }
-Assert-True ($html -match 'workspace-theme-comparison\.mp4') 'Desktop workspace tour is not referenced.'
-Assert-True ($html -match 'workspace-theme-comparison-mobile\.mp4') 'Mobile workspace tour is not referenced.'
+Assert-True ($html -match 'assets/connector-icons\.svg') 'The approved connector sprite is not referenced.'
+Assert-True ($html -match 'data-workflow-evidence') 'The Living Work Queue is not mounted.'
+foreach ($workflow in @('contract', 'shipment', 'reply')) {
+  Assert-True ($html -match ('data-workflow-tab=["'']' + [regex]::Escape($workflow) + '["'']')) "Missing workflow tab marker: $workflow"
+  Assert-True ($html -match ('data-workflow-panel=["'']' + [regex]::Escape($workflow) + '["'']')) "Missing workflow panel marker: $workflow"
+}
 Assert-True ($html -match 'data-hero-motion') 'The hero motion scene is not mounted.'
 Assert-True ($html -match 'data-scroll-link') 'Section navigation has no slow-glide marker.'
 Assert-True ($script -match 'calculateScrollDuration') 'Section glide script is not present.'
@@ -60,7 +65,11 @@ Assert-True (-not ($script -match 'hero-engine__face|foreignObject|hero-engine__
 Assert-True ($script -match 'hero-document-glow') 'The finished document glow is missing.'
 Assert-True ($script -match 'translate\(700 430\)') 'The finished document is not centred beneath the flat workspace.'
 Assert-True ($css -match 'hero__film') 'The translucent teal readability film is missing.'
-Assert-True ($script -match 'data-video-toggle') 'Workspace tour control is not wired.'
+Assert-True ($script -match 'enableWorkflowEvidence') 'The workflow evidence controller is not present.'
+Assert-True ($script -match 'WORKFLOW_ROTATION_MS') 'Workflow rotation is not configured.'
+Assert-True ($script -match 'shouldRotateWorkflow') 'Workflow rotation guards are not present.'
+Assert-True ($script -match 'enableConnectorKeyboardScroll') 'Connector keyboard scrolling is not wired.'
+Assert-True ($script -match 'getConnectorScrollTarget') 'Connector keyboard scroll bounds are not present.'
 Assert-True ($css -match 'prefers-reduced-motion') 'Reduced-motion fallback is not present.'
 
 Assert-True ($html -match 'assistall-turnstile-sitekey') 'The public Turnstile site-key mount is missing.'
