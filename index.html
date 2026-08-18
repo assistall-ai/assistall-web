@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="assets/site.webmanifest">
   <link rel="stylesheet" href="assets/brand.css?v=20260816a">
-  <link rel="stylesheet" href="assets/page.css?v=20260816a">
+  <link rel="stylesheet" href="assets/page.css?v=20260818a">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -98,14 +98,14 @@
         </header>
         <div class="capability-experience">
           <div class="capability-controls" role="tablist" aria-label="Assistall capabilities" data-reveal>
-            <button type="button" role="tab" data-capability-id="inbox"><strong>Inbox and controlled replies</strong><span>Messages in. Checked replies ready.</span></button>
-            <button type="button" role="tab" data-capability-id="files"><strong>Files, OCR and reports</strong><span>Documents read. Reports prepared.</span></button>
-            <button type="button" role="tab" data-capability-id="contracts"><strong>Contracts and renewals</strong><span>Changes, dates and review points surfaced.</span></button>
-            <button type="button" role="tab" data-capability-id="shipments"><strong>Shipments and delivery</strong><span>Status changes and records organised.</span></button>
-            <button type="button" role="tab" data-capability-id="clients"><strong>Clients and service requests</strong><span>Requests gathered and next steps prepared.</span></button>
-            <button type="button" role="tab" data-capability-id="booking"><strong>Booking and marketing</strong><span>Calendar and outreach work made clearer.</span></button>
+            <button id="capability-tab-inbox" type="button" role="tab" aria-controls="capability-panel" aria-selected="true" tabindex="0" data-capability-id="inbox"><strong>Inbox and controlled replies</strong><span>Messages in. Checked replies ready.</span></button>
+            <button id="capability-tab-files" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="files"><strong>Files, OCR and reports</strong><span>Documents read. Reports prepared.</span></button>
+            <button id="capability-tab-contracts" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="contracts"><strong>Contracts and renewals</strong><span>Changes, dates and review points surfaced.</span></button>
+            <button id="capability-tab-shipments" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="shipments"><strong>Shipments and delivery</strong><span>Status changes and records organised.</span></button>
+            <button id="capability-tab-clients" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="clients"><strong>Clients and service requests</strong><span>Requests gathered and next steps prepared.</span></button>
+            <button id="capability-tab-booking" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="booking"><strong>Booking and marketing</strong><span>Calendar and outreach work made clearer.</span></button>
           </div>
-          <div class="capability-evidence" role="tabpanel" data-reveal>
+          <div id="capability-panel" class="capability-evidence" role="tabpanel" aria-labelledby="capability-tab-inbox" data-reveal>
             <div class="product-window">
               <div class="product-window__bar"><span>Real workspace</span><span data-capability-title>Inbox and controlled replies</span></div>
               <img src="assets/media/workspace-limestone.png" alt="Real Assistall workspace used to demonstrate the selected capability" width="1220" height="760">
@@ -318,6 +318,6 @@
       <nav aria-label="Footer navigation"><a href="privacy.html">Privacy</a><a href=".well-known/security.txt">Security</a><a href="mailto:hello@assistall.ai">Contact</a></nav>
     </div>
   </footer>
-  <script type="module" src="assets/site.js?v=20260816a"></script>
+  <script type="module" src="assets/site.js?v=20260818a"></script>
 </body>
 </html>

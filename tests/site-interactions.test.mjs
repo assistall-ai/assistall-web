@@ -85,3 +85,14 @@ test('Turnstile only accepts a configured public site key', () => {
   assert.equal(site.normaliseTurnstileSiteKey('REPLACE_WITH_TURNSTILE_SITE_KEY'), '');
   assert.equal(site.normaliseTurnstileSiteKey(''), '');
 });
+
+test('Turnstile reset clears the consumed token and targets the rendered widget', () => {
+  assert.equal(typeof site.resetTurnstileWidget, 'function');
+  const field = { value: 'single-use-token' };
+  const resetCalls = [];
+
+  site.resetTurnstileWidget(field, { reset: (widgetId) => resetCalls.push(widgetId) }, 'widget-42');
+
+  assert.equal(field.value, '');
+  assert.deepEqual(resetCalls, ['widget-42']);
+});

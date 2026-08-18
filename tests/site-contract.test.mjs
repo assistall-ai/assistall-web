@@ -19,7 +19,25 @@ test('capability controls cover the six approved business workflows', () => {
 
   for (const id of ['inbox', 'files', 'contracts', 'shipments', 'clients', 'booking']) {
     assert.match(html, new RegExp(`data-capability-id=["']${id}["']`));
+    const tab = html.match(new RegExp(`<button[^>]*data-capability-id=["']${id}["'][^>]*>`));
+    assert.ok(tab, id);
+    assert.match(tab[0], new RegExp(`id=["']capability-tab-${id}["']`));
+    assert.match(tab[0], /aria-controls=["']capability-panel["']/);
   }
+
+  const panel = html.match(/<div[^>]*class=["'][^"']*capability-evidence[^"']*["'][^>]*>/);
+  assert.ok(panel);
+  assert.match(panel[0], /id=["']capability-panel["']/);
+  assert.match(panel[0], /aria-labelledby=["']capability-tab-inbox["']/);
+});
+
+test('changed page assets use a new shared cache revision', () => {
+  const pageCss = html.match(/assets\/page\.css\?v=([a-z0-9]+)/i);
+  const siteJs = html.match(/assets\/site\.js\?v=([a-z0-9]+)/i);
+  assert.ok(pageCss);
+  assert.ok(siteJs);
+  assert.equal(pageCss[1], siteJs[1]);
+  assert.notEqual(pageCss[1], '20260816a');
 });
 
 test('demo form posts the approved fields to the hardened same-origin endpoint', () => {

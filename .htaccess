@@ -2,9 +2,9 @@ Options -Indexes
 ServerSignature Off
 
 RewriteEngine On
-RewriteCond %{HTTPS} !=on
-RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+RewriteCond %{HTTPS} !=on [OR]
+RewriteCond %{HTTP_HOST} !^assistall\.ai$ [NC]
+RewriteRule ^ https://assistall.ai%{REQUEST_URI} [R=301,L,NE]
 
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"

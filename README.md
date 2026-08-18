@@ -11,7 +11,7 @@ The page tells one continuous story: work comes in, Assistall makes it clear, pe
 - Slow, header-aware in-page navigation
 - Six interactive capability stories
 - Neutral connector ecosystem with honest capability labels
-- Real Limestone and Cobalt workspace captures and responsive videos
+- Living Work Queue evidence for contract, shipment and reply workflows
 - Reduced-motion and no-JavaScript fallbacks
 - Private demo-request flow protected by Turnstile, signed server-to-server ingestion and forced RLS
 
@@ -22,8 +22,8 @@ The page tells one continuous story: work comes in, Assistall makes it clear, pe
 | `index.html` | Landing page and demo form |
 | `assets/brand.css` | Official brand variables and shared controls |
 | `assets/page.css` | Responsive layout and motion |
-| `assets/site.js` | Hero, section glide, capability tabs, video and form enhancement |
-| `assets/media/` | Local product captures and responsive workspace videos |
+| `assets/site.js` | Hero, section glide, capability tabs, Living Work Queue and form enhancement |
+| `assets/media/` | Local, sanitised product captures used by page evidence |
 | `demo-request.php` | cPanel validation, Turnstile verification and signed ingestion |
 | `privacy.html` / `security.html` | Public trust pages |
 | `supabase/migrations/` | Private lead tables, forced RLS and retention function |

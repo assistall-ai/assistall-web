@@ -1,7 +1,9 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 import {
   hashIdentifier,
   isFreshTimestamp,
+  resolveSupabaseSecretKey,
+  validateContentLength,
   validateInternalPayload,
   verifyHmacSignature,
 } from './validation.js';
@@ -30,8 +32,8 @@ Deno.serve(async (request: Request) => {
   const contentType = request.headers.get('content-type')?.split(';')[0].trim();
   if (contentType !== 'application/json') return json(415, { ok: false, error: 'request_rejected' });
 
-  const contentLength = Number(request.headers.get('content-length') ?? '0');
-  if (contentLength > MAX_BODY_BYTES) return json(413, { ok: false, error: 'request_rejected' });
+  const contentLength = validateContentLength(request.headers.get('content-length'), MAX_BODY_BYTES);
+  if (!contentLength.ok) return json(contentLength.status, { ok: false, error: 'request_rejected' });
 
   const timestamp = request.headers.get('x-assistall-timestamp') ?? '';
   const requestId = request.headers.get('x-assistall-request-id') ?? '';
@@ -47,7 +49,10 @@ Deno.serve(async (request: Request) => {
   const hmacSecret = Deno.env.get('WEBSITE_HMAC_SECRET') ?? '';
   const hashSalt = Deno.env.get('RATE_LIMIT_HASH_SALT') ?? '';
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-  const supabaseSecret = Deno.env.get('SUPABASE_SECRET_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const supabaseSecret = resolveSupabaseSecretKey(
+    Deno.env.get('SUPABASE_SECRET_KEYS'),
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+  );
   if (hmacSecret.length < 32 || hashSalt.length < 32 || !supabaseUrl || !supabaseSecret) {
     logResult(requestId, 'server_not_configured');
     return json(503, { ok: false, error: 'temporarily_unavailable' });

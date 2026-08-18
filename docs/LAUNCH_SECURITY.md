@@ -21,11 +21,12 @@ Never paste either value into HTML, JavaScript, tickets, screenshots or Git.
 Use the empty project reserved for website leads and rename it **Assistall Website**.
 
 1. Apply `supabase/migrations/20260816000100_create_website_demo_leads.sql`.
-2. Deploy `supabase/functions/demo-ingest` with JWT verification disabled. This function authenticates the cPanel server using its HMAC signature instead.
+2. Deploy `supabase/functions/demo-ingest`. Repository-root `supabase/config.toml` disables platform JWT verification for this function because it authenticates the cPanel server using its HMAC signature instead.
 3. Add Edge Function secrets:
    - `WEBSITE_HMAC_SECRET`
    - `RATE_LIMIT_HASH_SALT`
-   - `SUPABASE_SECRET_KEY` if using a new Supabase secret key. The function also supports the platform-provided legacy `SUPABASE_SERVICE_ROLE_KEY` during migration.
+   - Confirm the platform-provided `SUPABASE_SECRET_KEYS` JSON map contains a non-empty `default` key. The function selects that named key.
+   - Keep the platform-provided `SUPABASE_SERVICE_ROLE_KEY` only as a documented migration fallback while the new map is absent. A malformed map or a map without `default` fails closed and does not fall back.
 4. Schedule `select public.purge_demo_request_data();` once daily in **Integrations → Cron**. Suggested time: `20 2 * * *` UTC.
 5. Open **Database → Security Advisor**, rerun the advisor and resolve every RLS/security finding before launch.
 
@@ -93,7 +94,7 @@ php -l public_html/demo-request.php
 Run these against a staging hostname first:
 
 - Homepage, privacy, security and `security.txt` return successfully.
-- Every navigation link, capability tab, video control and CTA works at 1920, 1440, 1024, 820, 390 and 360 pixels.
+- Every navigation link, capability tab, Living Work Queue tab and CTA works at 1920, 1440, 1024, 820, 390 and 360 pixels.
 - No overlap, clipping, horizontal overflow or console error.
 - Reduced motion and no-JavaScript fallbacks remain usable.
 - `GET /demo-request.php` returns 405.

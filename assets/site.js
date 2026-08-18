@@ -35,6 +35,7 @@ const CAPABILITIES = Object.freeze([
   { id: 'clients', label: 'Clients and service requests', summary: 'Requests gathered and next steps prepared.', input: 'Client or vendor request', preparation: 'The request, owner and next step', result: 'A person decides what moves forward' },
   { id: 'booking', label: 'Booking and marketing', summary: 'Calendar and outreach work made clearer.', input: 'Booking, calendar or campaign work', preparation: 'A prepared schedule or outreach draft', result: 'Your team checks timing and message' },
 ]);
+const turnstileState = { widgetId: null };
 
 function motionPreviewOverride() {
   if (typeof window === 'undefined') return null;
@@ -117,6 +118,12 @@ export function normaliseTurnstileSiteKey(value) {
   const key = String(value ?? '').trim();
   if (!key || /^REPLACE_/i.test(key)) return '';
   return key;
+}
+
+export function resetTurnstileWidget(field, turnstile, widgetId) {
+  if (field) field.value = '';
+  if (widgetId == null) return;
+  try { turnstile?.reset?.(widgetId); } catch { /* Keep the form retryable if the widget API fails. */ }
 }
 
 function heroStarsMarkup() {
@@ -251,6 +258,7 @@ function renderCapability(root, requestedId) {
     button.setAttribute('aria-selected', String(active));
     button.tabIndex = active ? 0 : -1;
   });
+  root.querySelector('#capability-panel')?.setAttribute('aria-labelledby', `capability-tab-${state.activeId}`);
   const selected = state.items.find(({ active }) => active);
   for (const [key, value] of Object.entries({ title: selected.label, input: selected.input, preparation: selected.preparation, result: selected.result })) {
     const target = root.querySelector(`[data-capability-${key}]`);
@@ -384,17 +392,30 @@ function enableConnectorKeyboardScroll() {
 
 function enableRevealMotion() {
   const nodes = [...document.querySelectorAll('[data-reveal]')];
-  if (!nodes.length || prefersReducedMotion() || !('IntersectionObserver' in window)) { nodes.forEach((node) => node.classList.add('is-visible')); return; }
-  const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
-    if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
-  }), { threshold: .14 });
-  nodes.forEach((node) => observer.observe(node));
+  if (!nodes.length) return;
+  const revealRoot = document.documentElement;
+  if (prefersReducedMotion() || !('IntersectionObserver' in window)) {
+    revealRoot.classList.remove('reveal-enhanced');
+    nodes.forEach((node) => node.classList.add('is-visible'));
+    return;
+  }
+  try {
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+    }), { threshold: .14 });
+    revealRoot.classList.add('reveal-enhanced');
+    nodes.forEach((node) => observer.observe(node));
+  } catch {
+    revealRoot.classList.remove('reveal-enhanced');
+    nodes.forEach((node) => node.classList.add('is-visible'));
+  }
 }
 
 function enableDemoForm() {
   const form = document.querySelector('[data-demo-form]');
   if (!form) return;
   const started = form.elements.namedItem('started_at');
+  const turnstileField = form.elements.namedItem('cf-turnstile-response');
   if (started) started.value = String(Date.now());
   form.addEventListener('submit', async (event) => {
     if (!window.fetch || !form.reportValidity()) return;
@@ -409,9 +430,10 @@ function enableDemoForm() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.ok) throw new Error('request_failed');
       form.reset(); if (started) started.value = String(Date.now());
-      window.turnstile?.reset?.();
+      resetTurnstileWidget(turnstileField, window.turnstile, turnstileState.widgetId);
       if (status) status.textContent = 'Your request is saved. We will reply soon.';
     } catch {
+      resetTurnstileWidget(turnstileField, window.turnstile, turnstileState.widgetId);
       if (status) status.textContent = 'Your request could not be sent. Please try again or email hello@assistall.ai.';
     } finally { submit.disabled = false; }
   });
@@ -433,7 +455,7 @@ function enableTurnstile() {
 
   const render = () => {
     if (!window.turnstile || slot.dataset.rendered === 'true') return;
-    window.turnstile.render(slot, {
+    const widgetId = window.turnstile.render(slot, {
       sitekey,
       action: 'demo',
       theme: 'light',
@@ -442,6 +464,7 @@ function enableTurnstile() {
       'expired-callback': () => { field.value = ''; },
       'error-callback': () => { field.value = ''; },
     });
+    turnstileState.widgetId = widgetId;
     slot.dataset.rendered = 'true';
   };
 
