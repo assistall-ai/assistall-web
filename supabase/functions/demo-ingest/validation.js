@@ -22,9 +22,13 @@ function cleanMultiline(value) {
 export function validateContentLength(value, maximumBytes = 16 * 1024) {
   const raw = value == null ? '' : String(value);
   if (!/^\d+$/.test(raw)) return { ok: false, status: 411 };
+  const maximum = String(maximumBytes);
+  const normalized = raw.replace(/^0+(?=\d)/, '');
+  if (normalized.length > maximum.length || (normalized.length === maximum.length && normalized > maximum)) {
+    return { ok: false, status: 413 };
+  }
   const length = Number(raw);
-  if (!Number.isSafeInteger(length)) return { ok: false, status: 411 };
-  if (length > maximumBytes) return { ok: false, status: 413 };
+  if (!Number.isSafeInteger(length)) return { ok: false, status: 413 };
   return { ok: true, length };
 }
 

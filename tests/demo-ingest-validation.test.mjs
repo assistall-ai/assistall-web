@@ -76,10 +76,11 @@ test('content length validation requires bounded unsigned decimal bytes', () => 
 
   assert.deepEqual(validation.validateContentLength('0'), { ok: true, length: 0 });
   assert.deepEqual(validation.validateContentLength('16384'), { ok: true, length: 16384 });
-  for (const value of [null, '', '-1', '1.5', ' 12', '12 ', '12x', '9007199254740992']) {
+  for (const value of [null, '', '-1', '1.5', ' 12', '12 ', '12x']) {
     assert.deepEqual(validation.validateContentLength(value), { ok: false, status: 411 }, String(value));
   }
   assert.deepEqual(validation.validateContentLength('16385'), { ok: false, status: 413 });
+  assert.deepEqual(validation.validateContentLength('9007199254740992'), { ok: false, status: 413 });
 });
 
 test('Supabase secret resolution selects the default map key and fails closed', () => {

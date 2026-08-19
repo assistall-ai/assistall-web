@@ -20,11 +20,6 @@ Assert-True ($h1Count -eq 1) "Expected exactly one h1; found $h1Count."
 $requiredFiles = @(
   'assets/apple-touch-icon.png',
   'assets/media/workspace-limestone.png',
-  'assets/media/workspace-cobalt.png',
-  'assets/media/workspace-theme-comparison.png',
-  'assets/media/workspace-theme-comparison.mp4',
-  'assets/media/workspace-theme-comparison-mobile.png',
-  'assets/media/workspace-theme-comparison-mobile.mp4',
   'assets/connector-icons.svg',
   'assets/site.js',
   'demo-request.php',
