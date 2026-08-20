@@ -49,6 +49,16 @@ Record 4–6 second, silent, loopable desktop clips from the local Assistall app
 
 Each item has a first-frame PNG poster sourced from that recording. Footage uses fictional company names, email domains and operational records only. Sensitive values, file paths, local usernames, secrets and system notifications must not be visible.
 
+### Disposable fixture environment
+
+The current application ships the synthetic scenario JSON but does not expose a safe workflow-seeding command. Add a capture-only app command that can seed the three required records only when an explicit temporary data directory is supplied.
+
+- The command must reject the normal application directory, the repository directory and a missing `WADIH_AI_DATA_DIR` override.
+- It must bind its temporary server to `127.0.0.1` only.
+- It must insert only existing fictional Demo Trading LLC fixture data for one contract change, one shipment exception and one report with an extraction flag.
+- It must print the temporary directory and an explicit cleanup command; the website capture runner removes that directory after a successful or failed capture.
+- It must have no effect on the standard `serve` and `app` commands.
+
 ## Living Work Queue behaviour
 
 - Keep the semantic tabs for Contract, Shipment and Report.

@@ -49,6 +49,7 @@
 **Interfaces:**
 - Consumes: `C:\agency\assistall-app\approval_desk.py`, `multi_business/demo_scenarios/import_export.json`, `WADIH_AI_DATA_DIR`, Python Playwright and FFmpeg.
 - Produces: `capture-workflow-media.ps1 -Workflow <contract-review|shipment-review|report-preparation|all> -AppRoot <path> -OutputRoot <path>`.
+- Consumes: the app’s `seed-capture-fixtures` command, which refuses non-temporary normal-data targets.
 
 - [ ] **Step 1: Write the failing asset contract test**
 
@@ -77,8 +78,8 @@ param(
 )
 $captureData = Join-Path ([System.IO.Path]::GetTempPath()) ('assistall-capture-' + [guid]::NewGuid())
 $env:WADIH_AI_DATA_DIR = $captureData
-# Start the app at loopback only, load the import_export fixture through onboarding,
-# capture the named route at 1440x900, encode a silent MP4/poster, then remove $captureData.
+# Run approval_desk.py seed-capture-fixtures first; it refuses a normal app-data target.
+# Start the seeded loopback app, capture the named route at 1440x900, encode a silent MP4/poster, then remove $captureData.
 ```
 
 Document the three capture routes, sanitisation checklist, loopback-only requirement, shutdown and temporary-data cleanup. Ignore only the temporary directory pattern, never the reviewed output assets.
