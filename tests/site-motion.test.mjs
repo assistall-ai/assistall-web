@@ -46,17 +46,20 @@ test('hero motion uses one flat branded workspace, one bottom-centred output, an
   assert.equal((markup.match(/<animateMotion\b/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/class="hero-output"/g) ?? []).length, 1);
   assert.equal((markup.match(/class="hero-workspace-surface"/g) ?? []).length, 1);
+  assert.match(markup, /<div class="hero-workspace-shell" aria-hidden="true">/);
   assert.match(markup, /data-hero-workspace-xspin/);
   assert.doesNotMatch(markup, /animateTransform[^>]+type="rotate"/);
   assert.doesNotMatch(markup, /hero-engine__face|<foreignObject|hero-engine__cube/);
   assert.doesNotMatch(markup, /hero-engine__(?:orbit|intake)|black-hole/);
-  assert.match(markup, /Q [^\"]+ 760 286/);
+  assert.match(markup, /Q [^\"]+ 760 250/);
   assert.match(markup, /filter="url\(#hero-document-glow\)"/);
   assert.match(markup, /translate\(700 430\)/);
-  assert.ok(markup.indexOf('class="hero-workspace-surface"') < markup.indexOf('class="hero-output"'));
+  assert.ok(markup.indexOf('class="hero-workspace-surface"') > markup.indexOf('class="hero-output"'));
   assert.match(markup, /dur="5s"/);
   assert.match(pageCss, /@keyframes hero-workspace-xspin/);
   assert.match(pageCss, /rotateX\(360deg\)/);
+  assert.match(pageCss, /\.hero-workspace-shell[^}]*perspective/);
+  assert.match(pageCss, /\.hero-signal[^}]*drop-shadow/);
 });
 
 test('motion preview and reduced motion explicitly control workflow movement', () => {

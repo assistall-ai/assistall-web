@@ -14,10 +14,17 @@ ROUTES = {
     "report-preparation": ("reports", "Reports"),
 }
 
+WORKFLOW_ACTIONS = {
+    "contract-review": "Open contract",
+    "shipment-review": "Open shipment",
+    "report-preparation": "Open report",
+}
+
 
 def record_workflow(base_url: str, workflow: str, video_dir: Path) -> Path:
     """Create a short silent browser recording from the disposable local app."""
     route, heading = ROUTES[workflow]
+    action_label = WORKFLOW_ACTIONS[workflow]
     video_dir.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
         api = playwright.request.new_context(base_url=base_url)
@@ -48,11 +55,12 @@ def record_workflow(base_url: str, workflow: str, video_dir: Path) -> Path:
         page.goto(f"{base_url}/ui/#/{route}", wait_until="networkidle")
         page.locator("#main-content h1", has_text=heading).wait_for(state="visible")
         page.locator("#guided-tour").wait_for(state="hidden")
-        page.wait_for_timeout(1200)
-        page.mouse.wheel(0, 220)
-        page.wait_for_timeout(1400)
-        page.mouse.wheel(0, -120)
-        page.wait_for_timeout(2200)
+        page.wait_for_timeout(700)
+        page.get_by_role("button", name=action_label).click()
+        page.locator("#main-content h1").wait_for(state="visible")
+        page.wait_for_timeout(1000)
+        page.mouse.wheel(0, 180)
+        page.wait_for_timeout(1900)
         context.close()
         browser.close()
     videos = sorted(video_dir.glob("*.webm"), key=lambda item: item.stat().st_mtime)

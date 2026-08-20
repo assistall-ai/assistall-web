@@ -27,4 +27,8 @@ test('capture runner uses a disposable loopback app and local media tooling', ()
   assert.match(helper, /\/api\/login/);
   assert.match(helper, /\/api\/preferences/);
   assert.match(helper, /add_init_script/);
+  assert.match(helper, /WORKFLOW_ACTIONS/);
+  assert.match(helper, /get_by_role\("button", name=action_label\)\.click\(\)/);
+  assert.match(helper, /#main-content h1/);
+  assert.match(runner, /-ss 2/);
 });

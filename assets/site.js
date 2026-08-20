@@ -4,10 +4,10 @@ const SCROLL_SPEED = 0.8;
 const SECTION_GAP = 16;
 const HERO_MOTION_DURATION = 5;
 const HERO_INTAKE_X = 760;
-const HERO_INTAKE_DESKTOP_Y = 286;
-const HERO_INTAKE_MOBILE_Y = 282;
+const HERO_INTAKE_DESKTOP_Y = 250;
+const HERO_INTAKE_MOBILE_Y = 250;
 
-export const WORKFLOW_ROTATION_MS = 7000;
+export const WORKFLOW_ROTATION_MS = 6000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
@@ -168,20 +168,12 @@ function heroSignalMarkup(item) {
 export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
   return `<svg class="hero-motion__svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" role="presentation" focusable="false" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="surface-face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24585A"></stop><stop offset="1" stop-color="#071D1E"></stop></linearGradient>
       <linearGradient id="document-face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFDF8"></stop><stop offset="1" stop-color="#EBDDBF"></stop></linearGradient>
       <filter id="hero-document-glow" x="-90%" y="-70%" width="280%" height="280%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#C8A25D" flood-opacity=".72"></feDropShadow></filter>
-      <filter id="surface-shadow" x="-60%" y="-60%" width="220%" height="240%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity=".55"></feDropShadow></filter>
     </defs>
     <rect class="hero-motion__space" width="1200" height="700"></rect>
     <g class="hero-stars">${heroStarsMarkup()}</g>
     <g class="hero-routes">${items.map(heroSignalMarkup).join('')}</g>
-    <g class="hero-workspace-surface" data-hero-workspace-xspin filter="url(#surface-shadow)">
-      <rect x="664" y="250" width="192" height="168" rx="34" fill="url(#surface-face)"></rect>
-      <rect x="679" y="266" width="162" height="136" rx="26" class="hero-workspace-surface__inner"></rect>
-      <image href="assets/android-chrome-512x512.png" x="706" y="280" width="108" height="108"></image>
-      <path class="hero-workspace-surface__edge" d="M712 418h96"></path>
-    </g>
     <g class="hero-output" filter="url(#hero-document-glow)" transform="translate(700 430)">
       <animateTransform attributeName="transform" type="translate" additive="sum" values="0 -12;0 -12;0 8;0 118;0 194;0 -12" keyTimes="0;.43;.48;.62;.74;1" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animateTransform>
       <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.43;.48;.68;.76;1" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
@@ -191,7 +183,13 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
       <path class="hero-output__lines" d="M68 22h35M68 35h26M15 68h88M15 82h72"></path>
       <circle class="hero-output__check" cx="28" cy="116" r="12"></circle><path class="hero-output__tick" d="M22 116l4 4 8-9"></path>
     </g>
-  </svg>`;
+  </svg>
+  <div class="hero-workspace-shell" aria-hidden="true">
+    <div class="hero-workspace-surface" data-hero-workspace-xspin>
+      <div class="hero-workspace-surface__inner"><img src="assets/android-chrome-512x512.png" alt=""></div>
+      <span class="hero-workspace-surface__edge"></span>
+    </div>
+  </div>`;
 }
 
 function updateHash(hash) {

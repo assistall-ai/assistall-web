@@ -53,7 +53,7 @@ try {
     $poster = Join-Path $resolvedOutputRoot "$item.png"
     & ffmpeg.exe -v error -y -i $result.video_path -t 6 -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart -an $mp4
     if ($LASTEXITCODE -ne 0) { throw "FFmpeg could not encode $item." }
-    & ffmpeg.exe -v error -y -ss 1 -i $mp4 -frames:v 1 $poster
+    & ffmpeg.exe -v error -y -ss 2 -i $mp4 -frames:v 1 $poster
     if ($LASTEXITCODE -ne 0) { throw "FFmpeg could not create the $item poster." }
     & ffprobe.exe -v error -show_entries format=duration -of default=noprint_wrappers=1 $mp4
   }
