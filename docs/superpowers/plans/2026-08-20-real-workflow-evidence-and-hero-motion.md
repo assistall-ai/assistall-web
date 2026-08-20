@@ -38,6 +38,68 @@
 
 ---
 
+### Task 0: Add a capture-only fixture seeder to the desktop app
+
+**Files:**
+- Create: `C:\agency\assistall-app\.worktrees\capture-fixtures\capture_fixtures.py`
+- Create: `C:\agency\assistall-app\.worktrees\capture-fixtures\test_capture_fixtures.py`
+- Modify: `C:\agency\assistall-app\.worktrees\capture-fixtures\approval_desk.py:6942-6965`
+
+**Interfaces:**
+- Consumes: an explicit `WADIH_AI_DATA_DIR`, `multi_business/demo_scenarios/import_export.json` and local schema modules.
+- Produces: `seed_capture_fixtures(data_dir: Path) -> dict[str, int]` and `python approval_desk.py seed-capture-fixtures`.
+- Rejects: a missing override, the app repository, its normal data directory, an existing non-empty non-capture directory, and any path not named `assistall-capture-*` beneath the system temporary directory.
+
+- [ ] **Step 1: Write failing isolation and fixture tests**
+
+```python
+class CaptureFixtureTests(unittest.TestCase):
+    def test_refuses_the_normal_application_directory(self):
+        with self.assertRaises(ValueError):
+            capture_fixtures.seed_capture_fixtures(APP_ROOT)
+
+    def test_seeds_only_the_three_reviewable_fixture_records(self):
+        with tempfile.TemporaryDirectory(prefix='assistall-capture-') as temp:
+            result = capture_fixtures.seed_capture_fixtures(Path(temp))
+            self.assertEqual(result, {'contracts': 1, 'shipments': 1, 'reports': 1})
+```
+
+- [ ] **Step 2: Run the test red**
+
+Run: `C:\agency\assistall-app\venv\Scripts\python.exe -m unittest test_capture_fixtures`
+
+Expected: FAIL because the capture-fixture module and command do not exist.
+
+- [ ] **Step 3: Implement a rejecting-by-default fixture module and CLI command**
+
+```python
+def require_capture_directory(data_dir: Path) -> Path:
+    root = data_dir.resolve()
+    temp_root = Path(tempfile.gettempdir()).resolve()
+    if root.parent != temp_root or not root.name.startswith('assistall-capture-'):
+        raise ValueError('capture fixtures require a new system-temporary assistall-capture-* directory')
+    if root == APP_ROOT or root == NORMAL_DATA_DIR:
+        raise ValueError('capture fixtures cannot target application data')
+    return root
+```
+
+The module loads the existing JSON scenario only for fictional labels, then creates exactly one contract change, one shipment exception and one flagged report in the temporary database. Add the CLI subcommand without changing `serve` or `app` behaviour.
+
+- [ ] **Step 4: Run the test green and focused app verification**
+
+Run: `C:\agency\assistall-app\venv\Scripts\python.exe -m unittest test_capture_fixtures test_contracts_renewals test_report`
+
+Expected: PASS. The known worktree-only voice-bundle test remains excluded and is documented as environment-bound.
+
+- [ ] **Step 5: Commit the app seeder**
+
+```powershell
+git -C C:\agency\assistall-app\.worktrees\capture-fixtures add capture_fixtures.py test_capture_fixtures.py approval_desk.py
+git -C C:\agency\assistall-app\.worktrees\capture-fixtures commit -m "feat: add disposable capture fixture seeder"
+```
+
+---
+
 ### Task 1: Add reproducible synthetic workflow capture media
 
 **Files:**
