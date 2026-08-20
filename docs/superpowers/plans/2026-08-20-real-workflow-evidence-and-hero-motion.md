@@ -106,29 +106,32 @@ git -C C:\agency\assistall-app\.worktrees\capture-fixtures commit -m "feat: add 
 - Create: `tools/capture-workflow-media.ps1`
 - Create: `docs/capture-workflow-media.md`
 - Create: `assets/media/workflows/contract-review.mp4`, `contract-review.png`, `shipment-review.mp4`, `shipment-review.png`, `report-preparation.mp4`, `report-preparation.png`
-- Modify: `.gitignore`, `tests/site-contract.test.mjs`
+- Create: `tests/capture-workflow-media.test.mjs`
+- Modify: `.gitignore`
 
 **Interfaces:**
 - Consumes: `C:\agency\assistall-app\approval_desk.py`, `multi_business/demo_scenarios/import_export.json`, `WADIH_AI_DATA_DIR`, Python Playwright and FFmpeg.
 - Produces: `capture-workflow-media.ps1 -Workflow <contract-review|shipment-review|report-preparation|all> -AppRoot <path> -OutputRoot <path>`.
 - Consumes: the app’s `seed-capture-fixtures` command, which refuses non-temporary normal-data targets.
 
-- [ ] **Step 1: Write the failing asset contract test**
+- [ ] **Step 1: Write the failing capture-runner contract test**
 
 ```js
-test('workflow evidence references approved local recordings and posters', () => {
-  for (const id of ['contract-review', 'shipment-review', 'report-preparation']) {
-    assert.match(html, new RegExp(`assets/media/workflows/${id}\\.mp4`));
-    assert.match(html, new RegExp(`assets/media/workflows/${id}\\.png`));
-  }
+test('capture runner uses an explicit disposable app environment and local encoders', () => {
+  const runner = readFileSync(resolve(root, 'tools/capture-workflow-media.ps1'), 'utf8');
+  assert.match(runner, /WADIH_AI_DATA_DIR/);
+  assert.match(runner, /seed-capture-fixtures/);
+  assert.match(runner, /127\.0\.0\.1/);
+  assert.match(runner, /ffmpeg/);
+  assert.match(runner, /assistall-capture-/);
 });
 ```
 
 - [ ] **Step 2: Run the test red**
 
-Run: `node --test tests/site-contract.test.mjs`
+Run: `node --test tests/capture-workflow-media.test.mjs`
 
-Expected: FAIL because no real workflow assets are referenced.
+Expected: FAIL because no capture runner exists.
 
 - [ ] **Step 3: Implement the local-only capture runner and guide**
 
@@ -154,9 +157,9 @@ Run: `ffprobe -v error -show_entries format=duration -of default=noprint_wrapper
 
 Expected: three 4–6 second silent H.264 clips and matching posters with fictional Demo Trading LLC data only.
 
-- [ ] **Step 5: Run the test green and commit**
+- [ ] **Step 5: Run the capture test green and commit**
 
-Run: `node --test tests/site-contract.test.mjs`
+Run: `node --test tests/capture-workflow-media.test.mjs`
 
 Expected: PASS.
 
