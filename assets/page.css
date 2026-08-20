@@ -70,6 +70,9 @@ button, .button { border-radius: 10px; }
 .hero-workspace-surface__inner { fill: #0e3a3d; stroke: rgba(200,162,93,.55); stroke-width: 1.2; }
 .hero-workspace-surface__edge { fill: none; stroke: #c8a25d; stroke-width: 3; stroke-linecap: round; }
 .hero-output__image { fill: #d8d3c8; }.hero-output__mountain { fill: #c8a25d; }.hero-output__lines { fill: none; stroke: #9c9487; stroke-width: 5; stroke-linecap: round; }.hero-output__check { fill: #0e3a3d; }.hero-output__tick { fill: none; stroke: #fffdf8; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+/* The branded surface stays planar; only the short processing beat rotates it around its horizontal axis. */
+.hero-workspace-surface { transform-box: fill-box; transform-origin: center; transform-style: preserve-3d; animation: hero-workspace-xspin 5s cubic-bezier(.4,0,.2,1) infinite; }
+@keyframes hero-workspace-xspin { 0%, 36% { transform: perspective(720px) rotateX(0deg); } 48% { transform: perspective(720px) rotateX(360deg); } 100% { transform: perspective(720px) rotateX(360deg); } }
 
 .story-section { position: relative; padding: var(--section-pad) 0; overflow: clip; }
 .story-section::after { content: ""; position: absolute; inset: auto 0 0; height: 100px; pointer-events: none; background: linear-gradient(to bottom, transparent, color-mix(in srgb, currentColor 2%, transparent)); opacity: .25; }

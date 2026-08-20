@@ -172,8 +172,7 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
     <rect class="hero-motion__space" width="1200" height="700"></rect>
     <g class="hero-stars">${heroStarsMarkup()}</g>
     <g class="hero-routes">${items.map(heroSignalMarkup).join('')}</g>
-    <g class="hero-workspace-surface" filter="url(#surface-shadow)">
-      <animateTransform attributeName="transform" type="rotate" values="0 760 334;0 760 334;360 760 334;360 760 334" keyTimes="0;.36;.48;1" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animateTransform>
+    <g class="hero-workspace-surface" data-hero-workspace-xspin filter="url(#surface-shadow)">
       <rect x="664" y="250" width="192" height="168" rx="34" fill="url(#surface-face)"></rect>
       <rect x="679" y="266" width="162" height="136" rx="26" class="hero-workspace-surface__inner"></rect>
       <image href="assets/android-chrome-512x512.png" x="706" y="280" width="108" height="108"></image>
