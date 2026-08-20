@@ -2,6 +2,7 @@
 .vscode/
 .idea/
 .DS_Store
+assets/media/workflows/.raw/
 Thumbs.db
 
 # Nothing here should ever be secret, but be explicit
