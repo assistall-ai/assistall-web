@@ -11,7 +11,7 @@ The page tells one continuous story: work comes in, Assistall makes it clear, pe
 - Slow, header-aware in-page navigation
 - Six interactive capability stories
 - Neutral connector ecosystem with honest capability labels
-- Living Work Queue evidence for contract, shipment and reply workflows
+- Living Work Queue evidence for recorded contract, shipment and report workflows
 - Reduced-motion and no-JavaScript fallbacks
 - Private demo-request flow protected by Turnstile, signed server-to-server ingestion and forced RLS
 

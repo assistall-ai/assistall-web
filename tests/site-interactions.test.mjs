@@ -23,10 +23,18 @@ test('unknown capability selection falls back to inbox work', () => {
 });
 
 test('workflow evidence keeps one valid active workflow', () => {
-  assert.deepEqual(site.WORKFLOW_IDS, ['contract', 'shipment', 'reply']);
+  assert.deepEqual(site.WORKFLOW_IDS, ['contract', 'shipment', 'report']);
   assert.equal(site.WORKFLOW_ROTATION_MS, 7000);
   assert.equal(site.createWorkflowState('shipment').activeId, 'shipment');
   assert.equal(site.createWorkflowState('unknown').activeId, 'contract');
+});
+
+test('workflow media plays only for the active visible queue card when motion is allowed', () => {
+  assert.equal(typeof site.shouldPlayWorkflowVideo, 'function');
+  assert.equal(site.shouldPlayWorkflowVideo({ visible: true, active: true, reducedMotion: false }), true);
+  assert.equal(site.shouldPlayWorkflowVideo({ visible: false, active: true, reducedMotion: false }), false);
+  assert.equal(site.shouldPlayWorkflowVideo({ visible: true, active: false, reducedMotion: false }), false);
+  assert.equal(site.shouldPlayWorkflowVideo({ visible: true, active: true, reducedMotion: true }), false);
 });
 
 test('workflow keyboard navigation wraps and supports Home and End', () => {

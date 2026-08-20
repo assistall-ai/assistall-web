@@ -8,7 +8,7 @@ const HERO_INTAKE_DESKTOP_Y = 286;
 const HERO_INTAKE_MOBILE_Y = 282;
 
 export const WORKFLOW_ROTATION_MS = 7000;
-export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'reply']);
+export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
   { id: 'zoho', label: 'ZOHO', x: 338, y: 92, cx: 500, cy: 74, delay: 0.00 },
@@ -99,6 +99,10 @@ export function getConnectorScrollTarget(scrollLeft, key, clientWidth, scrollWid
 
 export function shouldRotateWorkflow({ visible, reducedMotion, interactionPaused }) {
   return Boolean(visible && !reducedMotion && !interactionPaused);
+}
+
+export function shouldPlayWorkflowVideo({ visible, active, reducedMotion }) {
+  return Boolean(visible && active && !reducedMotion);
 }
 
 export function buildDemoPayload(values = {}) {
@@ -298,6 +302,22 @@ function enableWorkflowEvidence() {
   let focusPaused = false;
   let timerId;
 
+  const syncVideos = () => {
+    panels.forEach((panel) => {
+      const video = panel.querySelector('[data-workflow-video]');
+      if (!video) return;
+      const active = panel.dataset.workflowPanel === activeId;
+      if (shouldPlayWorkflowVideo({ visible, active, reducedMotion: prefersReducedMotion() })) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+        if (!active) {
+          try { video.currentTime = 0; } catch { /* Metadata may not be ready yet. */ }
+        }
+      }
+    });
+  };
+
   const clearTimer = () => {
     if (timerId) window.clearTimeout(timerId);
     timerId = undefined;
@@ -319,6 +339,7 @@ function enableWorkflowEvidence() {
       else delete panel.dataset.active;
     });
     root.dataset.activeWorkflow = activeId;
+    syncVideos();
     if (resetTimer) schedule();
   };
 
@@ -342,6 +363,15 @@ function enableWorkflowEvidence() {
     });
   });
 
+  root.addEventListener('click', (event) => {
+    const replay = event.target.closest('[data-workflow-replay]');
+    if (!replay) return;
+    const video = replay.closest('[data-workflow-panel]')?.querySelector('[data-workflow-video]');
+    if (!video) return;
+    try { video.currentTime = 0; } catch { /* Metadata may not be ready yet. */ }
+    video.play().catch(() => {});
+  });
+
   root.addEventListener('mouseenter', () => { pointerPaused = true; schedule(); });
   root.addEventListener('mouseleave', () => { pointerPaused = false; schedule(); });
   root.addEventListener('focusin', () => { focusPaused = true; schedule(); });
@@ -354,8 +384,11 @@ function enableWorkflowEvidence() {
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
+      syncVideos();
       schedule();
     }, { threshold: 0.35 }).observe(root);
+  } else {
+    visible = true;
   }
 
   root.classList.add('is-enhanced');

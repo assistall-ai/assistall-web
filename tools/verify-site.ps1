@@ -20,6 +20,9 @@ Assert-True ($h1Count -eq 1) "Expected exactly one h1; found $h1Count."
 $requiredFiles = @(
   'assets/apple-touch-icon.png',
   'assets/media/workspace-limestone.png',
+  'assets/media/workflows/contract-review.mp4',
+  'assets/media/workflows/shipment-review.mp4',
+  'assets/media/workflows/report-preparation.mp4',
   'assets/connector-icons.svg',
   'assets/site.js',
   'demo-request.php',
@@ -45,10 +48,11 @@ foreach ($id in @('how-it-works', 'capabilities', 'connections', 'product', 'hum
 }
 Assert-True ($html -match 'assets/connector-icons\.svg') 'The approved connector sprite is not referenced.'
 Assert-True ($html -match 'data-workflow-evidence') 'The Living Work Queue is not mounted.'
-foreach ($workflow in @('contract', 'shipment', 'reply')) {
+foreach ($workflow in @('contract', 'shipment', 'report')) {
   Assert-True ($html -match ('data-workflow-tab=["'']' + [regex]::Escape($workflow) + '["'']')) "Missing workflow tab marker: $workflow"
   Assert-True ($html -match ('data-workflow-panel=["'']' + [regex]::Escape($workflow) + '["'']')) "Missing workflow panel marker: $workflow"
 }
+Assert-True (([regex]::Matches($html, 'data-workflow-video')).Count -eq 3) 'The Living Work Queue must include the three recorded workflow videos.'
 Assert-True ($html -match 'data-hero-motion') 'The hero motion scene is not mounted.'
 Assert-True ($html -match 'data-scroll-link') 'Section navigation has no slow-glide marker.'
 Assert-True ($script -match 'calculateScrollDuration') 'Section glide script is not present.'

@@ -38,6 +38,7 @@ test('changed page assets use a new shared cache revision', () => {
   assert.ok(siteJs);
   assert.equal(pageCss[1], siteJs[1]);
   assert.notEqual(pageCss[1], '20260816a');
+  assert.notEqual(pageCss[1], '20260818a');
 });
 
 test('demo form posts the approved fields to the hardened same-origin endpoint', () => {
@@ -75,7 +76,7 @@ test('product evidence is a semantic three-workflow queue without theme media', 
   assert.ok(workflowEvidence);
   assert.doesNotMatch(workflowEvidence[0], /data-reveal/);
 
-  for (const id of ['contract', 'shipment', 'reply']) {
+  for (const id of ['contract', 'shipment', 'report']) {
     assert.match(html, new RegExp(`data-workflow-tab=["']${id}["']`));
     assert.match(html, new RegExp(`data-workflow-panel=["']${id}["']`));
 
@@ -84,7 +85,11 @@ test('product evidence is a semantic three-workflow queue without theme media', 
     assert.match(workflowPanel[0], /tabindex=["']0["']/);
   }
   assert.equal((html.match(/role="tab"/g) ?? []).length >= 3, true);
-  assert.match(html, /Ready for review/);
-  assert.match(html, /Approve reply/);
+  for (const file of ['contract-review', 'shipment-review', 'report-preparation']) {
+    assert.match(html, new RegExp(`assets/media/workflows/${file}\\.mp4`));
+    assert.match(html, new RegExp(`assets/media/workflows/${file}\\.png`));
+  }
+  assert.equal((html.match(/data-workflow-video/g) ?? []).length, 3);
+  assert.equal((html.match(/data-workflow-replay/g) ?? []).length, 3);
   assert.doesNotMatch(html, /workspace-theme-comparison|workspace-cobalt|data-workspace-video|data-video-toggle/);
 });
