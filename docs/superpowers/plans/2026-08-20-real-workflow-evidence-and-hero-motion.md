@@ -87,7 +87,7 @@ The module loads the existing JSON scenario only for fictional labels, then crea
 
 - [ ] **Step 4: Run the test green and focused app verification**
 
-Run: `C:\agency\assistall-app\venv\Scripts\python.exe -m unittest test_capture_fixtures test_contracts_renewals test_report`
+Run: `C:\agency\assistall-app\venv\Scripts\python.exe -m unittest test_capture_fixtures test_workflow_modules test_report`
 
 Expected: PASS. The known worktree-only voice-bundle test remains excluded and is documented as environment-bound.
 
