@@ -30,7 +30,8 @@
 | `assets/page.css` | Hero x-axis keyframes, media layout and fallbacks |
 | `index.html` | Tabs, local media, replay controls and text fallback |
 | `assets/media/workflows/*.mp4` / `*.png` | Sanitised synthetic recordings and first-frame posters |
-| `tools/capture-workflow-media.ps1` | Disposable app startup, frame capture and local encoding |
+| `tools/capture-workflow-media.ps1` | Disposable app startup and local encoding entry point |
+| `tools/capture_workflow_media.py` | Playwright session, login and route recording called by the PowerShell entry point |
 | `tests/site-motion.test.mjs` | Hero and video lifecycle behaviour |
 | `tests/site-contract.test.mjs` | Asset and semantic media contracts |
 | `tools/verify-site.ps1` | Required local media and structural release checks |
@@ -104,6 +105,7 @@ git -C C:\agency\assistall-app\.worktrees\capture-fixtures commit -m "feat: add 
 
 **Files:**
 - Create: `tools/capture-workflow-media.ps1`
+- Create: `tools/capture_workflow_media.py`
 - Create: `docs/capture-workflow-media.md`
 - Create: `assets/media/workflows/contract-review.mp4`, `contract-review.png`, `shipment-review.mp4`, `shipment-review.png`, `report-preparation.mp4`, `report-preparation.png`
 - Create: `tests/capture-workflow-media.test.mjs`
@@ -164,7 +166,7 @@ Run: `node --test tests/capture-workflow-media.test.mjs`
 Expected: PASS.
 
 ```powershell
-git add .gitignore tools/capture-workflow-media.ps1 docs/capture-workflow-media.md assets/media/workflows tests/site-contract.test.mjs
+git add .gitignore tools/capture-workflow-media.ps1 tools/capture_workflow_media.py docs/capture-workflow-media.md assets/media/workflows tests/capture-workflow-media.test.mjs
 git commit -m "feat: add synthetic workflow evidence media"
 ```
 
