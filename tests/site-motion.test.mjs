@@ -48,6 +48,7 @@ test('hero motion uses the approved set of real work inputs and matching marks',
 
 test('hero motion keeps its workspace and output in the same responsive coordinate system', () => {
   const markup = createHeroMotionMarkup();
+  const heroOutputKeyframes = pageCss.slice(pageCss.indexOf('@keyframes hero-output-emerge'), pageCss.indexOf('.story-section'));
 
   assert.match(markup, /assets\/android-chrome-512x512\.png/);
   assert.equal((markup.match(/<animateMotion\b/g) ?? []).length, HERO_MOTION_ITEMS.length);
@@ -55,8 +56,11 @@ test('hero motion keeps its workspace and output in the same responsive coordina
   assert.equal((markup.match(/class="hero-workspace-surface"/g) ?? []).length, 1);
   assert.match(markup, /<div class="hero-output-shell" data-hero-layer="output" aria-hidden="true">/);
   assert.match(markup, /<div class="hero-workspace-shell" data-hero-layer="workspace" aria-hidden="true">/);
-  assert.match(markup, /data-hero-workspace-turn/);
+  assert.match(markup, /data-hero-workspace-static/);
   assert.equal((markup.match(/<use href="assets\/connector-icons\.svg#connector-/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.match(markup, /preserveAspectRatio="xMidYMid meet"/);
+  assert.match(markup, /values="0;\.76;1;\.08;0;0;0;0"/);
+  assert.doesNotMatch(markup, /values="\.76;\.9;1;\.08;0;0;\.76;\.76"/);
   assert.doesNotMatch(markup, /animateTransform[^>]+type="rotate"/);
   assert.doesNotMatch(markup, /hero-signal__shiver/);
   assert.doesNotMatch(markup, /hero-engine__face|<foreignObject|hero-engine__cube/);
@@ -66,15 +70,16 @@ test('hero motion keeps its workspace and output in the same responsive coordina
   assert.match(markup, /dur="6\.4s"/);
   assert.match(siteScript, /function syncHeroLayers\(/);
   assert.match(siteScript, /getScreenCTM/);
-  assert.match(pageCss, /@keyframes hero-workspace-turn/);
-  assert.match(pageCss, /rotate\(360deg\)/);
+  assert.doesNotMatch(pageCss, /@keyframes hero-workspace-turn/);
+  assert.doesNotMatch(pageCss, /hero-workspace-surface[^}]*animation:/);
+  assert.doesNotMatch(pageCss, /rotate\(/);
   assert.doesNotMatch(pageCss, /rotateX\(/);
   assert.doesNotMatch(pageCss, /backface-visibility/);
-  assert.match(pageCss, /hero-output-emerge[\s\S]*translateY\(100%\)/);
-  assert.doesNotMatch(pageCss, /translateY\(-12%\)/);
-  assert.match(pageCss, /\.hero-motion \{ z-index: -1; \}/);
-  assert.match(pageCss, /\.hero__film \{ z-index: -2;/);
-  assert.match(pageCss, /@media \(max-width: 820px\)[\s\S]*data-hero-input="zoho"/);
+  assert.match(heroOutputKeyframes, /clip-path/);
+  assert.doesNotMatch(heroOutputKeyframes, /translateY/);
+  assert.match(pageCss, /\.hero-motion \{ z-index: -3; \}/);
+  assert.match(pageCss, /\.hero__film \{ z-index: -1;/);
+  assert.doesNotMatch(pageCss, /data-hero-input="zoho"[^}]*display: none/);
   assert.match(pageCss, /\.hero-output-shell[^}]*z-index: 1/);
   assert.doesNotMatch(pageCss, /\.hero-workspace-shell[^}]*perspective/);
   assert.doesNotMatch(pageCss, /\.hero-workspace-shell[^}]*left: 55\.3333%/);
