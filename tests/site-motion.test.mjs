@@ -34,11 +34,15 @@ test('section glide easing begins and ends exactly at its anchors', () => {
   assert.ok(easeInOutCubic(0.5) > 0.49 && easeInOutCubic(0.5) < 0.51);
 });
 
-test('hero motion uses the approved set of real work inputs', () => {
+test('hero motion uses the approved set of real work inputs and matching marks', () => {
   assert.equal(HERO_MOTION_ITEMS.length, 14);
   assert.deepEqual(
     HERO_MOTION_ITEMS.map(({ label }) => label),
     ['ZOHO', 'odoo', 'WhatsApp', 'Email', 'DOCX', 'XLSX', 'CSV', 'Voice', 'Folder', 'TXT', 'PDF', 'PPTX', 'JPG', 'JSON'],
+  );
+  assert.deepEqual(
+    HERO_MOTION_ITEMS.map(({ icon }) => icon),
+    ['zoho', 'odoo', 'whatsapp', 'gmail', 'word', 'excel', 'csv', 'voice', 'folder', 'txt', 'pdf', 'powerpoint', 'image', 'json'],
   );
 });
 
@@ -51,7 +55,8 @@ test('hero motion keeps its workspace and output in the same responsive coordina
   assert.equal((markup.match(/class="hero-workspace-surface"/g) ?? []).length, 1);
   assert.match(markup, /<div class="hero-output-shell" data-hero-layer="output" aria-hidden="true">/);
   assert.match(markup, /<div class="hero-workspace-shell" data-hero-layer="workspace" aria-hidden="true">/);
-  assert.match(markup, /data-hero-workspace-xspin/);
+  assert.match(markup, /data-hero-workspace-turn/);
+  assert.equal((markup.match(/<use href="assets\/connector-icons\.svg#connector-/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.doesNotMatch(markup, /animateTransform[^>]+type="rotate"/);
   assert.doesNotMatch(markup, /hero-signal__shiver/);
   assert.doesNotMatch(markup, /hero-engine__face|<foreignObject|hero-engine__cube/);
@@ -61,10 +66,17 @@ test('hero motion keeps its workspace and output in the same responsive coordina
   assert.match(markup, /dur="6\.4s"/);
   assert.match(siteScript, /function syncHeroLayers\(/);
   assert.match(siteScript, /getScreenCTM/);
-  assert.match(pageCss, /@keyframes hero-workspace-xspin/);
-  assert.match(pageCss, /rotateX\(360deg\)/);
+  assert.match(pageCss, /@keyframes hero-workspace-turn/);
+  assert.match(pageCss, /rotate\(360deg\)/);
+  assert.doesNotMatch(pageCss, /rotateX\(/);
+  assert.doesNotMatch(pageCss, /backface-visibility/);
+  assert.match(pageCss, /hero-output-emerge[\s\S]*translateY\(100%\)/);
+  assert.doesNotMatch(pageCss, /translateY\(-12%\)/);
+  assert.match(pageCss, /\.hero-motion \{ z-index: -1; \}/);
+  assert.match(pageCss, /\.hero__film \{ z-index: -2;/);
+  assert.match(pageCss, /@media \(max-width: 820px\)[\s\S]*data-hero-input="zoho"/);
   assert.match(pageCss, /\.hero-output-shell[^}]*z-index: 1/);
-  assert.match(pageCss, /\.hero-workspace-shell[^}]*perspective/);
+  assert.doesNotMatch(pageCss, /\.hero-workspace-shell[^}]*perspective/);
   assert.doesNotMatch(pageCss, /\.hero-workspace-shell[^}]*left: 55\.3333%/);
   assert.match(pageCss, /\.hero-signal[^}]*drop-shadow/);
 });

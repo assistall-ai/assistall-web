@@ -35,4 +35,19 @@
   <symbol id="connector-csv" viewBox="0 0 32 32">
     <path d="M6 3h14l6 6v20H6Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 3v7h6M10 14h12M10 19h12M10 24h12M14 12v14M19 12v14" stroke="currentColor" stroke-width="1.5"/>
   </symbol>
+  <symbol id="connector-voice" viewBox="0 0 32 32">
+    <path d="M16 4a4 4 0 0 0-4 4v8a4 4 0 0 0 8 0V8a4 4 0 0 0-4-4Zm-8 12a8 8 0 0 0 16 0M16 24v5M11 29h10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="connector-txt" viewBox="0 0 32 32">
+    <path d="M7 3h12l6 6v20H7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 3v7h6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 16h10M11 21h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="connector-powerpoint" viewBox="0 0 32 32">
+    <path d="M11 4h15v24H11Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M17 9h9M17 15h9M17 21h9" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="8" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><text x="6" y="20" fill="currentColor" font-family="Arial,sans-serif" font-size="11" font-weight="700">P</text>
+  </symbol>
+  <symbol id="connector-image" viewBox="0 0 32 32">
+    <rect x="4" y="5" width="24" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11" cy="12" r="2.2" fill="currentColor"/><path d="m6 24 7-7 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="connector-json" viewBox="0 0 32 32">
+    <path d="M13 5c-4 0-4 3-4 6v2c0 2-1 3-3 3 2 0 3 1 3 3v2c0 3 0 6 4 6M19 5c4 0 4 3 4 6v2c0 2 1 3 3 3-2 0-3 1-3 3v2c0 3 0 6-4 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
 </svg>

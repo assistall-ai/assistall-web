@@ -13,20 +13,20 @@ export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', label: 'ZOHO', x: 338, y: 92, cx: 500, cy: 74, delay: 0.00 },
-  { id: 'odoo', label: 'odoo', x: 548, y: 62, cx: 650, cy: 82, delay: 0.12 },
-  { id: 'whatsapp', label: 'WhatsApp', x: 824, y: 76, cx: 792, cy: 94, delay: 0.20 },
-  { id: 'email', label: 'Email', x: 1042, y: 118, cx: 914, cy: 132, delay: 0.34 },
-  { id: 'docx', label: 'DOCX', x: 238, y: 222, cx: 438, cy: 194, delay: 0.18 },
-  { id: 'xlsx', label: 'XLSX', x: 456, y: 214, cx: 576, cy: 192, delay: 0.30 },
-  { id: 'csv', label: 'CSV', x: 272, y: 370, cx: 462, cy: 326, delay: 0.44, mobileHidden: true },
-  { id: 'voice', label: 'Voice', x: 414, y: 445, cx: 540, cy: 355, delay: 0.54, mobileHidden: true },
-  { id: 'folder', label: 'Folder', x: 572, y: 454, cx: 646, cy: 362, delay: 0.62, mobileHidden: true },
-  { id: 'txt', label: 'TXT', x: 338, y: 572, cx: 550, cy: 438, delay: 0.58, mobileHidden: true },
-  { id: 'pdf', label: 'PDF', x: 1095, y: 248, cx: 940, cy: 214, delay: 0.26 },
-  { id: 'pptx', label: 'PPTX', x: 1090, y: 402, cx: 938, cy: 328, delay: 0.42 },
-  { id: 'jpg', label: 'JPG', x: 998, y: 540, cx: 900, cy: 415, delay: 0.50, mobileHidden: true },
-  { id: 'json', label: 'JSON', x: 1135, y: 570, cx: 946, cy: 438, delay: 0.60, mobileHidden: true },
+  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 338, y: 92, cx: 500, cy: 74, delay: 0.00 },
+  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 548, y: 62, cx: 650, cy: 82, delay: 0.12 },
+  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 824, y: 76, cx: 792, cy: 94, delay: 0.20 },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 1042, y: 118, cx: 914, cy: 132, delay: 0.34 },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 238, y: 222, cx: 438, cy: 194, delay: 0.18 },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 456, y: 214, cx: 576, cy: 192, delay: 0.30 },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 272, y: 370, cx: 462, cy: 326, delay: 0.44, mobileHidden: true },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 414, y: 445, cx: 540, cy: 355, delay: 0.54, mobileHidden: true },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 572, y: 454, cx: 646, cy: 362, delay: 0.62, mobileHidden: true },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 338, y: 572, cx: 550, cy: 438, delay: 0.58, mobileHidden: true },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1095, y: 248, cx: 940, cy: 214, delay: 0.26 },
+  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1090, y: 402, cx: 938, cy: 328, delay: 0.42 },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 998, y: 540, cx: 900, cy: 415, delay: 0.50, mobileHidden: true },
+  { id: 'json', icon: 'json', label: 'JSON', x: 1135, y: 570, cx: 946, cy: 438, delay: 0.60, mobileHidden: true },
 ]);
 
 const CAPABILITIES = Object.freeze([
@@ -161,7 +161,9 @@ function heroSignalMarkup(item) {
   <g class="hero-signal${mobile}" data-hero-input="${item.id}">
     <animateMotion path="${path}" keyPoints="0;0;0;1;1;1;0;0" keyTimes="${keyTimes}" keySplines="${splines}" calcMode="spline" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animateMotion>
     <animate attributeName="opacity" values=".76;.9;1;.08;0;0;.76;.76" keyTimes="${keyTimes}" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
-    <rect x="-39" y="-19" width="78" height="38" rx="10"></rect><text x="0" y="5" text-anchor="middle">${item.label}</text>
+    <rect x="-46" y="-20" width="92" height="40" rx="10"></rect>
+    <svg class="hero-signal__icon" x="-37" y="-12" width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><use href="assets/connector-icons.svg#connector-${item.icon}"></use></svg>
+    <text x="-7" y="5" text-anchor="start">${item.label}</text>
   </g>`;
 }
 
@@ -177,7 +179,7 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
     </div>
   </div>
   <div class="hero-workspace-shell" data-hero-layer="workspace" aria-hidden="true">
-    <div class="hero-workspace-surface" data-hero-workspace-xspin>
+    <div class="hero-workspace-surface" data-hero-workspace-turn>
       <div class="hero-workspace-surface__inner"><img src="assets/android-chrome-512x512.png" alt=""></div>
       <span class="hero-workspace-surface__edge"></span>
     </div>
