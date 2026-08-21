@@ -20,6 +20,12 @@ WORKFLOW_ACTIONS = {
     "report-preparation": "Open report",
 }
 
+WORKFLOW_VIEWER_ACTIONS = {
+    "contract-review": 'button[data-action="contract-version-download"][data-name="Northstar Renewal Terms Review.png"]',
+    "shipment-review": 'button[data-action="shipment-source-download"][data-name="Container Seal Inspection.png"]',
+    "report-preparation": 'button[data-action="report-source-download"][data-name="Daily Sales Report.png"]',
+}
+
 
 def record_workflow(base_url: str, workflow: str, video_dir: Path) -> Path:
     """Create a short silent browser recording from the disposable local app."""
@@ -28,7 +34,7 @@ def record_workflow(base_url: str, workflow: str, video_dir: Path) -> Path:
     video_dir.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
         api = playwright.request.new_context(base_url=base_url)
-        payload = {"name": "Capture Operator", "pin": "2468"}
+        payload = {"name": "Rania Al Mansoori", "pin": "2468"}
         response = api.post("/api/setup/first-user", data=payload)
         if not response.ok:
             response = api.post("/api/login", data=payload)
@@ -58,9 +64,15 @@ def record_workflow(base_url: str, workflow: str, video_dir: Path) -> Path:
         page.wait_for_timeout(700)
         page.get_by_role("button", name=action_label).click()
         page.locator("#main-content h1").wait_for(state="visible")
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(900)
+        page.locator(WORKFLOW_VIEWER_ACTIONS[workflow]).click()
+        page.locator("#evidence-viewer").wait_for(state="visible")
+        page.wait_for_timeout(1650)
+        page.get_by_role("button", name="Close").click()
+        page.locator("#evidence-viewer").wait_for(state="hidden")
+        page.wait_for_timeout(550)
         page.mouse.wheel(0, 180)
-        page.wait_for_timeout(1900)
+        page.wait_for_timeout(1700)
         context.close()
         browser.close()
     videos = sorted(video_dir.glob("*.webm"), key=lambda item: item.stat().st_mtime)

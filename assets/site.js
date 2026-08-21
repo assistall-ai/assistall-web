@@ -2,12 +2,14 @@ const MIN_SCROLL_DURATION = 700;
 const MAX_SCROLL_DURATION = 1400;
 const SCROLL_SPEED = 0.8;
 const SECTION_GAP = 16;
-const HERO_MOTION_DURATION = 5;
+const HERO_MOTION_DURATION = 6.4;
 const HERO_INTAKE_X = 760;
 const HERO_INTAKE_DESKTOP_Y = 250;
 const HERO_INTAKE_MOBILE_Y = 250;
+const HERO_WORKSPACE_BOUNDS = Object.freeze({ x: 664, y: 250, width: 192, height: 168 });
+const HERO_OUTPUT_BOUNDS = Object.freeze({ x: 700, y: 410, width: 120, height: 150 });
 
-export const WORKFLOW_ROTATION_MS = 6000;
+export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
@@ -159,37 +161,50 @@ function heroSignalMarkup(item) {
   <g class="hero-signal${mobile}" data-hero-input="${item.id}">
     <animateMotion path="${path}" keyPoints="0;0;0;1;1;1;0;0" keyTimes="${keyTimes}" keySplines="${splines}" calcMode="spline" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animateMotion>
     <animate attributeName="opacity" values=".76;.9;1;.08;0;0;.76;.76" keyTimes="${keyTimes}" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
-    <g class="hero-signal__shiver"><animateTransform attributeName="transform" type="translate" values="0 0;0 0;-3 1;0 0;0 0;0 0;0 0;0 0" keyTimes="${keyTimes}" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animateTransform>
-      <rect x="-39" y="-19" width="78" height="38" rx="10"></rect><text x="0" y="5" text-anchor="middle">${item.label}</text>
-    </g>
+    <rect x="-39" y="-19" width="78" height="38" rx="10"></rect><text x="0" y="5" text-anchor="middle">${item.label}</text>
   </g>`;
 }
 
 export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
   return `<svg class="hero-motion__svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" role="presentation" focusable="false" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="document-face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFDF8"></stop><stop offset="1" stop-color="#EBDDBF"></stop></linearGradient>
-      <filter id="hero-document-glow" x="-90%" y="-70%" width="280%" height="280%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#C8A25D" flood-opacity=".72"></feDropShadow></filter>
-    </defs>
     <rect class="hero-motion__space" width="1200" height="700"></rect>
     <g class="hero-stars">${heroStarsMarkup()}</g>
     <g class="hero-routes">${items.map(heroSignalMarkup).join('')}</g>
-    <g class="hero-output" filter="url(#hero-document-glow)" transform="translate(700 430)">
-      <animateTransform attributeName="transform" type="translate" additive="sum" values="0 -12;0 -12;0 8;0 118;0 194;0 -12" keyTimes="0;.43;.48;.62;.74;1" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animateTransform>
-      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.43;.48;.68;.76;1" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
-      <rect class="hero-output__paper" width="120" height="150" rx="10" fill="url(#document-face)"></rect>
-      <rect class="hero-output__image" x="15" y="18" width="42" height="34" rx="5"></rect>
-      <path class="hero-output__mountain" d="M18 48l12-12 8 8 8-9 9 13z"></path>
-      <path class="hero-output__lines" d="M68 22h35M68 35h26M15 68h88M15 82h72"></path>
-      <circle class="hero-output__check" cx="28" cy="116" r="12"></circle><path class="hero-output__tick" d="M22 116l4 4 8-9"></path>
-    </g>
   </svg>
-  <div class="hero-workspace-shell" aria-hidden="true">
+  <div class="hero-output-shell" data-hero-layer="output" aria-hidden="true">
+    <div class="hero-output">
+      <div class="hero-output__paper"><span class="hero-output__preview"></span><span class="hero-output__line hero-output__line--one"></span><span class="hero-output__line hero-output__line--two"></span><span class="hero-output__approved">Ready</span></div>
+    </div>
+  </div>
+  <div class="hero-workspace-shell" data-hero-layer="workspace" aria-hidden="true">
     <div class="hero-workspace-surface" data-hero-workspace-xspin>
       <div class="hero-workspace-surface__inner"><img src="assets/android-chrome-512x512.png" alt=""></div>
       <span class="hero-workspace-surface__edge"></span>
     </div>
   </div>`;
+}
+
+function syncHeroLayers(svg, canvas) {
+  const matrix = svg.getScreenCTM?.();
+  if (!matrix) return;
+  const canvasRect = canvas.getBoundingClientRect();
+  const placeLayer = (selector, bounds) => {
+    const layer = canvas.querySelector(selector);
+    if (!layer) return;
+    const point = svg.createSVGPoint();
+    point.x = bounds.x;
+    point.y = bounds.y;
+    const topLeft = point.matrixTransform(matrix);
+    point.x = bounds.x + bounds.width;
+    point.y = bounds.y + bounds.height;
+    const bottomRight = point.matrixTransform(matrix);
+    layer.style.left = `${topLeft.x - canvasRect.left}px`;
+    layer.style.top = `${topLeft.y - canvasRect.top}px`;
+    layer.style.width = `${bottomRight.x - topLeft.x}px`;
+    layer.style.height = `${bottomRight.y - topLeft.y}px`;
+  };
+  placeLayer('[data-hero-layer="output"]', HERO_OUTPUT_BOUNDS);
+  placeLayer('[data-hero-layer="workspace"]', HERO_WORKSPACE_BOUNDS);
 }
 
 function updateHash(hash) {
@@ -243,9 +258,13 @@ function enableHeroMotion() {
       svg.querySelectorAll(`[data-hero-route="${item.id}"] path`).forEach((route) => route.setAttribute('d', path));
       svg.querySelector(`[data-hero-input="${item.id}"] animateMotion`)?.setAttribute('path', path);
     });
+    syncHeroLayers(svg, canvas);
   };
   syncViewBox();
+  window.requestAnimationFrame(() => syncHeroLayers(svg, canvas));
   mobileView.addEventListener?.('change', syncViewBox);
+  window.addEventListener('resize', () => syncHeroLayers(svg, canvas), { passive: true });
+  if ('ResizeObserver' in window) new ResizeObserver(() => syncHeroLayers(svg, canvas)).observe(canvas);
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => entry.isIntersecting ? svg.unpauseAnimations?.() : svg.pauseAnimations?.(), { threshold: .1 }).observe(figure);
   }

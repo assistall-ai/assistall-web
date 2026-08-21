@@ -68,14 +68,21 @@ button, .button { border-radius: 10px; }
 .hero-signal { filter: drop-shadow(0 0 9px rgba(255,253,248,.46)); }
 .hero-signal rect { fill: rgba(255,253,248,.26); stroke: rgba(255,253,248,.9); stroke-width: 1; }
 .hero-signal text { fill: #fffdf8; font: 700 12px Aptos, "Segoe UI", Arial, sans-serif; letter-spacing: .04em; }
-.hero-workspace-shell { position: absolute; z-index: 1; left: 55.3333%; top: 35.7143%; width: 16%; aspect-ratio: 192 / 168; perspective: 720px; pointer-events: none; }
-.hero-workspace-surface { position: relative; width: 100%; height: 100%; display: grid; place-items: center; border: 1px solid rgba(200,162,93,.72); border-radius: 18%; background: linear-gradient(135deg, #24585a, #071d1e); box-shadow: 0 18px 26px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,253,248,.08); transform-origin: center; transform-style: preserve-3d; animation: hero-workspace-xspin 5s cubic-bezier(.4,0,.2,1) infinite; }
+.hero-output-shell, .hero-workspace-shell { position: absolute; pointer-events: none; }
+.hero-output-shell { z-index: 1; }
+.hero-workspace-shell { z-index: 2; perspective: 720px; }
+.hero-workspace-surface { position: relative; width: 100%; height: 100%; display: grid; place-items: center; border: 1px solid rgba(200,162,93,.72); border-radius: 18%; background: linear-gradient(135deg, #24585a, #071d1e); box-shadow: 0 18px 26px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,253,248,.08); transform-origin: center; transform-style: preserve-3d; backface-visibility: hidden; animation: hero-workspace-xspin 6.4s cubic-bezier(.4,0,.2,1) infinite; }
 .hero-workspace-surface__inner { width: 84.375%; aspect-ratio: 1; display: grid; place-items: center; border: 1px solid rgba(200,162,93,.55); border-radius: 16%; background: #0e3a3d; box-shadow: inset 0 1px 0 rgba(255,253,248,.08); }
 .hero-workspace-surface__inner img { width: 66.667%; height: auto; border-radius: 12%; }
 .hero-workspace-surface__edge { position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px; border-radius: 99px; background: #c8a25d; box-shadow: 0 0 8px rgba(200,162,93,.54); }
-.hero-output__image { fill: #d8d3c8; }.hero-output__mountain { fill: #c8a25d; }.hero-output__lines { fill: none; stroke: #9c9487; stroke-width: 5; stroke-linecap: round; }.hero-output__check { fill: #0e3a3d; }.hero-output__tick { fill: none; stroke: #fffdf8; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.hero-output { width: 100%; height: 100%; transform-origin: top center; animation: hero-output-emerge 6.4s cubic-bezier(.2,.8,.2,1) infinite; }
+.hero-output__paper { position: relative; width: 100%; height: 100%; overflow: hidden; border: 1px solid rgba(255,253,248,.72); border-radius: 10px; background: linear-gradient(145deg, #fffdf8, #ebddbf); box-shadow: 0 14px 28px rgba(200,162,93,.6), 0 0 36px rgba(255,253,248,.36); }
+.hero-output__preview { position: absolute; top: 13%; left: 12%; width: 36%; height: 26%; border-radius: 5px; background: linear-gradient(140deg, #d8d3c8 0 45%, #c8a25d 46% 100%); }
+.hero-output__line { position: absolute; right: 12%; height: 4%; border-radius: 999px; background: #9c9487; }.hero-output__line--one { top: 17%; width: 29%; }.hero-output__line--two { top: 29%; width: 22%; }
+.hero-output__approved { position: absolute; bottom: 13%; left: 12%; padding: 5% 8%; border-radius: 5px; color: #fffdf8; background: #0e3a3d; font: 700 clamp(5px, .75vw, 10px)/1 Aptos, "Segoe UI", Arial, sans-serif; letter-spacing: .04em; }
 /* The branded surface remains flat except for the short, complete processing turn around its own horizontal axis. */
 @keyframes hero-workspace-xspin { 0%, 36% { transform: rotateX(0deg); } 42% { transform: rotateX(24deg); } 53% { transform: rotateX(210deg); } 62%, 100% { transform: rotateX(360deg); } }
+@keyframes hero-output-emerge { 0%, 43% { opacity: 0; transform: translateY(-12%) scale(.96); } 48% { opacity: 1; transform: translateY(-4%) scale(1); } 70% { opacity: 1; transform: translateY(40%) scale(1); } 82%, 100% { opacity: 0; transform: translateY(88%) scale(.98); } }
 
 .story-section { position: relative; padding: var(--section-pad) 0; overflow: clip; }
 .story-section::after { content: ""; position: absolute; inset: auto 0 0; height: 100px; pointer-events: none; background: linear-gradient(to bottom, transparent, color-mix(in srgb, currentColor 2%, transparent)); opacity: .25; }

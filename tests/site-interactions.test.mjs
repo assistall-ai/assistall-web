@@ -24,7 +24,7 @@ test('unknown capability selection falls back to inbox work', () => {
 
 test('workflow evidence keeps one valid active workflow', () => {
   assert.deepEqual(site.WORKFLOW_IDS, ['contract', 'shipment', 'report']);
-  assert.equal(site.WORKFLOW_ROTATION_MS, 6000);
+  assert.equal(site.WORKFLOW_ROTATION_MS, 8000);
   assert.equal(site.createWorkflowState('shipment').activeId, 'shipment');
   assert.equal(site.createWorkflowState('unknown').activeId, 'contract');
 });

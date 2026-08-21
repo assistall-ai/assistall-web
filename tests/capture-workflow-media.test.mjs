@@ -28,7 +28,15 @@ test('capture runner uses a disposable loopback app and local media tooling', ()
   assert.match(helper, /\/api\/preferences/);
   assert.match(helper, /add_init_script/);
   assert.match(helper, /WORKFLOW_ACTIONS/);
+  assert.match(helper, /WORKFLOW_VIEWER_ACTIONS/);
+  assert.match(helper, /Northstar Renewal Terms Review\.png/);
+  assert.match(helper, /Container Seal Inspection\.png/);
+  assert.match(helper, /Daily Sales Report\.png/);
   assert.match(helper, /get_by_role\("button", name=action_label\)\.click\(\)/);
+  assert.match(helper, /locator\(WORKFLOW_VIEWER_ACTIONS\[workflow\]\)\.click\(\)/);
+  assert.match(helper, /#evidence-viewer/);
+  assert.match(helper, /name="Close"/);
   assert.match(helper, /#main-content h1/);
-  assert.match(runner, /-ss 2/);
+  assert.match(runner, /-t 7\.5/);
+  assert.match(runner, /-ss 3\.2/);
 });

@@ -8,10 +8,13 @@ import {
   createHeroMotionMarkup,
   easeInOutCubic,
   getTargetScrollTop,
+  WORKFLOW_ROTATION_MS,
 } from '../assets/site.js';
 
 const pageCss = await readFile(new URL('../assets/page.css', import.meta.url), 'utf8');
 const siteScript = await readFile(new URL('../assets/site.js', import.meta.url), 'utf8');
+const captureScript = await readFile(new URL('../tools/capture_workflow_media.py', import.meta.url), 'utf8');
+const pageHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
 test('section glide duration stays deliberate without becoming slow', () => {
   assert.equal(calculateScrollDuration(0), 700);
@@ -39,27 +42,43 @@ test('hero motion uses the approved set of real work inputs', () => {
   );
 });
 
-test('hero motion uses one flat branded workspace, one bottom-centred output, and a route for every input', () => {
+test('hero motion keeps its workspace and output in the same responsive coordinate system', () => {
   const markup = createHeroMotionMarkup();
 
   assert.match(markup, /assets\/android-chrome-512x512\.png/);
   assert.equal((markup.match(/<animateMotion\b/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/class="hero-output"/g) ?? []).length, 1);
+  assert.equal((markup.match(/class="hero-output-shell"/g) ?? []).length, 1);
   assert.equal((markup.match(/class="hero-workspace-surface"/g) ?? []).length, 1);
-  assert.match(markup, /<div class="hero-workspace-shell" aria-hidden="true">/);
+  assert.match(markup, /<div class="hero-output-shell" data-hero-layer="output" aria-hidden="true">/);
+  assert.match(markup, /<div class="hero-workspace-shell" data-hero-layer="workspace" aria-hidden="true">/);
   assert.match(markup, /data-hero-workspace-xspin/);
   assert.doesNotMatch(markup, /animateTransform[^>]+type="rotate"/);
+  assert.doesNotMatch(markup, /hero-signal__shiver/);
   assert.doesNotMatch(markup, /hero-engine__face|<foreignObject|hero-engine__cube/);
   assert.doesNotMatch(markup, /hero-engine__(?:orbit|intake)|black-hole/);
   assert.match(markup, /Q [^\"]+ 760 250/);
-  assert.match(markup, /filter="url\(#hero-document-glow\)"/);
-  assert.match(markup, /translate\(700 430\)/);
-  assert.ok(markup.indexOf('class="hero-workspace-surface"') > markup.indexOf('class="hero-output"'));
-  assert.match(markup, /dur="5s"/);
+  assert.ok(markup.indexOf('hero-workspace-surface') > markup.indexOf('hero-output-shell'));
+  assert.match(markup, /dur="6\.4s"/);
+  assert.match(siteScript, /function syncHeroLayers\(/);
+  assert.match(siteScript, /getScreenCTM/);
   assert.match(pageCss, /@keyframes hero-workspace-xspin/);
   assert.match(pageCss, /rotateX\(360deg\)/);
+  assert.match(pageCss, /\.hero-output-shell[^}]*z-index: 1/);
   assert.match(pageCss, /\.hero-workspace-shell[^}]*perspective/);
+  assert.doesNotMatch(pageCss, /\.hero-workspace-shell[^}]*left: 55\.3333%/);
   assert.match(pageCss, /\.hero-signal[^}]*drop-shadow/);
+});
+
+test('workflow evidence gives source viewers time to be understood before advancing', () => {
+  assert.equal(WORKFLOW_ROTATION_MS, 8000);
+  assert.match(captureScript, /WORKFLOW_VIEWER_ACTIONS/);
+});
+
+test('workflow labels use the professional fictional capture records', () => {
+  assert.match(pageHtml, /Northstar Supplies Framework Agreement/);
+  assert.match(pageHtml, /NSC-4427/);
+  assert.match(pageHtml, /Daily Sales Report/);
+  assert.doesNotMatch(pageHtml, /Demo Trading|SHP-2048|daily_sales\.xlsx/);
 });
 
 test('motion preview and reduced motion explicitly control workflow movement', () => {
