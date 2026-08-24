@@ -4,17 +4,17 @@ const SCROLL_SPEED = 0.8;
 const SECTION_GAP = 16;
 const HERO_MOTION_DURATION = 6.4;
 const HERO_INTAKE_X = 760;
-const HERO_INTAKE_DESKTOP_Y = 250;
-const HERO_INTAKE_MOBILE_Y = 250;
+const HERO_INTAKE_DESKTOP_Y = 334;
+const HERO_INTAKE_MOBILE_Y = 334;
 const HERO_WORKSPACE_BOUNDS = Object.freeze({ x: 664, y: 250, width: 192, height: 168 });
-const HERO_OUTPUT_BOUNDS = Object.freeze({ x: 700, y: 410, width: 120, height: 150 });
+const HERO_OUTPUT_BOUNDS = Object.freeze({ x: 700, y: 404, width: 120, height: 150 });
 
 export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', icon: 'zoho', iconViewBox: '0 0 48 32', label: 'ZOHO', x: 338, y: 92, cx: 500, cy: 74, delay: 0.00 },
-  { id: 'odoo', icon: 'odoo', iconViewBox: '0 0 48 32', label: 'odoo', x: 548, y: 62, cx: 650, cy: 82, delay: 0.12 },
+  { id: 'zoho', icon: 'zoho', iconViewBox: '0 0 48 32', wordmark: true, label: 'ZOHO', x: 338, y: 92, cx: 500, cy: 74, delay: 0.00 },
+  { id: 'odoo', icon: 'odoo', iconViewBox: '0 0 88 32', wordmark: true, label: 'odoo', x: 548, y: 62, cx: 650, cy: 82, delay: 0.12 },
   { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 824, y: 76, cx: 792, cy: 94, delay: 0.20 },
   { id: 'email', icon: 'gmail', label: 'Email', x: 1042, y: 118, cx: 914, cy: 132, delay: 0.34 },
   { id: 'docx', icon: 'word', label: 'DOCX', x: 238, y: 222, cx: 438, cy: 194, delay: 0.18 },
@@ -147,23 +147,26 @@ function heroStarsMarkup() {
 function heroSignalMarkup(item) {
   const path = `M ${item.x} ${item.y} Q ${item.cx} ${item.cy} ${HERO_INTAKE_X} ${HERO_INTAKE_DESKTOP_Y}`;
   const hold = 0.08 + item.delay / HERO_MOTION_DURATION;
-  const launch = hold + 0.06;
-  const arrive = launch + 0.14;
-  const keyTimes = [0, hold, launch, arrive, arrive + 0.03, 0.72, 0.77, 1].map((value) => value.toFixed(3)).join(';');
-  const splines = Array(7).fill('0.20 0.80 0.20 1').join(';');
+  const launch = hold + 0.07;
+  const arrive = launch + 0.18;
+  const submerge = arrive + 0.025;
+  const keyTimes = [0, hold, launch, arrive, submerge, 0.76, 0.82, 1].map((value) => value.toFixed(3)).join(';');
+  const splines = Array(7).fill('0.16 0.82 0.20 1').join(';');
   const mobile = item.mobileHidden ? ' hero-signal--mobile-hidden' : '';
+  const wordmark = item.wordmark ? ' hero-signal--wordmark' : '';
+  const mark = item.wordmark
+    ? `<rect x="-55" y="-20" width="110" height="40" rx="10"></rect><svg class="hero-signal__icon" x="-36" y="-13" width="72" height="26" viewBox="${item.iconViewBox}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="assets/connector-icons.svg#connector-${item.icon}"></use></svg>`
+    : `<rect x="-46" y="-20" width="92" height="40" rx="10"></rect><svg class="hero-signal__icon" x="-37" y="-12" width="24" height="24" viewBox="${item.iconViewBox ?? '0 0 32 32'}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="assets/connector-icons.svg#connector-${item.icon}"></use></svg><text x="-7" y="5" text-anchor="start">${item.label}</text>`;
   return `<g class="hero-signal-route${mobile}" data-hero-route="${item.id}">
     <path class="hero-route" d="${path}"></path>
     <path class="hero-route hero-route--pulse" d="${path}" pathLength="1" stroke-dasharray="0.16 0.84">
       <animate attributeName="stroke-dashoffset" values="1;1;0;-1;-1;1;1;1" keyTimes="${keyTimes}" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
     </path>
   </g>
-  <g class="hero-signal${mobile}" data-hero-input="${item.id}">
+  <g class="hero-signal${mobile}${wordmark}" data-hero-input="${item.id}">
     <animateMotion path="${path}" keyPoints="0;0;0;1;1;1;0;0" keyTimes="${keyTimes}" keySplines="${splines}" calcMode="spline" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animateMotion>
-    <animate attributeName="opacity" values="0;.76;1;.08;0;0;0;0" keyTimes="${keyTimes}" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
-    <rect x="-46" y="-20" width="92" height="40" rx="10"></rect>
-    <svg class="hero-signal__icon" x="-37" y="-12" width="24" height="24" viewBox="${item.iconViewBox ?? '0 0 32 32'}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="assets/connector-icons.svg#connector-${item.icon}"></use></svg>
-    <text x="-7" y="5" text-anchor="start">${item.label}</text>
+    <animate attributeName="opacity" values="0;.76;1;1;0;0;0;0" keyTimes="${keyTimes}" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
+    ${mark}
   </g>`;
 }
 
@@ -179,7 +182,7 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
     </div>
   </div>
   <div class="hero-workspace-shell" data-hero-layer="workspace" aria-hidden="true">
-    <div class="hero-workspace-surface" data-hero-workspace-static>
+    <div class="hero-workspace-surface" data-hero-workspace-spin>
       <div class="hero-workspace-surface__inner"><img src="assets/android-chrome-512x512.png" alt=""></div>
       <span class="hero-workspace-surface__edge"></span>
     </div>
