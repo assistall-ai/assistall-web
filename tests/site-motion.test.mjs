@@ -10,6 +10,7 @@ import {
   getTargetScrollTop,
   WORKFLOW_ROTATION_MS,
 } from '../assets/site.js';
+import * as siteModule from '../assets/site.js';
 
 const pageCss = await readFile(new URL('../assets/page.css', import.meta.url), 'utf8');
 const brandCss = await readFile(new URL('../assets/brand.css', import.meta.url), 'utf8');
@@ -48,38 +49,59 @@ test('hero motion uses the approved set of real work inputs and matching marks',
   assert.equal(HERO_MOTION_ITEMS.filter(({ wordmark }) => wordmark).length, 0);
 });
 
-test('hero motion keeps every moving part inside one stable DOM field', () => {
+test('hero motion keeps routes and moving parts inside one stable DOM field', () => {
   const markup = createHeroMotionMarkup();
-  const heroOutputKeyframes = pageCss.slice(pageCss.indexOf('@keyframes hero-output-emerge'), pageCss.indexOf('.story-section'));
 
   assert.match(markup, /assets\/android-chrome-512x512\.png/);
   assert.equal((markup.match(/<div class="hero-signal-card/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/class="hero-route-line/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.match(markup, /<svg class="hero-route-map"[^>]*viewBox="0 0 1200 700"/);
+  assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.match(markup, /class="hero-motion__field"/);
   assert.match(markup, /class="hero-output" data-hero-output/);
   assert.match(markup, /class="hero-workspace" data-hero-workspace/);
-  assert.doesNotMatch(markup, /<svg|<use|<animateMotion|hero-output-shell|hero-workspace-shell/);
-  assert.doesNotMatch(siteScript, /syncHeroLayers|getScreenCTM|ResizeObserver\(\(\) => syncHeroLayers/);
-  assert.match(pageCss, /@keyframes hero-workspace-turn/);
-  assert.match(pageCss, /\.hero-workspace[^}]*animation: hero-workspace-turn/);
-  assert.match(pageCss, /0%, 48% \{ transform: rotateX\(0deg\); \}/);
-  assert.match(pageCss, /61%, 100% \{ transform: rotateX\(360deg\); \}/);
-  assert.match(pageCss, /perspective: 720px/);
+  assert.doesNotMatch(markup, /<use|<animateMotion|hero-output-shell|hero-workspace-shell/);
+  assert.doesNotMatch(siteScript, /hero-route-line|hero-signal-intake|hero-workspace-turn/);
+  assert.match(pageCss, /\.hero-route-map path/);
+  assert.match(pageCss, /rotateY\(/);
   assert.match(pageCss, /backface-visibility: hidden/);
-  assert.match(heroOutputKeyframes, /66%/);
-  assert.match(heroOutputKeyframes, /translateY\(-100%\)/);
-  assert.doesNotMatch(heroOutputKeyframes, /clip-path/);
-  assert.match(pageCss, /\.hero-motion \{ z-index: 0; \}/);
+  assert.match(pageCss, /\.hero-motion \{ z-index: 2; \}/);
   assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
-  assert.match(pageCss, /\.hero-signal-card[^}]*animation: hero-signal-intake/);
-  assert.match(pageCss, /\.hero-route-line::before[^}]*linear-gradient/);
-  assert.match(pageCss, /hero-workspace-turn 8400ms cubic-bezier\([^)]*\) infinite alternate/);
   assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
-  assert.match(pageCss, /html\[data-motion-preview="on"\] \.hero-signal-card[^}]*8400ms !important/);
   assert.match(pageCss, /\.hero-output__paper[^}]*0 0 64px/);
   assert.match(pageHtml, /data-connector-mark="odoo"/);
   assert.doesNotMatch(pageHtml, /connector-icons\.svg/);
+});
+
+test('hero sequence shows a group before a Y-axis spin and aligned document output', () => {
+  assert.equal(typeof siteModule.getHeroSequenceState, 'function');
+
+  const intake = siteModule.getHeroSequenceState(900);
+  assert.equal(intake.phase, 'intake');
+  assert.equal(intake.workspace.rotationY, 0);
+  const visibleInputs = intake.inputs.filter(({ opacity }) => opacity > 0);
+  assert.deepEqual(visibleInputs.map(({ id }) => id), ['zoho', 'whatsapp', 'voice', 'pptx', 'json']);
+  assert.ok(visibleInputs.find(({ id }) => id === 'zoho').x < 500);
+  assert.ok(visibleInputs.filter(({ routeProgress }) => routeProgress > 0).length >= 1);
+
+  const glidingInputs = siteModule.getHeroSequenceState(1450).inputs.filter(({ routeProgress }) => routeProgress > 0);
+  assert.ok(glidingInputs.length >= 3);
+
+  const earlyIntake = siteModule.getHeroSequenceState(1150).inputs.filter(({ opacity }) => opacity > 0);
+  const horizontalSpread = Math.max(...earlyIntake.map(({ x }) => x)) - Math.min(...earlyIntake.map(({ x }) => x));
+  assert.ok(horizontalSpread > 550);
+  assert.ok(earlyIntake.find(({ id }) => id === 'zoho').x < 410);
+
+  const spin = siteModule.getHeroSequenceState(4400);
+  assert.equal(spin.phase, 'spin');
+  assert.ok(spin.workspace.rotationY > 0 && spin.workspace.rotationY < 360);
+  assert.equal(spin.document.opacity, 0);
+
+  const output = siteModule.getHeroSequenceState(6200);
+  assert.equal(output.phase, 'output');
+  assert.equal(output.workspace.rotationY, 360);
+  assert.ok(output.document.opacity > 0);
+  assert.ok(output.document.translateY > -55);
 });
 
 test('workflow evidence gives source viewers time to be understood before advancing', () => {
