@@ -12,6 +12,7 @@ import {
 } from '../assets/site.js';
 
 const pageCss = await readFile(new URL('../assets/page.css', import.meta.url), 'utf8');
+const brandCss = await readFile(new URL('../assets/brand.css', import.meta.url), 'utf8');
 const siteScript = await readFile(new URL('../assets/site.js', import.meta.url), 'utf8');
 const captureScript = await readFile(new URL('../tools/capture_workflow_media.py', import.meta.url), 'utf8');
 const pageHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -53,6 +54,7 @@ test('hero motion keeps every moving part inside one stable DOM field', () => {
 
   assert.match(markup, /assets\/android-chrome-512x512\.png/);
   assert.equal((markup.match(/<div class="hero-signal-card/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.equal((markup.match(/class="hero-route-line/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.match(markup, /class="hero-motion__field"/);
   assert.match(markup, /class="hero-output" data-hero-output/);
@@ -68,10 +70,14 @@ test('hero motion keeps every moving part inside one stable DOM field', () => {
   assert.match(heroOutputKeyframes, /66%/);
   assert.match(heroOutputKeyframes, /translateY\(-100%\)/);
   assert.doesNotMatch(heroOutputKeyframes, /clip-path/);
-  assert.match(pageCss, /\.hero-motion \{ z-index: -3; \}/);
-  assert.match(pageCss, /\.hero__film \{ z-index: -1;/);
+  assert.match(pageCss, /\.hero-motion \{ z-index: 0; \}/);
+  assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
   assert.match(pageCss, /\.hero-signal-card[^}]*animation: hero-signal-intake/);
-  assert.match(pageCss, /\.hero-output__paper[^}]*0 0 52px/);
+  assert.match(pageCss, /\.hero-route-line::before[^}]*linear-gradient/);
+  assert.match(pageCss, /hero-workspace-turn 8400ms cubic-bezier\([^)]*\) infinite alternate/);
+  assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
+  assert.match(pageCss, /html\[data-motion-preview="on"\] \.hero-signal-card[^}]*8400ms !important/);
+  assert.match(pageCss, /\.hero-output__paper[^}]*0 0 64px/);
   assert.match(pageHtml, /data-connector-mark="odoo"/);
   assert.doesNotMatch(pageHtml, /connector-icons\.svg/);
 });

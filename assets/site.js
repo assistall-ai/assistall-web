@@ -147,6 +147,18 @@ function connectorMarkMarkup(icon) {
   return `<span class="connector-mark" data-connector-mark="${icon}">${text ? `<span class="connector-mark__text">${text}</span>` : '<span class="connector-mark__shape"></span>'}</span>`;
 }
 
+function heroRouteMarkup(item) {
+  const target = { x: 766, y: 334 };
+  const deltaX = target.x - item.x;
+  const deltaY = target.y - item.y;
+  const left = Math.min(item.x, target.x) / 12;
+  const top = Math.min(item.y, target.y) / 7;
+  const width = Math.max(Math.abs(deltaX) / 12, 0.25);
+  const height = Math.max(Math.abs(deltaY) / 7, 0.25);
+  const diagonal = deltaX * deltaY >= 0 ? ' hero-route-line--down' : ' hero-route-line--up';
+  return `<span class="hero-route-line${diagonal}" style="--route-x:${left.toFixed(3)}%;--route-y:${top.toFixed(3)}%;--route-width:${width.toFixed(3)}%;--route-height:${height.toFixed(3)}%;--route-delay:${item.delay}s"></span>`;
+}
+
 function heroSignalMarkup(item) {
   const mobile = item.mobileHidden ? ' hero-signal-card--mobile-hidden' : '';
   const style = `--from-x:${(item.x / 12).toFixed(3)}%;--from-y:${(item.y / 7).toFixed(3)}%;--signal-delay:${item.delay}s`;
@@ -157,7 +169,7 @@ function heroSignalMarkup(item) {
 export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
   return `<div class="hero-motion__field" aria-hidden="true">
     <div class="hero-stars">${heroStarsMarkup()}</div>
-    <div class="hero-signal-field">${items.map(heroSignalMarkup).join('')}</div>
+    <div class="hero-signal-field">${items.map(heroRouteMarkup).join('')}${items.map(heroSignalMarkup).join('')}</div>
     <div class="hero-output" data-hero-output>
       <div class="hero-output__paper"><span class="hero-output__preview"></span><span class="hero-output__line hero-output__line--one"></span><span class="hero-output__line hero-output__line--two"></span><span class="hero-output__approved">Ready</span></div>
     </div>
