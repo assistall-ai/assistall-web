@@ -2,12 +2,7 @@ const MIN_SCROLL_DURATION = 700;
 const MAX_SCROLL_DURATION = 1400;
 const SCROLL_SPEED = 0.8;
 const SECTION_GAP = 16;
-const HERO_MOTION_DURATION = 6.4;
-const HERO_INTAKE_X = 766;
-const HERO_INTAKE_DESKTOP_Y = 334;
-const HERO_INTAKE_MOBILE_Y = 334;
-const HERO_WORKSPACE_BOUNDS = Object.freeze({ x: 700, y: 276, width: 132, height: 116 });
-const HERO_OUTPUT_BOUNDS = Object.freeze({ x: 720, y: 392, width: 92, height: 120 });
+const HERO_MOTION_DURATION = 8.4;
 
 export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
@@ -140,73 +135,37 @@ function heroStarsMarkup() {
     seed = (seed * 9301 + 49297) % 233280;
     const y = Math.round((seed / 233280) * 700);
     const radius = index % 9 === 0 ? 1.6 : index % 4 === 0 ? 1.05 : 0.7;
-    return `<circle class="hero-star" cx="${x}" cy="${y}" r="${radius}" style="--star-delay:${((index % 12) * 0.31).toFixed(2)}s"></circle>`;
+    return `<span class="hero-star" style="--star-x:${(x / 12).toFixed(3)}%;--star-y:${(y / 7).toFixed(3)}%;--star-size:${radius * 2}px;--star-delay:${((index % 12) * 0.31).toFixed(2)}s"></span>`;
   }).join('');
 }
 
+function connectorMarkMarkup(icon) {
+  const text = {
+    odoo: 'odoo', zoho: 'ZOHO', word: 'W', excel: 'X', csv: 'CSV', pdf: 'PDF',
+    powerpoint: 'PPT', txt: 'TXT', json: '{}',
+  }[icon];
+  return `<span class="connector-mark" data-connector-mark="${icon}">${text ? `<span class="connector-mark__text">${text}</span>` : '<span class="connector-mark__shape"></span>'}</span>`;
+}
+
 function heroSignalMarkup(item) {
-  const path = `M ${item.x} ${item.y} Q ${item.cx} ${item.cy} ${HERO_INTAKE_X} ${HERO_INTAKE_DESKTOP_Y}`;
-  const hold = 0.08 + item.delay / HERO_MOTION_DURATION;
-  const launch = hold + 0.07;
-  const arrive = launch + 0.18;
-  const submerge = arrive + 0.025;
-  const keyTimes = [0, hold, launch, arrive, submerge, 0.76, 0.82, 1].map((value) => value.toFixed(3)).join(';');
-  const splines = Array(7).fill('0.16 0.82 0.20 1').join(';');
-  const mobile = item.mobileHidden ? ' hero-signal--mobile-hidden' : '';
-  const mark = `<rect x="-46" y="-20" width="92" height="40" rx="10"></rect><svg class="hero-signal__icon" x="-37" y="-12" width="24" height="24" viewBox="0 0 32 32" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="assets/connector-icons.svg#connector-${item.icon}"></use></svg><text x="-7" y="5" text-anchor="start">${item.label}</text>`;
-  return `<g class="hero-signal-route${mobile}" data-hero-route="${item.id}">
-    <path class="hero-route" d="${path}"></path>
-    <path class="hero-route hero-route--pulse" d="${path}" pathLength="1" stroke-dasharray="0.16 0.84">
-      <animate attributeName="stroke-dashoffset" values="1;1;0;-1;-1;1;1;1" keyTimes="${keyTimes}" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
-    </path>
-  </g>
-  <g class="hero-signal${mobile}" data-hero-input="${item.id}">
-    <animateMotion path="${path}" keyPoints="0;0;0;1;1;1;0;0" keyTimes="${keyTimes}" keySplines="${splines}" calcMode="spline" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animateMotion>
-    <animate attributeName="opacity" values="0;.76;1;1;0;0;0;0" keyTimes="${keyTimes}" dur="${HERO_MOTION_DURATION}s" repeatCount="indefinite"></animate>
-    ${mark}
-  </g>`;
+  const mobile = item.mobileHidden ? ' hero-signal-card--mobile-hidden' : '';
+  const style = `--from-x:${(item.x / 12).toFixed(3)}%;--from-y:${(item.y / 7).toFixed(3)}%;--signal-delay:${item.delay}s`;
+  const usesTextMark = ['odoo', 'zoho', 'word', 'excel', 'csv', 'pdf', 'powerpoint', 'txt', 'json'].includes(item.icon);
+  return `<div class="hero-signal-card${mobile}" style="${style}">${connectorMarkMarkup(item.icon)}${usesTextMark ? '' : `<span class="hero-signal-card__label">${item.label}</span>`}</div>`;
 }
 
 export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
-  return `<svg class="hero-motion__svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" role="presentation" focusable="false" xmlns="http://www.w3.org/2000/svg">
-    <rect class="hero-motion__space" width="1200" height="700"></rect>
-    <g class="hero-stars">${heroStarsMarkup()}</g>
-    <g class="hero-routes">${items.map(heroSignalMarkup).join('')}</g>
-  </svg>
-  <div class="hero-output-shell" data-hero-layer="output" aria-hidden="true">
-    <div class="hero-output">
+  return `<div class="hero-motion__field" aria-hidden="true">
+    <div class="hero-stars">${heroStarsMarkup()}</div>
+    <div class="hero-signal-field">${items.map(heroSignalMarkup).join('')}</div>
+    <div class="hero-output" data-hero-output>
       <div class="hero-output__paper"><span class="hero-output__preview"></span><span class="hero-output__line hero-output__line--one"></span><span class="hero-output__line hero-output__line--two"></span><span class="hero-output__approved">Ready</span></div>
     </div>
-  </div>
-  <div class="hero-workspace-shell" data-hero-layer="workspace" aria-hidden="true">
-    <div class="hero-workspace-surface" data-hero-workspace-spin>
-      <div class="hero-workspace-surface__face hero-workspace-surface__face--front"><div class="hero-workspace-surface__inner"><img src="assets/android-chrome-512x512.png" alt=""></div><span class="hero-workspace-surface__edge"></span></div>
-      <div class="hero-workspace-surface__face hero-workspace-surface__face--back"><div class="hero-workspace-surface__inner"><img src="assets/android-chrome-512x512.png" alt=""></div><span class="hero-workspace-surface__edge"></span></div>
+    <div class="hero-workspace" data-hero-workspace>
+      <div class="hero-workspace__face hero-workspace__face--front"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div><span class="hero-workspace__edge"></span></div>
+      <div class="hero-workspace__face hero-workspace__face--back"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div><span class="hero-workspace__edge"></span></div>
     </div>
   </div>`;
-}
-
-function syncHeroLayers(svg, canvas) {
-  const matrix = svg.getScreenCTM?.();
-  if (!matrix) return;
-  const canvasRect = canvas.getBoundingClientRect();
-  const placeLayer = (selector, bounds) => {
-    const layer = canvas.querySelector(selector);
-    if (!layer) return;
-    const point = svg.createSVGPoint();
-    point.x = bounds.x;
-    point.y = bounds.y;
-    const topLeft = point.matrixTransform(matrix);
-    point.x = bounds.x + bounds.width;
-    point.y = bounds.y + bounds.height;
-    const bottomRight = point.matrixTransform(matrix);
-    layer.style.left = `${topLeft.x - canvasRect.left}px`;
-    layer.style.top = `${topLeft.y - canvasRect.top}px`;
-    layer.style.width = `${bottomRight.x - topLeft.x}px`;
-    layer.style.height = `${bottomRight.y - topLeft.y}px`;
-  };
-  placeLayer('[data-hero-layer="output"]', HERO_OUTPUT_BOUNDS);
-  placeLayer('[data-hero-layer="workspace"]', HERO_WORKSPACE_BOUNDS);
 }
 
 function updateHash(hash) {
@@ -248,28 +207,7 @@ function enableHeroMotion() {
   const canvas = figure?.querySelector('[data-hero-motion-canvas]');
   if (!figure || !canvas || prefersReducedMotion()) return;
   canvas.innerHTML = createHeroMotionMarkup();
-  const svg = canvas.querySelector('svg');
-  if (!svg) return;
   figure.classList.add('hero-motion--enhanced');
-  const mobileView = window.matchMedia('(max-width: 680px)');
-  const syncViewBox = () => {
-    const intakeY = mobileView.matches ? HERO_INTAKE_MOBILE_Y : HERO_INTAKE_DESKTOP_Y;
-    svg.setAttribute('viewBox', mobileView.matches ? '390 0 760 700' : '0 0 1200 700');
-    HERO_MOTION_ITEMS.forEach((item) => {
-      const path = `M ${item.x} ${item.y} Q ${item.cx} ${item.cy} ${HERO_INTAKE_X} ${intakeY}`;
-      svg.querySelectorAll(`[data-hero-route="${item.id}"] path`).forEach((route) => route.setAttribute('d', path));
-      svg.querySelector(`[data-hero-input="${item.id}"] animateMotion`)?.setAttribute('path', path);
-    });
-    syncHeroLayers(svg, canvas);
-  };
-  syncViewBox();
-  window.requestAnimationFrame(() => syncHeroLayers(svg, canvas));
-  mobileView.addEventListener?.('change', syncViewBox);
-  window.addEventListener('resize', () => syncHeroLayers(svg, canvas), { passive: true });
-  if ('ResizeObserver' in window) new ResizeObserver(() => syncHeroLayers(svg, canvas)).observe(canvas);
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(([entry]) => entry.isIntersecting ? svg.unpauseAnimations?.() : svg.pauseAnimations?.(), { threshold: .1 }).observe(figure);
-  }
 }
 
 function renderCapability(root, requestedId) {
@@ -414,19 +352,6 @@ function enableWorkflowEvidence() {
   activate(activeId, { resetTimer: false });
 }
 
-async function enableConnectorIconFallback() {
-  try {
-    const response = await fetch('assets/connector-icons.svg', { cache: 'force-cache' });
-    if (!response.ok) throw new Error('Connector sprite unavailable');
-    const source = await response.text();
-    const complete = ['microsoft', 'gmail', 'whatsapp', 'odoo', 'zoho', 'folder', 'calendar', 'pdf', 'word', 'excel', 'csv']
-      .every((id) => source.includes(`id="connector-${id}"`));
-    if (!complete) throw new Error('Connector sprite incomplete');
-  } catch {
-    document.documentElement.classList.add('connector-icons-unavailable');
-  }
-}
-
 function enableConnectorKeyboardScroll() {
   const row = document.querySelector('.connector-grid');
   if (!row) return;
@@ -536,7 +461,6 @@ function initialiseSite() {
   enableHeroMotion();
   enableCapabilitySwitcher();
   enableConnectorKeyboardScroll();
-  enableConnectorIconFallback();
   enableWorkflowEvidence();
   enableRevealMotion();
   enableTurnstile();

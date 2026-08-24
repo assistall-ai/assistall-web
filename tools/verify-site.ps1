@@ -23,7 +23,6 @@ $requiredFiles = @(
   'assets/media/workflows/contract-review.mp4',
   'assets/media/workflows/shipment-review.mp4',
   'assets/media/workflows/report-preparation.mp4',
-  'assets/connector-icons.svg',
   'assets/site.js',
   'demo-request.php',
   'privacy.html',
@@ -46,7 +45,8 @@ Assert-True (-not [regex]::IsMatch($html, $externalSource)) 'Unexpected third-pa
 foreach ($id in @('how-it-works', 'capabilities', 'connections', 'product', 'human-value', 'trust', 'demo')) {
   Assert-True ($html -match ('id=["'']' + [regex]::Escape($id) + '["'']')) "Missing continuous-story section: $id"
 }
-Assert-True ($html -match 'assets/connector-icons\.svg') 'The approved connector sprite is not referenced.'
+Assert-True ($html -match 'data-connector-mark="microsoft"') 'The stable connector marks are not mounted.'
+Assert-True (-not ($html -match 'connector-icons\.svg|<use\b|textLength=')) 'A distorted external connector sprite remains on the page.'
 Assert-True ($html -match 'data-workflow-evidence') 'The Living Work Queue is not mounted.'
 foreach ($workflow in @('contract', 'shipment', 'report')) {
   Assert-True ($html -match ('data-workflow-tab=["'']' + [regex]::Escape($workflow) + '["'']')) "Missing workflow tab marker: $workflow"
@@ -59,10 +59,9 @@ Assert-True ($script -match 'calculateScrollDuration') 'Section glide script is 
 Assert-True ($script -match 'HERO_MOTION_ITEMS') 'Hero input sources are not defined.'
 Assert-True ($script -match 'createHeroMotionMarkup') 'Hero motion renderer is not present.'
 Assert-True ($script -match 'android-chrome-512x512\.png') 'Hero motion does not use the official Assistall mark.'
-Assert-True ($script -match 'hero-workspace-surface') 'Hero motion does not contain the flat Assistall workspace surface.'
+Assert-True ($script -match 'hero-workspace') 'Hero motion does not contain the flat Assistall workspace surface.'
 Assert-True (-not ($script -match 'hero-engine__face|foreignObject|hero-engine__(?:orbit|intake)')) 'A removed 3D cube, intake hole or orbit remains in the hero.'
-Assert-True ($script -match 'syncHeroLayers') 'The hero layers are not aligned from the rendered SVG coordinates.'
-Assert-True ($script -match 'HERO_OUTPUT_BOUNDS') 'The finished document bounds are not defined.'
+Assert-True (-not ($script -match 'syncHeroLayers|getScreenCTM|HERO_OUTPUT_BOUNDS')) 'The removed hybrid hero coordinate bridge remains in the renderer.'
 Assert-True ($css -match 'hero-output-emerge') 'The finished document glow and motion are missing.'
 Assert-True ($css -match 'hero__film') 'The translucent teal readability film is missing.'
 Assert-True ($script -match 'enableWorkflowEvidence') 'The workflow evidence controller is not present.'

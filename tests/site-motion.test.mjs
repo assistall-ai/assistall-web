@@ -15,7 +15,6 @@ const pageCss = await readFile(new URL('../assets/page.css', import.meta.url), '
 const siteScript = await readFile(new URL('../assets/site.js', import.meta.url), 'utf8');
 const captureScript = await readFile(new URL('../tools/capture_workflow_media.py', import.meta.url), 'utf8');
 const pageHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-const connectorSprite = await readFile(new URL('../assets/connector-icons.svg', import.meta.url), 'utf8');
 
 test('section glide duration stays deliberate without becoming slow', () => {
   assert.equal(calculateScrollDuration(0), 700);
@@ -48,52 +47,33 @@ test('hero motion uses the approved set of real work inputs and matching marks',
   assert.equal(HERO_MOTION_ITEMS.filter(({ wordmark }) => wordmark).length, 0);
 });
 
-test('hero motion keeps its workspace and output in the same responsive coordinate system', () => {
+test('hero motion keeps every moving part inside one stable DOM field', () => {
   const markup = createHeroMotionMarkup();
   const heroOutputKeyframes = pageCss.slice(pageCss.indexOf('@keyframes hero-output-emerge'), pageCss.indexOf('.story-section'));
 
   assert.match(markup, /assets\/android-chrome-512x512\.png/);
-  assert.equal((markup.match(/<animateMotion\b/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/class="hero-output-shell"/g) ?? []).length, 1);
-  assert.equal((markup.match(/class="hero-workspace-surface"/g) ?? []).length, 1);
-  assert.match(markup, /<div class="hero-output-shell" data-hero-layer="output" aria-hidden="true">/);
-  assert.match(markup, /<div class="hero-workspace-shell" data-hero-layer="workspace" aria-hidden="true">/);
-  assert.match(markup, /data-hero-workspace-spin/);
-  assert.equal((markup.match(/<use href="assets\/connector-icons\.svg#connector-/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.match(markup, /preserveAspectRatio="xMidYMid meet"/);
-  assert.match(markup, /values="0;\.76;1;1;0;0;0;0"/);
-  assert.doesNotMatch(markup, /values="\.76;\.9;1;\.08;0;0;\.76;\.76"/);
-  assert.doesNotMatch(markup, /animateTransform[^>]+type="rotate"/);
-  assert.doesNotMatch(markup, /hero-signal__shiver/);
-  assert.doesNotMatch(markup, /hero-engine__face|<foreignObject|hero-engine__cube/);
-  assert.doesNotMatch(markup, /hero-engine__(?:orbit|intake)|black-hole/);
-  assert.match(markup, /Q [^\"]+ 766 334/);
-  assert.match(markup, /hero-workspace-surface__face--front/);
-  assert.match(markup, /hero-workspace-surface__face--back/);
-  assert.ok(markup.indexOf('hero-workspace-surface') > markup.indexOf('hero-output-shell'));
-  assert.match(markup, /dur="6\.4s"/);
-  assert.match(siteScript, /function syncHeroLayers\(/);
-  assert.match(siteScript, /getScreenCTM/);
-  assert.match(pageCss, /@keyframes hero-workspace-spin/);
-  assert.match(pageCss, /hero-workspace-surface[^}]*animation: hero-workspace-spin/);
+  assert.equal((markup.match(/<div class="hero-signal-card/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.match(markup, /class="hero-motion__field"/);
+  assert.match(markup, /class="hero-output" data-hero-output/);
+  assert.match(markup, /class="hero-workspace" data-hero-workspace/);
+  assert.doesNotMatch(markup, /<svg|<use|<animateMotion|hero-output-shell|hero-workspace-shell/);
+  assert.doesNotMatch(siteScript, /syncHeroLayers|getScreenCTM|ResizeObserver\(\(\) => syncHeroLayers/);
+  assert.match(pageCss, /@keyframes hero-workspace-turn/);
+  assert.match(pageCss, /\.hero-workspace[^}]*animation: hero-workspace-turn/);
   assert.match(pageCss, /0%, 48% \{ transform: rotateX\(0deg\); \}/);
   assert.match(pageCss, /61%, 100% \{ transform: rotateX\(360deg\); \}/);
   assert.match(pageCss, /perspective: 720px/);
   assert.match(pageCss, /backface-visibility: hidden/);
   assert.match(heroOutputKeyframes, /66%/);
-  assert.match(heroOutputKeyframes, /translateY\(-96\.667%\)/);
+  assert.match(heroOutputKeyframes, /translateY\(-100%\)/);
   assert.doesNotMatch(heroOutputKeyframes, /clip-path/);
   assert.match(pageCss, /\.hero-motion \{ z-index: -3; \}/);
   assert.match(pageCss, /\.hero__film \{ z-index: -1;/);
-  assert.doesNotMatch(pageCss, /data-hero-input="zoho"[^}]*display: none/);
-  assert.match(pageCss, /\.hero-output-shell[^}]*z-index: 1/);
-  assert.match(pageCss, /\.hero-workspace-shell[^}]*perspective: 720px/);
-  assert.doesNotMatch(pageCss, /\.hero-workspace-shell[^}]*left: 55\.3333%/);
-  assert.match(pageCss, /\.hero-signal[^}]*drop-shadow/);
+  assert.match(pageCss, /\.hero-signal-card[^}]*animation: hero-signal-intake/);
   assert.match(pageCss, /\.hero-output__paper[^}]*0 0 52px/);
-  assert.match(connectorSprite, /<symbol id="connector-whatsapp" viewBox="0 0 32 32">/);
-  assert.match(connectorSprite, /<symbol id="connector-odoo" viewBox="0 0 32 32">/);
-  assert.match(pageHtml, /viewBox="0 0 32 32"[^>]*><use href="assets\/connector-icons\.svg#connector-odoo"/);
+  assert.match(pageHtml, /data-connector-mark="odoo"/);
+  assert.doesNotMatch(pageHtml, /connector-icons\.svg/);
 });
 
 test('workflow evidence gives source viewers time to be understood before advancing', () => {
