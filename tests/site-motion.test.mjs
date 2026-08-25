@@ -93,16 +93,20 @@ test('hero sequence sends every input through the workspace top gate before its 
   assert.ok(horizontalSpread > 550);
   assert.ok(earlyIntake.filter(({ y }) => y < 125).length >= 3, 'the composition needs a visible top row of inputs');
 
+  const finalIntake = siteModule.getHeroSequenceState(4300);
+  assert.ok(finalIntake.inputs.some(({ opacity }) => opacity > 0), 'the last input must finish before lights can return');
+  assert.ok(finalIntake.lights.every(({ direction }) => direction !== 'return'), 'return lights must wait until the full intake is clear');
+
   const cleared = siteModule.getHeroSequenceState(4500);
   assert.ok(cleared.inputs.every(({ x, y, opacity }) => x === 870 && y === 276 && opacity === 0), 'every input must clear through the single top gate');
-  assert.ok(cleared.lights.every(({ opacity }) => opacity > 0), 'only the trailing light may travel back out after intake');
+  assert.ok(cleared.lights.every(({ direction, opacity }) => direction === 'return' && opacity > 0), 'only the trailing light may travel back out after intake');
 
-  const spin = siteModule.getHeroSequenceState(5200);
+  const spin = siteModule.getHeroSequenceState(5800);
   assert.equal(spin.phase, 'spin');
   assert.ok(spin.workspace.rotationY > 0 && spin.workspace.rotationY < 360);
   assert.equal(spin.document.opacity, 0);
 
-  const output = siteModule.getHeroSequenceState(7200);
+  const output = siteModule.getHeroSequenceState(8000);
   assert.equal(output.phase, 'output');
   assert.equal(output.workspace.rotationY, 360);
   assert.ok(output.document.opacity > 0);

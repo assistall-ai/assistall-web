@@ -2,7 +2,7 @@ const MIN_SCROLL_DURATION = 700;
 const MAX_SCROLL_DURATION = 1400;
 const SCROLL_SPEED = 0.8;
 const SECTION_GAP = 16;
-export const HERO_SEQUENCE_MS = 11000;
+export const HERO_SEQUENCE_MS = 11800;
 // This coordinate is the centre of the workspace's top edge in the 1200 × 700 stage.
 const HERO_TARGET = Object.freeze({ x: 870, y: 276 });
 
@@ -208,7 +208,7 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
 export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
   const elapsed = Math.max(0, Number(elapsedMs) || 0);
   const time = elapsed % HERO_SEQUENCE_MS;
-  const phase = time < 4600 ? 'intake' : time < 6000 ? 'spin' : time < 9400 ? 'output' : 'settle';
+  const phase = time < 5200 ? 'intake' : time < 6500 ? 'spin' : time < 9800 ? 'output' : 'settle';
 
   const inputs = items.map((item) => {
     const slot = items.indexOf(item);
@@ -229,11 +229,11 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
     };
   });
 
-  const reverseProgress = clampUnit((time - 3900) / 700);
+  const reverseProgress = clampUnit((time - 4450) / 700);
   const lights = items.map((item, index) => {
     const inputProgress = clampUnit((time - 650 - index * 200) / 1150);
     const inputTravel = easeInOutCubic(inputProgress);
-    const returning = time >= 3900;
+    const returning = time >= 4450;
     const lightTravel = returning ? 1 - reverseProgress : Math.max(0, inputTravel - .045);
     const point = heroRoutePoint(item, lightTravel);
     const returnFade = 1 - clampUnit((reverseProgress - .88) / .12);
@@ -242,19 +242,20 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
       id: item.id,
       x: point.x,
       y: point.y,
-      opacity: time >= 4700 ? 0 : (returning ? returnFade : intakeFade),
+      direction: returning ? 'return' : (intakeFade > 0 ? 'intake' : 'hidden'),
+      opacity: time >= 5200 ? 0 : (returning ? returnFade : intakeFade),
       scale: returning ? .75 + (1 - reverseProgress) * .35 : .72 + inputTravel * .28,
     };
   });
 
-  const spinProgress = clampUnit((time - 4700) / 1100);
-  const documentProgress = clampUnit((time - 6400) / 1800);
-  const documentFade = time < 9000 ? 1 : 1 - clampUnit((time - 9000) / 500);
+  const spinProgress = clampUnit((time - 5300) / 1100);
+  const documentProgress = clampUnit((time - 7000) / 1800);
+  const documentFade = time < 9600 ? 1 : 1 - clampUnit((time - 9600) / 500);
   return {
     phase,
     inputs,
     lights,
-    workspace: { rotationY: time < 4700 ? 0 : 360 * easeInOutCubic(spinProgress) },
+    workspace: { rotationY: time < 5300 ? 0 : 360 * easeInOutCubic(spinProgress) },
     document: {
       opacity: documentProgress * documentFade,
       translateY: -55 + 104 * easeOutCubic(documentProgress),
