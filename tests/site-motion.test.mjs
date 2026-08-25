@@ -56,6 +56,7 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.equal((markup.match(/<div class="hero-signal-card/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.match(markup, /<svg class="hero-route-map"[^>]*viewBox="0 0 1200 700"/);
   assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.equal((markup.match(/data-hero-light=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.match(markup, /class="hero-motion__field"/);
   assert.match(markup, /class="hero-output" data-hero-output/);
@@ -65,39 +66,43 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.match(pageCss, /\.hero-route-map path/);
   assert.match(pageCss, /rotateY\(/);
   assert.match(pageCss, /backface-visibility: hidden/);
-  assert.match(pageCss, /\.hero-motion \{ z-index: 2; \}/);
+  assert.match(pageCss, /\.hero-motion \{ z-index: 0; \}/);
   assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
   assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
   assert.match(pageCss, /\.hero-output__paper[^}]*0 0 64px/);
+  assert.doesNotMatch(pageCss, /\.fallback-signal--(?:four|five) \{ bottom:/, 'the static fallback must reserve the lower hero area for the output document');
   assert.match(pageHtml, /data-connector-mark="odoo"/);
   assert.doesNotMatch(pageHtml, /connector-icons\.svg/);
 });
 
-test('hero sequence shows a group before a Y-axis spin and aligned document output', () => {
+test('hero sequence sends every input through the workspace top gate before its Y-axis spin', () => {
   assert.equal(typeof siteModule.getHeroSequenceState, 'function');
 
   const intake = siteModule.getHeroSequenceState(900);
   assert.equal(intake.phase, 'intake');
   assert.equal(intake.workspace.rotationY, 0);
-  const visibleInputs = intake.inputs.filter(({ opacity }) => opacity > 0);
-  assert.deepEqual(visibleInputs.map(({ id }) => id), ['zoho', 'whatsapp', 'voice', 'pptx', 'json']);
-  assert.ok(visibleInputs.find(({ id }) => id === 'zoho').x < 500);
-  assert.ok(visibleInputs.filter(({ routeProgress }) => routeProgress > 0).length >= 1);
+  assert.equal(intake.inputs.length, HERO_MOTION_ITEMS.length);
+  assert.ok(intake.inputs.every(({ y }) => y < 276), 'icons must begin above the workspace top edge');
 
-  const glidingInputs = siteModule.getHeroSequenceState(1450).inputs.filter(({ routeProgress }) => routeProgress > 0);
-  assert.ok(glidingInputs.length >= 3);
+  const glidingInputs = siteModule.getHeroSequenceState(2200).inputs.filter(({ routeProgress, opacity }) => routeProgress > 0 && opacity > 0);
+  assert.ok(glidingInputs.length >= 3 && glidingInputs.length <= 7, 'the intake must stay readable rather than collapsing into one crowd');
+  assert.ok(glidingInputs.every(({ y }) => y < 276), 'icons must remain above the workspace until they enter it');
 
-  const earlyIntake = siteModule.getHeroSequenceState(1150).inputs.filter(({ opacity }) => opacity > 0);
+  const earlyIntake = siteModule.getHeroSequenceState(1150).inputs;
   const horizontalSpread = Math.max(...earlyIntake.map(({ x }) => x)) - Math.min(...earlyIntake.map(({ x }) => x));
   assert.ok(horizontalSpread > 550);
-  assert.ok(earlyIntake.find(({ id }) => id === 'zoho').x < 410);
+  assert.ok(earlyIntake.filter(({ y }) => y < 125).length >= 3, 'the composition needs a visible top row of inputs');
 
-  const spin = siteModule.getHeroSequenceState(4400);
+  const cleared = siteModule.getHeroSequenceState(4500);
+  assert.ok(cleared.inputs.every(({ x, y, opacity }) => x === 870 && y === 276 && opacity === 0), 'every input must clear through the single top gate');
+  assert.ok(cleared.lights.every(({ opacity }) => opacity > 0), 'only the trailing light may travel back out after intake');
+
+  const spin = siteModule.getHeroSequenceState(5200);
   assert.equal(spin.phase, 'spin');
   assert.ok(spin.workspace.rotationY > 0 && spin.workspace.rotationY < 360);
   assert.equal(spin.document.opacity, 0);
 
-  const output = siteModule.getHeroSequenceState(6200);
+  const output = siteModule.getHeroSequenceState(7200);
   assert.equal(output.phase, 'output');
   assert.equal(output.workspace.rotationY, 360);
   assert.ok(output.document.opacity > 0);

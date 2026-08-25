@@ -2,9 +2,9 @@ const MIN_SCROLL_DURATION = 700;
 const MAX_SCROLL_DURATION = 1400;
 const SCROLL_SPEED = 0.8;
 const SECTION_GAP = 16;
-export const HERO_SEQUENCE_MS = 9600;
-const HERO_BATCH_SIZE = 5;
-const HERO_TARGET = Object.freeze({ x: 870, y: 334 });
+export const HERO_SEQUENCE_MS = 11000;
+// This coordinate is the centre of the workspace's top edge in the 1200 × 700 stage.
+const HERO_TARGET = Object.freeze({ x: 870, y: 276 });
 
 export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
@@ -14,22 +14,16 @@ export const HERO_MOTION_ITEMS = Object.freeze([
   { id: 'odoo', icon: 'odoo', label: 'odoo', x: 548, y: 62, cx: 650, cy: 82, delay: 0.12 },
   { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 824, y: 76, cx: 792, cy: 94, delay: 0.20 },
   { id: 'email', icon: 'gmail', label: 'Email', x: 1042, y: 118, cx: 914, cy: 132, delay: 0.34 },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 238, y: 222, cx: 438, cy: 194, delay: 0.18 },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 456, y: 214, cx: 576, cy: 192, delay: 0.30 },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 272, y: 370, cx: 462, cy: 326, delay: 0.44, mobileHidden: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 414, y: 445, cx: 540, cy: 355, delay: 0.54, mobileHidden: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 572, y: 454, cx: 646, cy: 362, delay: 0.62, mobileHidden: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 338, y: 572, cx: 550, cy: 438, delay: 0.58, mobileHidden: true },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1095, y: 248, cx: 940, cy: 214, delay: 0.26 },
-  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1090, y: 402, cx: 938, cy: 328, delay: 0.42 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 998, y: 540, cx: 900, cy: 415, delay: 0.50, mobileHidden: true },
-  { id: 'json', icon: 'json', label: 'JSON', x: 1135, y: 570, cx: 946, cy: 438, delay: 0.60, mobileHidden: true },
-]);
-
-const HERO_SIGNAL_BATCHES = Object.freeze([
-  Object.freeze(['zoho', 'whatsapp', 'voice', 'pptx', 'json']),
-  Object.freeze(['odoo', 'email', 'csv', 'folder', 'jpg']),
-  Object.freeze(['docx', 'xlsx', 'txt', 'pdf']),
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 212, y: 202, cx: 438, cy: 194, delay: 0.18 },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 442, y: 198, cx: 576, cy: 192, delay: 0.30 },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 126, y: 252, cx: 462, cy: 326, delay: 0.44, mobileHidden: true },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 350, y: 244, cx: 540, cy: 355, delay: 0.54, mobileHidden: true },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 598, y: 238, cx: 646, cy: 362, delay: 0.62, mobileHidden: true },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 270, y: 132, cx: 550, cy: 438, delay: 0.58, mobileHidden: true },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1088, y: 212, cx: 940, cy: 214, delay: 0.26 },
+  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1140, y: 270, cx: 938, cy: 328, delay: 0.42 },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 1010, y: 248, cx: 900, cy: 415, delay: 0.50, mobileHidden: true },
+  { id: 'json', icon: 'json', label: 'JSON', x: 1190, y: 154, cx: 946, cy: 438, delay: 0.60, mobileHidden: true },
 ]);
 
 const CAPABILITIES = Object.freeze([
@@ -163,15 +157,30 @@ function easeOutCubic(progress) {
   return 1 - (1 - clampUnit(progress)) ** 3;
 }
 
+function heroRouteControl(item) {
+  return {
+    x: (item.x + HERO_TARGET.x) / 2,
+    y: Math.min(HERO_TARGET.y - 26, Math.min(item.y, HERO_TARGET.y) - 34),
+  };
+}
+
+function heroRoutePoint(item, progress) {
+  const t = clampUnit(progress);
+  const inverse = 1 - t;
+  const control = heroRouteControl(item);
+  return {
+    x: inverse ** 2 * item.x + 2 * inverse * t * control.x + t ** 2 * HERO_TARGET.x,
+    y: inverse ** 2 * item.y + 2 * inverse * t * control.y + t ** 2 * HERO_TARGET.y,
+  };
+}
+
 function heroRoutePath(item) {
-  const midpointX = (item.x + HERO_TARGET.x) / 2;
-  const bend = item.y < HERO_TARGET.y ? -38 : 38;
-  const midpointY = (item.y + HERO_TARGET.y) / 2 + bend;
-  return `M ${item.x} ${item.y} Q ${midpointX.toFixed(1)} ${midpointY.toFixed(1)} ${HERO_TARGET.x} ${HERO_TARGET.y}`;
+  const control = heroRouteControl(item);
+  return `M ${item.x} ${item.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${HERO_TARGET.x} ${HERO_TARGET.y}`;
 }
 
 function heroRouteMapMarkup(items) {
-  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => `<path data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item)}"></path>`).join('')}</svg>`;
+  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => `<path data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item)}"></path><circle data-hero-light="${item.id}" r="4" cx="${item.x}" cy="${item.y}"></circle>`).join('')}</svg>`;
 }
 
 function heroSignalMarkup(item) {
@@ -198,40 +207,54 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
 
 export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
   const elapsed = Math.max(0, Number(elapsedMs) || 0);
-  const cycle = Math.floor(elapsed / HERO_SEQUENCE_MS);
   const time = elapsed % HERO_SEQUENCE_MS;
-  const usesOfficialItems = items === HERO_MOTION_ITEMS;
-  const fallbackBatches = Array.from({ length: Math.ceil(items.length / HERO_BATCH_SIZE) }, (_, index) => items.slice(index * HERO_BATCH_SIZE, (index + 1) * HERO_BATCH_SIZE).map(({ id }) => id));
-  const batches = usesOfficialItems ? HERO_SIGNAL_BATCHES : fallbackBatches;
-  const activeIds = new Set(batches[cycle % batches.length]);
-  const phase = time < 3300 ? 'intake' : time < 4800 ? 'spin' : time < 7400 ? 'output' : 'settle';
+  const phase = time < 4600 ? 'intake' : time < 6000 ? 'spin' : time < 9400 ? 'output' : 'settle';
 
   const inputs = items.map((item) => {
-    if (!activeIds.has(item.id) || time >= 3300) return { id: item.id, x: item.x, y: item.y, opacity: 0, scale: .82, routeProgress: 0, routeOpacity: 0 };
-    const slot = [...activeIds].indexOf(item.id);
-    const progress = clampUnit((time - 700 - slot * 140) / 2100);
+    const slot = items.indexOf(item);
+    const progress = clampUnit((time - 650 - slot * 200) / 1150);
     const travel = easeInOutCubic(progress);
-    const fadeIn = clampUnit((time - slot * 120) / 180);
-    const fadeOut = 1 - clampUnit((progress - .9) / .1);
+    const point = heroRoutePoint(item, travel);
+    const fadeIn = clampUnit(time / 220);
+    const fadeOut = 1 - clampUnit((progress - .86) / .14);
     const opacity = fadeIn * fadeOut;
     return {
       id: item.id,
-      x: item.x + (HERO_TARGET.x - item.x) * travel,
-      y: item.y + (HERO_TARGET.y - item.y) * travel,
+      x: point.x,
+      y: point.y,
       opacity,
       scale: .82 + .18 * opacity,
-      routeProgress: clampUnit(travel * 1.08),
+      routeProgress: time < 3900 ? clampUnit(travel * 1.08) : 1,
       routeOpacity: opacity,
     };
   });
 
-  const spinProgress = clampUnit((time - 3600) / 1200);
-  const documentProgress = clampUnit((time - 5200) / 1800);
-  const documentFade = time < 7000 ? 1 : 1 - clampUnit((time - 7000) / 400);
+  const reverseProgress = clampUnit((time - 3900) / 700);
+  const lights = items.map((item, index) => {
+    const inputProgress = clampUnit((time - 650 - index * 200) / 1150);
+    const inputTravel = easeInOutCubic(inputProgress);
+    const returning = time >= 3900;
+    const lightTravel = returning ? 1 - reverseProgress : Math.max(0, inputTravel - .045);
+    const point = heroRoutePoint(item, lightTravel);
+    const returnFade = 1 - clampUnit((reverseProgress - .88) / .12);
+    const intakeFade = inputTravel > .045 && inputProgress < 1 ? 1 : 0;
+    return {
+      id: item.id,
+      x: point.x,
+      y: point.y,
+      opacity: time >= 4700 ? 0 : (returning ? returnFade : intakeFade),
+      scale: returning ? .75 + (1 - reverseProgress) * .35 : .72 + inputTravel * .28,
+    };
+  });
+
+  const spinProgress = clampUnit((time - 4700) / 1100);
+  const documentProgress = clampUnit((time - 6400) / 1800);
+  const documentFade = time < 9000 ? 1 : 1 - clampUnit((time - 9000) / 500);
   return {
     phase,
     inputs,
-    workspace: { rotationY: time < 3600 ? 0 : 360 * easeInOutCubic(spinProgress) },
+    lights,
+    workspace: { rotationY: time < 4700 ? 0 : 360 * easeInOutCubic(spinProgress) },
     document: {
       opacity: documentProgress * documentFade,
       translateY: -55 + 104 * easeOutCubic(documentProgress),
@@ -281,6 +304,7 @@ function enableHeroMotion() {
   figure.classList.add('hero-motion--enhanced');
   const signalElements = new Map([...canvas.querySelectorAll('[data-hero-signal]')].map((element) => [element.dataset.heroSignal, element]));
   const routeElements = new Map([...canvas.querySelectorAll('[data-hero-route]')].map((element) => [element.dataset.heroRoute, element]));
+  const lightElements = new Map([...canvas.querySelectorAll('[data-hero-light]')].map((element) => [element.dataset.heroLight, element]));
   const workspace = canvas.querySelector('[data-hero-workspace]');
   const output = canvas.querySelector('[data-hero-output]');
   const startedAt = performance.now();
@@ -298,6 +322,20 @@ function enableHeroMotion() {
       if (route) {
         route.style.setProperty('--route-progress', input.routeProgress.toFixed(3));
         route.style.setProperty('--route-opacity', input.routeOpacity.toFixed(3));
+      }
+    }
+    for (const lightState of state.lights) {
+      const light = lightElements.get(lightState.id);
+      const route = routeElements.get(lightState.id);
+      if (light) {
+        light.setAttribute('cx', lightState.x.toFixed(2));
+        light.setAttribute('cy', lightState.y.toFixed(2));
+        light.style.setProperty('--light-opacity', lightState.opacity.toFixed(3));
+        light.style.setProperty('--light-scale', lightState.scale.toFixed(3));
+      }
+      if (route && lightState.opacity > 0) {
+        route.style.setProperty('--route-progress', '1');
+        route.style.setProperty('--route-opacity', (lightState.opacity * .28).toFixed(3));
       }
     }
     workspace?.style.setProperty('--workspace-turn', `${state.workspace.rotationY.toFixed(2)}deg`);
