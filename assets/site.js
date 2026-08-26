@@ -6,7 +6,7 @@ export const HERO_SEQUENCE_MS = 11800;
 // This coordinate is the centre of the workspace's top edge in the 1200 × 700 stage.
 const HERO_TARGET = Object.freeze({ x: 870, y: 276 });
 // Arrival lights continue into the workspace so their end point stays hidden.
-const HERO_LIGHT_TARGET = Object.freeze({ x: 870, y: 336 });
+const HERO_ROUTE_TARGET_Y = 336;
 
 export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
@@ -168,6 +168,21 @@ function easeOutCubic(progress) {
   return 1 - (1 - clampUnit(progress)) ** 3;
 }
 
+function heroGateTarget(item, items, y) {
+  const ordered = [...items].sort((first, second) => first.x - second.x || first.y - second.y);
+  const rank = Math.max(0, ordered.findIndex(({ id }) => id === item.id));
+  const laneProgress = ordered.length > 1 ? rank / (ordered.length - 1) : .5;
+  return { x: 836 + laneProgress * 68, y };
+}
+
+function heroInputTarget(item, items) {
+  return heroGateTarget(item, items, HERO_TARGET.y);
+}
+
+function heroRouteTarget(item, items) {
+  return heroGateTarget(item, items, HERO_ROUTE_TARGET_Y);
+}
+
 function heroRouteControl(item, target = HERO_TARGET) {
   return {
     x: (item.x + target.x) / 2,
@@ -185,18 +200,20 @@ function heroRoutePoint(item, progress, target = HERO_TARGET) {
   };
 }
 
-function heroRoutePath(item) {
-  const control = heroRouteControl(item);
-  return `M ${item.x} ${item.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${HERO_TARGET.x} ${HERO_TARGET.y}`;
+function heroRoutePath(item, items) {
+  const target = heroRouteTarget(item, items);
+  const control = heroRouteControl(item, target);
+  return `M ${item.x} ${item.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${target.x.toFixed(1)} ${target.y}`;
 }
 
-function heroReturnPath(item) {
-  const control = heroRouteControl(item);
-  return `M ${HERO_TARGET.x} ${HERO_TARGET.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${item.x} ${item.y}`;
+function heroReturnPath(item, items) {
+  const target = heroRouteTarget(item, items);
+  const control = heroRouteControl(item, target);
+  return `M ${target.x.toFixed(1)} ${target.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${item.x} ${item.y}`;
 }
 
 function heroRouteMapMarkup(items) {
-  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => `<path data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item)}"></path><path class="hero-route-charge" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item)}"></path><circle data-hero-light="${item.id}" r="3" cx="${item.x}" cy="${item.y}"></circle>`).join('')}</svg>`;
+  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => `<path data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item, items)}"></path><path class="hero-route-charge" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item, items)}"></path><circle data-hero-light="${item.id}" r="3" cx="${item.x}" cy="${item.y}"></circle>`).join('')}</svg>`;
 }
 
 function heroSignalMarkup(item) {
@@ -224,13 +241,13 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
 export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
   const elapsed = Math.max(0, Number(elapsedMs) || 0);
   const time = elapsed % HERO_SEQUENCE_MS;
-  const phase = time < 3500 ? 'intake' : time < 4700 ? 'spin' : time < 8000 ? 'output' : 'settle';
-  const returning = time >= 2600 && time < 3400;
+  const phase = time < 3600 ? 'intake' : time < 4700 ? 'spin' : time < 8000 ? 'output' : 'settle';
+  const returning = time >= 2600 && time < 3600;
 
   const inputs = items.map((item) => {
     const progress = clampUnit((time - 600) / 1800);
     const travel = easeInOutCubic(progress);
-    const point = heroRoutePoint(item, travel);
+    const point = heroRoutePoint(item, travel, heroInputTarget(item, items));
     const fadeIn = clampUnit(time / 220);
     const fadeOut = 1 - clampUnit((progress - .86) / .14);
     const opacity = fadeIn * fadeOut;
@@ -251,7 +268,7 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
     const inputProgress = clampUnit((time - 600) / 1800);
     const inputTravel = easeInOutCubic(inputProgress);
     const lightTravel = Math.min(1, inputTravel + .08);
-    const point = heroRoutePoint(item, lightTravel, HERO_LIGHT_TARGET);
+    const point = heroRoutePoint(item, lightTravel, heroRouteTarget(item, items));
     const intakeFade = inputTravel > .045 ? 1 - clampUnit((inputProgress - .48) / .18) : 0;
     return {
       id: item.id,
@@ -263,8 +280,8 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
     };
   });
 
-  const chargeDuration = 350;
-  const chargeStagger = 50;
+  const chargeDuration = 520;
+  const chargeStagger = 35;
   const charges = items.map((item, index) => {
     const launchedAt = 2600 + index * chargeStagger;
     const progress = clampUnit((time - launchedAt) / chargeDuration);

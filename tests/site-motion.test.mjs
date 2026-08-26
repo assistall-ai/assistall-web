@@ -73,6 +73,7 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-light=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-charge=/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.equal((markup.match(/data-hero-route=[^>]+d="[^"]+ 336"/g) ?? []).length, HERO_MOTION_ITEMS.length, 'each intake route must continue behind the workspace');
   assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/connector-mark__svg/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.match(markup, /class="hero-motion__field"/);
@@ -121,13 +122,14 @@ test('hero sequence sends every input through the workspace top gate before its 
   assert.ok(nearGate.lights.every(({ opacity }) => opacity === 0), 'arrival dots must already be hidden behind the workspace before its top edge');
 
   const cleared = siteModule.getHeroSequenceState(2800);
-  assert.ok(cleared.inputs.every(({ x, y, opacity }) => x === 870 && y === 276 && opacity === 0), 'every input must clear through the single top gate');
+  assert.ok(cleared.inputs.every(({ x, y, opacity }) => x >= 836 && x <= 904 && y === 276 && opacity === 0), 'every input must clear through the workspace top gate');
   assert.ok(cleared.lights.every(({ opacity }) => opacity === 0), 'arrival lights must disappear behind the workspace before the return');
   const activeReturnCharges = cleared.charges.filter(({ opacity }) => opacity > 0);
   assert.ok(activeReturnCharges.length > 0 && activeReturnCharges.length < HERO_MOTION_ITEMS.length, 'a circuit wave must avoid a firework-like all-path burst');
   const laterReturn = siteModule.getHeroSequenceState(2900);
   const chargeTravel = activeReturnCharges.map(({ id, progress }) => laterReturn.charges.find((charge) => charge.id === id).progress - progress);
   assert.ok(chargeTravel.every((distance) => Math.abs(distance - chargeTravel[0]) < 0.0001), 'active return charges must share one travel speed');
+  assert.ok(chargeTravel[0] < .2, 'the return current must travel more deliberately than a burst');
 
   const spin = siteModule.getHeroSequenceState(4150);
   assert.equal(spin.phase, 'spin');
