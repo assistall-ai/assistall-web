@@ -73,9 +73,11 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-light=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-charge=/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/data-hero-route=[^>]+d="[^"]+ 336"/g) ?? []).length, HERO_MOTION_ITEMS.length, 'each intake route must continue behind the workspace');
+  assert.equal((markup.match(/data-hero-route=[^>]+d="[^"]+ 290"/g) ?? []).length, HERO_MOTION_ITEMS.length, 'each intake route must continue behind the workspace without dropping below it on squeezed screens');
   assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/connector-mark__svg/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.equal((markup.match(/hero-signal-card__label/g) ?? []).length, HERO_MOTION_ITEMS.length, 'every source must pair its monochrome logo with a readable name');
+  assert.doesNotMatch(markup, /text-anchor="middle"/, 'hero document marks must not render oversized SVG text when their names already appear beside the icon');
   assert.match(markup, /class="hero-motion__field"/);
   assert.match(markup, /class="hero-output" data-hero-output/);
   assert.match(markup, /class="hero-workspace" data-hero-workspace/);
@@ -86,6 +88,7 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.match(pageCss, /rotateY\(/);
   assert.match(pageCss, /backface-visibility: hidden/);
   assert.match(pageCss, /\.hero-motion \{ z-index: 2; \}/, 'hero signals must remain visible above the dark film while staying behind copy');
+  assert.match(pageCss, /\.hero-motion__stage \{[^}]*translateY\(/, 'the animation field must sit lower than the header crop');
   assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
   assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
   assert.match(pageCss, /\.hero-output__paper[^}]*0 0 64px/);

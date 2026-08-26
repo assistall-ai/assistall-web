@@ -6,7 +6,7 @@ export const HERO_SEQUENCE_MS = 11800;
 // This coordinate is the centre of the workspace's top edge in the 1200 × 700 stage.
 const HERO_TARGET = Object.freeze({ x: 870, y: 276 });
 // Arrival lights continue into the workspace so their end point stays hidden.
-const HERO_ROUTE_TARGET_Y = 336;
+const HERO_ROUTE_TARGET_Y = 290;
 
 export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
@@ -155,8 +155,9 @@ function connectorMarkMarkup(icon) {
     voice: '<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-6 8a6 6 0 0 0 12 0M12 17v4m-4 0h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
     image: '<path d="M3 4h18v16H3zM6 16l4-4 3 3 2-2 3 3M8 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   }[icon];
-  const label = { word: 'W', excel: 'X', csv: 'CSV', pdf: 'PDF', powerpoint: 'P', txt: 'TXT', json: '{}' }[icon];
-  const documentMark = label ? `<path d="M5 2h10l4 4v16H5z" fill="none" stroke="currentColor" stroke-width="1.8"/><text x="12" y="15" text-anchor="middle" fill="currentColor" font-size="${label.length > 1 ? '5.2' : '8'}" font-weight="800" font-family="Arial, sans-serif">${label}</text>` : path;
+  const documentMark = ['word', 'excel', 'csv', 'pdf', 'powerpoint', 'txt', 'json'].includes(icon)
+    ? '<path d="M5 2h10l4 4v16H5zM15 2v5h4M8 12h8m-8 4h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
+    : path;
   return `<span class="connector-mark" data-connector-mark="${icon}"><svg class="connector-mark__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${documentMark}</svg></span>`;
 }
 
@@ -219,8 +220,7 @@ function heroRouteMapMarkup(items) {
 function heroSignalMarkup(item) {
   const mobile = item.mobileHidden ? ' hero-signal-card--mobile-hidden' : '';
   const style = `--signal-x:${(item.x / 12).toFixed(3)}%;--signal-y:${(item.y / 7).toFixed(3)}%;--signal-opacity:0;--signal-scale:.82`;
-  const usesTextMark = ['odoo', 'zoho', 'word', 'excel', 'csv', 'pdf', 'powerpoint', 'txt', 'json'].includes(item.icon);
-  return `<div class="hero-signal-card${mobile}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}${usesTextMark ? '' : `<span class="hero-signal-card__label">${item.label}</span>`}</div>`;
+  return `<div class="hero-signal-card${mobile}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}<span class="hero-signal-card__label">${item.label}</span></div>`;
 }
 
 export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
