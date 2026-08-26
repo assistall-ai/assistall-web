@@ -7,25 +7,27 @@ export const HERO_SEQUENCE_MS = 11800;
 const HERO_TARGET = Object.freeze({ x: 870, y: 276 });
 // Arrival lights terminate deep within the workspace so their end point stays fully occluded.
 const HERO_ROUTE_TARGET_Y = 340;
+const HERO_VIEWBOX_HEIGHT = 700;
+const HERO_WORKSPACE_ENDPOINT_DEPTH = .58;
 
 export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 570, y: 70 },
-  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 570, y: 170 },
-  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 680, y: 210 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 680, y: 55 },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 800, y: 25 },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 915, y: 25 },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 1030, y: 25, mobileHidden: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 1120, y: 35, mobileHidden: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 1185, y: 90, mobileHidden: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 1185, y: 185 },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1145, y: 270 },
-  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1080, y: 205 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 1085, y: 120, mobileHidden: true },
-  { id: 'json', icon: 'json', label: 'JSON', x: 570, y: 270, mobileHidden: true },
+  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 540, y: 70 },
+  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 540, y: 170 },
+  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 670, y: 150 },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 670, y: 30, compact: true },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 770, y: 20, compact: true },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 910, y: 20, compact: true },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 1050, y: 20, compact: true },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 1180, y: 60, mobileHidden: true },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 1180, y: 160, mobileHidden: true },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 1180, y: 260 },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1060, y: 270 },
+  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 670, y: 270 },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 1080, y: 140, mobileHidden: true },
+  { id: 'json', icon: 'json', label: 'JSON', x: 540, y: 270, mobileHidden: true },
 ]);
 
 const CAPABILITIES = Object.freeze([
@@ -176,12 +178,23 @@ function heroGateTarget(item, items, y) {
   return { x: 836 + laneProgress * 68, y };
 }
 
+export function calculateHeroRouteTargetY({ stageHeight, workspaceOffsetY, workspaceHeight } = {}) {
+  const stage = Number(stageHeight);
+  const workspaceTop = Number(workspaceOffsetY);
+  const workspace = Number(workspaceHeight);
+  if (!(stage > 0 && workspace > 0 && Number.isFinite(workspaceTop))) return HERO_ROUTE_TARGET_Y;
+  const top = workspaceTop / stage * HERO_VIEWBOX_HEIGHT;
+  const bottom = (workspaceTop + workspace - 4) / stage * HERO_VIEWBOX_HEIGHT;
+  const target = (workspaceTop + workspace * HERO_WORKSPACE_ENDPOINT_DEPTH) / stage * HERO_VIEWBOX_HEIGHT;
+  return Math.min(bottom, Math.max(top + 12, target));
+}
+
 function heroInputTarget(item, items) {
   return heroGateTarget(item, items, HERO_TARGET.y);
 }
 
-function heroRouteTarget(item, items) {
-  return heroGateTarget(item, items, HERO_ROUTE_TARGET_Y);
+function heroRouteTarget(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
+  return heroGateTarget(item, items, routeTargetY);
 }
 
 function heroRouteControl(item, target = HERO_TARGET) {
@@ -201,26 +214,30 @@ function heroRoutePoint(item, progress, target = HERO_TARGET) {
   };
 }
 
-function heroRoutePath(item, items) {
-  const target = heroRouteTarget(item, items);
+function heroRoutePath(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
+  const target = heroRouteTarget(item, items, routeTargetY);
   const control = heroRouteControl(item, target);
   return `M ${item.x} ${item.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${target.x.toFixed(1)} ${target.y}`;
 }
 
-function heroReturnPath(item, items) {
-  const target = heroRouteTarget(item, items);
+function heroReturnPath(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
+  const target = heroRouteTarget(item, items, routeTargetY);
   const control = heroRouteControl(item, target);
   return `M ${target.x.toFixed(1)} ${target.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${item.x} ${item.y}`;
 }
 
-function heroRouteMapMarkup(items) {
-  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => `<path data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item, items)}"></path><path class="hero-route-charge" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item, items)}"></path><circle data-hero-light="${item.id}" r="3" cx="${item.x}" cy="${item.y}"></circle>`).join('')}</svg>`;
+function heroRouteMapMarkup(items, routeTargetY = HERO_ROUTE_TARGET_Y) {
+  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => {
+    const compactHidden = item.compact ? '' : ' hero-route--compact-hidden';
+    return `<path class="hero-route${compactHidden}" data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item, items, routeTargetY)}"></path><path class="hero-route-charge${compactHidden}" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item, items, routeTargetY)}"></path><circle class="hero-route-light${compactHidden}" data-hero-light="${item.id}" r="3" cx="${item.x}" cy="${item.y}"></circle>`;
+  }).join('')}</svg>`;
 }
 
 function heroSignalMarkup(item) {
   const mobile = item.mobileHidden ? ' hero-signal-card--mobile-hidden' : '';
+  const compact = item.compact ? ' hero-signal-card--compact' : '';
   const style = `--signal-x:${(item.x / 12).toFixed(3)}%;--signal-y:${(item.y / 7).toFixed(3)}%;--signal-opacity:1;--signal-scale:.72`;
-  return `<div class="hero-signal-card${mobile}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}<span class="hero-signal-card__label">${item.label}</span></div>`;
+  return `<div class="hero-signal-card${mobile}${compact}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}<span class="hero-signal-card__label">${item.label}</span></div>`;
 }
 
 export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
@@ -238,7 +255,7 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
   </div>`;
 }
 
-export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
+export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, routeTargetY = HERO_ROUTE_TARGET_Y) {
   const elapsed = Math.max(0, Number(elapsedMs) || 0);
   const time = elapsed % HERO_SEQUENCE_MS;
   const phase = time < 3600 ? 'intake' : time < 4700 ? 'spin' : time < 8000 ? 'output' : 'settle';
@@ -268,7 +285,7 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
     const inputProgress = clampUnit((time - 600) / 1800);
     const inputTravel = easeInOutCubic(inputProgress);
     const lightTravel = Math.min(1, inputTravel + .08);
-    const point = heroRoutePoint(item, lightTravel, heroRouteTarget(item, items));
+    const point = heroRoutePoint(item, lightTravel, heroRouteTarget(item, items, routeTargetY));
     const intakeFade = inputTravel > .045 ? 1 - clampUnit((inputProgress - .48) / .18) : 0;
     return {
       id: item.id,
@@ -351,9 +368,25 @@ function enableHeroMotion() {
   const chargeElements = new Map([...canvas.querySelectorAll('[data-hero-charge]')].map((element) => [element.dataset.heroCharge, element]));
   const workspace = canvas.querySelector('[data-hero-workspace]');
   const output = canvas.querySelector('[data-hero-output]');
+  let routeTargetY = HERO_ROUTE_TARGET_Y;
+  const updateRouteGeometry = () => {
+    const stageBounds = canvas.getBoundingClientRect();
+    const workspaceBounds = workspace?.getBoundingClientRect();
+    routeTargetY = calculateHeroRouteTargetY({
+      stageHeight: stageBounds.height,
+      workspaceOffsetY: workspaceBounds ? workspaceBounds.top - stageBounds.top : undefined,
+      workspaceHeight: workspaceBounds?.height,
+    });
+    for (const item of HERO_MOTION_ITEMS) {
+      routeElements.get(item.id)?.setAttribute('d', heroRoutePath(item, HERO_MOTION_ITEMS, routeTargetY));
+      chargeElements.get(item.id)?.setAttribute('d', heroReturnPath(item, HERO_MOTION_ITEMS, routeTargetY));
+    }
+  };
+  updateRouteGeometry();
+  window.addEventListener('resize', updateRouteGeometry, { passive: true });
   const startedAt = performance.now();
   const render = (now) => {
-    const state = getHeroSequenceState(now - startedAt);
+    const state = getHeroSequenceState(now - startedAt, HERO_MOTION_ITEMS, routeTargetY);
     for (const input of state.inputs) {
       const signal = signalElements.get(input.id);
       const route = routeElements.get(input.id);

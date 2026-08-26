@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import {
   HERO_MOTION_ITEMS,
+  calculateHeroRouteTargetY,
   calculateScrollDuration,
   createHeroMotionMarkup,
   easeInOutCubic,
@@ -46,8 +47,11 @@ test('hero motion uses the approved set of real work inputs and matching marks',
     HERO_MOTION_ITEMS.map(({ icon }) => icon),
     ['zoho', 'odoo', 'whatsapp', 'gmail', 'word', 'excel', 'csv', 'voice', 'folder', 'txt', 'pdf', 'powerpoint', 'image', 'json'],
   );
+  assert.deepEqual(HERO_MOTION_ITEMS.filter(({ compact }) => compact).map(({ id }) => id), ['email', 'docx', 'xlsx', 'csv'], 'the squeezed layout must retain one clean top row of sources');
   assert.equal(HERO_MOTION_ITEMS.filter(({ wordmark }) => wordmark).length, 0);
-  assert.match(createHeroMotionMarkup(), /--signal-opacity:1;--signal-scale:\.72/, 'source cards should be painted before the first animation frame');
+  const markup = createHeroMotionMarkup();
+  assert.match(markup, /--signal-opacity:1;--signal-scale:\.72/, 'source cards should be painted before the first animation frame');
+  assert.equal((markup.match(/hero-signal-card--compact/g) ?? []).length, 4, 'the responsive source row must be explicit in the animation markup');
 });
 
 test('hero source icons form an ordered five-zone upper and side perimeter', () => {
@@ -58,13 +62,13 @@ test('hero source icons form an ordered five-zone upper and side perimeter', () 
   assert.ok(HERO_MOTION_ITEMS.every(({ x }) => x >= 540), 'sources stay clear of the hero headline');
   assert.ok(HERO_MOTION_ITEMS.every(({ y }) => y <= 270), 'the lower hero space remains reserved for the output document');
   const zoneCounts = [
-    HERO_MOTION_ITEMS.filter(({ x }) => x <= 600).length,
-    HERO_MOTION_ITEMS.filter(({ x, y }) => x > 600 && x < 750 && y <= 215).length,
-    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 800 && x <= 1030 && y <= 55).length,
-    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 1085 && y <= 120).length,
-    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 1080 && y >= 185).length,
+    HERO_MOTION_ITEMS.filter(({ x }) => x <= 540).length,
+    HERO_MOTION_ITEMS.filter(({ x, y }) => x > 540 && x < 700 && y <= 270).length,
+    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 770 && x <= 1050 && y <= 20).length,
+    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 1080 && y <= 160).length,
+    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 1060 && y >= 260).length,
   ];
-  assert.deepEqual(zoneCounts, [3, 2, 3, 3, 3], 'source cards must occupy balanced, readable perimeter zones');
+  assert.deepEqual(zoneCounts, [3, 3, 3, 3, 2], 'source cards must occupy balanced, readable perimeter zones');
   const workspace = { x: 870, y: 276 };
   for (const item of HERO_MOTION_ITEMS.filter(({ id }) => ['jpg', 'json', 'pptx', 'pdf'].includes(id))) {
     assert.ok(Math.hypot(item.x - workspace.x, item.y - workspace.y) >= 180, `${item.id} must stay clear of the workspace`);
@@ -72,9 +76,18 @@ test('hero source icons form an ordered five-zone upper and side perimeter', () 
   for (const item of HERO_MOTION_ITEMS) {
     for (const other of HERO_MOTION_ITEMS) {
       if (item.id === other.id) continue;
-      assert.ok(Math.hypot(item.x - other.x, item.y - other.y) >= 85, `${item.id} and ${other.id} must not bunch together`);
+      assert.ok(Math.hypot(item.x - other.x, item.y - other.y) >= 100, `${item.id} and ${other.id} must not bunch together`);
     }
   }
+});
+
+test('hero route endpoint stays within the rendered workspace on squeezed screens', () => {
+  const squeezed = calculateHeroRouteTargetY({ stageHeight: 780, workspaceOffsetY: 307, workspaceHeight: 72 });
+  const wide = calculateHeroRouteTargetY({ stageHeight: 780, workspaceOffsetY: 307, workspaceHeight: 116 });
+  const squeezedTop = 307 / 780 * 700;
+  const squeezedBottom = (307 + 72) / 780 * 700;
+  assert.ok(squeezed > squeezedTop && squeezed < squeezedBottom, 'squeezed-screen endpoint must remain inside the workspace bounds');
+  assert.ok(wide > squeezed, 'a wider workspace can safely carry the endpoint deeper without exposing it below');
 });
 
 test('hero motion keeps routes and moving parts inside one stable DOM field', () => {
@@ -102,6 +115,8 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.match(pageCss, /backface-visibility: hidden/);
   assert.match(pageCss, /\.hero-motion \{ z-index: 2; \}/, 'hero signals must remain visible above the dark film while staying behind copy');
   assert.match(pageCss, /\.hero-motion__stage \{[^}]*translateY\(/, 'the animation field must sit lower than the header crop');
+  assert.match(pageCss, /\.hero-signal-card:not\(\.hero-signal-card--compact\), \.hero-route--compact-hidden \{ display: none; \}/, 'squeezed screens must suppress cards and paths outside the readable source row');
+  assert.match(pageCss, /\.hero-signal-card--compact \{ top: calc\(var\(--signal-y\) \+ 1\.5rem\); \}/, 'the squeezed source row must clear the fixed header');
   assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
   assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
   assert.match(pageCss, /\.hero-output__paper[^}]*0 0 64px/);
