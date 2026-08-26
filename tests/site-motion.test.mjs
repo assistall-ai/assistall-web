@@ -49,6 +49,21 @@ test('hero motion uses the approved set of real work inputs and matching marks',
   assert.equal(HERO_MOTION_ITEMS.filter(({ wordmark }) => wordmark).length, 0);
 });
 
+test('hero source icons form an even upper and side perimeter', () => {
+  assert.equal(HERO_MOTION_ITEMS.filter(({ x, y }) => x < 650 && y >= 120).length, 3, 'three sources sit to the left of the workspace');
+  assert.equal(HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 650 && x < 820 && y <= 115).length, 2, 'two sources balance the upper-left');
+  assert.equal(HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 820 && x <= 1000 && y <= 115).length, 3, 'three sources span the top');
+  assert.equal(HERO_MOTION_ITEMS.filter(({ x }) => x > 1000).length, 5, 'five sources balance the upper-right and right edge');
+  assert.ok(HERO_MOTION_ITEMS.every(({ x }) => x >= 600), 'sources stay clear of the hero headline');
+  assert.ok(HERO_MOTION_ITEMS.every(({ y }) => y <= 260), 'the lower hero space remains reserved for the output document');
+  for (const item of HERO_MOTION_ITEMS) {
+    for (const other of HERO_MOTION_ITEMS) {
+      if (item.id === other.id) continue;
+      assert.ok(Math.hypot(item.x - other.x, item.y - other.y) >= 70, `${item.id} and ${other.id} must not bunch together`);
+    }
+  }
+});
+
 test('hero motion keeps routes and moving parts inside one stable DOM field', () => {
   const markup = createHeroMotionMarkup();
 
@@ -69,13 +84,14 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.match(pageCss, /\.hero-route-charge/);
   assert.match(pageCss, /rotateY\(/);
   assert.match(pageCss, /backface-visibility: hidden/);
-  assert.match(pageCss, /\.hero-motion \{ z-index: 0; \}/);
+  assert.match(pageCss, /\.hero-motion \{ z-index: 2; \}/, 'hero signals must remain visible above the dark film while staying behind copy');
   assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
   assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
   assert.match(pageCss, /\.hero-output__paper[^}]*0 0 64px/);
   assert.doesNotMatch(pageCss, /\.fallback-signal--(?:four|five) \{ bottom:/, 'the static fallback must reserve the lower hero area for the output document');
   assert.match(pageHtml, /data-connector-mark="odoo"/);
   assert.ok((pageHtml.match(/connector-mark__svg/g) ?? []).length >= 12, 'connections must use inline monochrome SVG marks rather than approximated text or CSS shapes');
+  assert.match(pageHtml, /<script type="module" src="assets\/site\.js\?v=[^"]+"><\/script>/, 'the motion module must remain a complete script element');
   assert.doesNotMatch(pageHtml, /connector-icons\.svg/);
 });
 
@@ -94,17 +110,24 @@ test('hero sequence sends every input through the workspace top gate before its 
 
   const earlyIntake = siteModule.getHeroSequenceState(1150).inputs;
   const horizontalSpread = Math.max(...earlyIntake.map(({ x }) => x)) - Math.min(...earlyIntake.map(({ x }) => x));
-  assert.ok(horizontalSpread > 550);
+  assert.ok(horizontalSpread > 480);
   assert.ok(earlyIntake.filter(({ y }) => y < 125).length >= 3, 'the composition needs a visible top row of inputs');
 
   const finalIntake = siteModule.getHeroSequenceState(2300);
   assert.ok(finalIntake.inputs.some(({ opacity }) => opacity > 0), 'the inputs must finish before lights can return');
   assert.ok(finalIntake.lights.every(({ direction }) => direction !== 'return'), 'return lights must wait until the full intake is clear');
 
+  const nearGate = siteModule.getHeroSequenceState(2000);
+  assert.ok(nearGate.lights.every(({ opacity }) => opacity === 0), 'arrival dots must already be hidden behind the workspace before its top edge');
+
   const cleared = siteModule.getHeroSequenceState(2800);
   assert.ok(cleared.inputs.every(({ x, y, opacity }) => x === 870 && y === 276 && opacity === 0), 'every input must clear through the single top gate');
   assert.ok(cleared.lights.every(({ opacity }) => opacity === 0), 'arrival lights must disappear behind the workspace before the return');
-  assert.ok(cleared.charges.some(({ opacity }) => opacity > 0), 'return uses travelling circuit charges instead of visible arrival points');
+  const activeReturnCharges = cleared.charges.filter(({ opacity }) => opacity > 0);
+  assert.ok(activeReturnCharges.length > 0 && activeReturnCharges.length < HERO_MOTION_ITEMS.length, 'a circuit wave must avoid a firework-like all-path burst');
+  const laterReturn = siteModule.getHeroSequenceState(2900);
+  const chargeTravel = activeReturnCharges.map(({ id, progress }) => laterReturn.charges.find((charge) => charge.id === id).progress - progress);
+  assert.ok(chargeTravel.every((distance) => Math.abs(distance - chargeTravel[0]) < 0.0001), 'active return charges must share one travel speed');
 
   const spin = siteModule.getHeroSequenceState(4150);
   assert.equal(spin.phase, 'spin');

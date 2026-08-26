@@ -5,25 +5,27 @@ const SECTION_GAP = 16;
 export const HERO_SEQUENCE_MS = 11800;
 // This coordinate is the centre of the workspace's top edge in the 1200 × 700 stage.
 const HERO_TARGET = Object.freeze({ x: 870, y: 276 });
+// Arrival lights continue into the workspace so their end point stays hidden.
+const HERO_LIGHT_TARGET = Object.freeze({ x: 870, y: 336 });
 
 export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 115, y: 70 },
-  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 275, y: 70 },
-  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 440, y: 74 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 600, y: 70 },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 760, y: 65 },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 920, y: 72 },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 120, y: 220, mobileHidden: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 300, y: 230, mobileHidden: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 480, y: 230, mobileHidden: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 650, y: 215, mobileHidden: true },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1080, y: 76 },
-  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1120, y: 225 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 960, y: 245, mobileHidden: true },
-  { id: 'json', icon: 'json', label: 'JSON', x: 1160, y: 150, mobileHidden: true },
+  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 600, y: 120 },
+  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 600, y: 195 },
+  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 640, y: 260 },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 680, y: 100 },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 760, y: 100 },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 840, y: 100 },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 920, y: 100, mobileHidden: true },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 1000, y: 100, mobileHidden: true },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 1090, y: 110, mobileHidden: true },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 1160, y: 145 },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1160, y: 230 },
+  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1090, y: 260 },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 1010, y: 255, mobileHidden: true },
+  { id: 'json', icon: 'json', label: 'JSON', x: 940, y: 245, mobileHidden: true },
 ]);
 
 const CAPABILITIES = Object.freeze([
@@ -166,20 +168,20 @@ function easeOutCubic(progress) {
   return 1 - (1 - clampUnit(progress)) ** 3;
 }
 
-function heroRouteControl(item) {
+function heroRouteControl(item, target = HERO_TARGET) {
   return {
-    x: (item.x + HERO_TARGET.x) / 2,
-    y: Math.min(HERO_TARGET.y - 26, Math.min(item.y, HERO_TARGET.y) - 34),
+    x: (item.x + target.x) / 2,
+    y: Math.min(target.y - 26, Math.min(item.y, target.y) - 34),
   };
 }
 
-function heroRoutePoint(item, progress) {
+function heroRoutePoint(item, progress, target = HERO_TARGET) {
   const t = clampUnit(progress);
   const inverse = 1 - t;
-  const control = heroRouteControl(item);
+  const control = heroRouteControl(item, target);
   return {
-    x: inverse ** 2 * item.x + 2 * inverse * t * control.x + t ** 2 * HERO_TARGET.x,
-    y: inverse ** 2 * item.y + 2 * inverse * t * control.y + t ** 2 * HERO_TARGET.y,
+    x: inverse ** 2 * item.x + 2 * inverse * t * control.x + t ** 2 * target.x,
+    y: inverse ** 2 * item.y + 2 * inverse * t * control.y + t ** 2 * target.y,
   };
 }
 
@@ -223,7 +225,7 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
   const elapsed = Math.max(0, Number(elapsedMs) || 0);
   const time = elapsed % HERO_SEQUENCE_MS;
   const phase = time < 3500 ? 'intake' : time < 4700 ? 'spin' : time < 8000 ? 'output' : 'settle';
-  const returning = time >= 2600 && time < 3600;
+  const returning = time >= 2600 && time < 3400;
 
   const inputs = items.map((item) => {
     const progress = clampUnit((time - 600) / 1800);
@@ -248,9 +250,9 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
   const lights = items.map((item) => {
     const inputProgress = clampUnit((time - 600) / 1800);
     const inputTravel = easeInOutCubic(inputProgress);
-    const lightTravel = Math.max(0, inputTravel - .045);
-    const point = heroRoutePoint(item, lightTravel);
-    const intakeFade = inputTravel > .045 ? 1 - clampUnit((inputProgress - .72) / .28) : 0;
+    const lightTravel = Math.min(1, inputTravel + .08);
+    const point = heroRoutePoint(item, lightTravel, HERO_LIGHT_TARGET);
+    const intakeFade = inputTravel > .045 ? 1 - clampUnit((inputProgress - .48) / .18) : 0;
     return {
       id: item.id,
       x: point.x,
@@ -261,11 +263,12 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
     };
   });
 
+  const chargeDuration = 350;
+  const chargeStagger = 50;
   const charges = items.map((item, index) => {
-    // A staggered wave reads as a current travelling through related traces,
-    // instead of a burst radiating from the workspace.
-    const progress = clampUnit((time - 2600 - index * 36) / 520);
-    const active = time >= 2600 + index * 36 && time < 3120 + index * 36;
+    const launchedAt = 2600 + index * chargeStagger;
+    const progress = clampUnit((time - launchedAt) / chargeDuration);
+    const active = time >= launchedAt && time < launchedAt + chargeDuration;
     return { id: item.id, progress, opacity: active ? Math.sin(Math.PI * progress) : 0 };
   });
 
