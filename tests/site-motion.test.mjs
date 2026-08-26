@@ -47,11 +47,12 @@ test('hero motion uses the approved set of real work inputs and matching marks',
     HERO_MOTION_ITEMS.map(({ icon }) => icon),
     ['zoho', 'odoo', 'whatsapp', 'gmail', 'word', 'excel', 'csv', 'voice', 'folder', 'txt', 'pdf', 'powerpoint', 'image', 'json'],
   );
-  assert.deepEqual(HERO_MOTION_ITEMS.filter(({ compact }) => compact).map(({ id }) => id), ['email', 'docx', 'xlsx', 'csv'], 'the squeezed layout must retain one clean top row of sources');
+  assert.deepEqual(HERO_MOTION_ITEMS.filter(({ compact }) => compact).map(({ id }) => id), ['email', 'docx', 'xlsx', 'csv', 'voice', 'folder', 'txt', 'pdf'], 'the squeezed layout must retain eight readable sources');
   assert.equal(HERO_MOTION_ITEMS.filter(({ wordmark }) => wordmark).length, 0);
   const markup = createHeroMotionMarkup();
   assert.match(markup, /--signal-opacity:1;--signal-scale:\.72/, 'source cards should be painted before the first animation frame');
-  assert.equal((markup.match(/hero-signal-card--compact/g) ?? []).length, 4, 'the responsive source row must be explicit in the animation markup');
+  assert.equal((markup.match(/hero-signal-card--compact/g) ?? []).length, 8, 'the responsive source set must be explicit in the animation markup');
+  assert.equal((markup.match(/hero-route--compact-hidden/g) ?? []).length, 18, 'only the six omitted sources may lose their intake, return, and light routes');
 });
 
 test('hero source icons form an ordered five-zone upper and side perimeter', () => {
