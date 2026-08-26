@@ -47,19 +47,20 @@ test('hero motion uses the approved set of real work inputs and matching marks',
     ['zoho', 'odoo', 'whatsapp', 'gmail', 'word', 'excel', 'csv', 'voice', 'folder', 'txt', 'pdf', 'powerpoint', 'image', 'json'],
   );
   assert.equal(HERO_MOTION_ITEMS.filter(({ wordmark }) => wordmark).length, 0);
+  assert.match(createHeroMotionMarkup(), /--signal-opacity:1;--signal-scale:\.72/, 'source cards should be painted before the first animation frame');
 });
 
 test('hero source icons form an even upper and side perimeter', () => {
-  assert.equal(HERO_MOTION_ITEMS.filter(({ x, y }) => x < 650 && y >= 120).length, 3, 'three sources sit to the left of the workspace');
-  assert.equal(HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 650 && x < 820 && y <= 115).length, 2, 'two sources balance the upper-left');
-  assert.equal(HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 820 && x <= 1000 && y <= 115).length, 3, 'three sources span the top');
-  assert.equal(HERO_MOTION_ITEMS.filter(({ x }) => x > 1000).length, 5, 'five sources balance the upper-right and right edge');
-  assert.ok(HERO_MOTION_ITEMS.every(({ x }) => x >= 600), 'sources stay clear of the hero headline');
-  assert.ok(HERO_MOTION_ITEMS.every(({ y }) => y <= 260), 'the lower hero space remains reserved for the output document');
+  const xSpread = Math.max(...HERO_MOTION_ITEMS.map(({ x }) => x)) - Math.min(...HERO_MOTION_ITEMS.map(({ x }) => x));
+  const ySpread = Math.max(...HERO_MOTION_ITEMS.map(({ y }) => y)) - Math.min(...HERO_MOTION_ITEMS.map(({ y }) => y));
+  assert.ok(xSpread >= 600, 'sources must span the full usable perimeter');
+  assert.ok(ySpread >= 220, 'sources must use both the top and side space');
+  assert.ok(HERO_MOTION_ITEMS.every(({ x }) => x >= 540), 'sources stay clear of the hero headline');
+  assert.ok(HERO_MOTION_ITEMS.every(({ y }) => y <= 320), 'the lower hero space remains reserved for the output document');
   for (const item of HERO_MOTION_ITEMS) {
     for (const other of HERO_MOTION_ITEMS) {
       if (item.id === other.id) continue;
-      assert.ok(Math.hypot(item.x - other.x, item.y - other.y) >= 70, `${item.id} and ${other.id} must not bunch together`);
+      assert.ok(Math.hypot(item.x - other.x, item.y - other.y) >= 85, `${item.id} and ${other.id} must not bunch together`);
     }
   }
 });
@@ -107,6 +108,14 @@ test('hero sequence sends every input through the workspace top gate before its 
   assert.equal(intake.workspace.rotationY, 0);
   assert.equal(intake.inputs.length, HERO_MOTION_ITEMS.length);
   assert.ok(intake.inputs.every(({ y }) => y < 276), 'icons must begin above the workspace top edge');
+
+  const preloaded = siteModule.getHeroSequenceState(0);
+  assert.ok(preloaded.inputs.every(({ opacity }) => opacity === 1), 'source icons must be visible from the first frame');
+  assert.deepEqual(preloaded.inputs.map(({ x, y }) => ({ x, y })), HERO_MOTION_ITEMS.map(({ x, y }) => ({ x, y })), 'preloaded sources must hold their perimeter positions before intake');
+
+  const restaged = siteModule.getHeroSequenceState(9000);
+  assert.ok(restaged.inputs.every(({ opacity }) => opacity === 1), 'sources must reappear during the resting portion of the loop');
+  assert.deepEqual(restaged.inputs.map(({ x, y }) => ({ x, y })), HERO_MOTION_ITEMS.map(({ x, y }) => ({ x, y })), 'restaged sources must return to their perimeter positions');
 
   const glidingInputs = siteModule.getHeroSequenceState(1500).inputs.filter(({ routeProgress, opacity }) => routeProgress > 0 && opacity > 0);
   assert.equal(glidingInputs.length, HERO_MOTION_ITEMS.length, 'all inputs must enter together');

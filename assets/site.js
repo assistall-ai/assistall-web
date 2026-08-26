@@ -12,20 +12,20 @@ export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 600, y: 120 },
-  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 600, y: 195 },
-  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 640, y: 260 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 680, y: 100 },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 760, y: 100 },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 840, y: 100 },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 920, y: 100, mobileHidden: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 1000, y: 100, mobileHidden: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 1090, y: 110, mobileHidden: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 1160, y: 145 },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1160, y: 230 },
-  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1090, y: 260 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 1010, y: 255, mobileHidden: true },
-  { id: 'json', icon: 'json', label: 'JSON', x: 940, y: 245, mobileHidden: true },
+  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 560, y: 105 },
+  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 560, y: 190 },
+  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 650, y: 260 },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 690, y: 30 },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 800, y: 30 },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 910, y: 30 },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 1020, y: 30, mobileHidden: true },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 1130, y: 40, mobileHidden: true },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 1180, y: 120, mobileHidden: true },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 1180, y: 205 },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1100, y: 270 },
+  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 990, y: 260 },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 880, y: 250, mobileHidden: true },
+  { id: 'json', icon: 'json', label: 'JSON', x: 760, y: 230, mobileHidden: true },
 ]);
 
 const CAPABILITIES = Object.freeze([
@@ -219,7 +219,7 @@ function heroRouteMapMarkup(items) {
 
 function heroSignalMarkup(item) {
   const mobile = item.mobileHidden ? ' hero-signal-card--mobile-hidden' : '';
-  const style = `--signal-x:${(item.x / 12).toFixed(3)}%;--signal-y:${(item.y / 7).toFixed(3)}%;--signal-opacity:0;--signal-scale:.82`;
+  const style = `--signal-x:${(item.x / 12).toFixed(3)}%;--signal-y:${(item.y / 7).toFixed(3)}%;--signal-opacity:1;--signal-scale:.72`;
   return `<div class="hero-signal-card${mobile}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}<span class="hero-signal-card__label">${item.label}</span></div>`;
 }
 
@@ -243,14 +243,14 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
   const time = elapsed % HERO_SEQUENCE_MS;
   const phase = time < 3600 ? 'intake' : time < 4700 ? 'spin' : time < 8000 ? 'output' : 'settle';
   const returning = time >= 2600 && time < 3600;
+  const restaged = time >= 8300;
 
   const inputs = items.map((item) => {
-    const progress = clampUnit((time - 600) / 1800);
+    const progress = restaged ? 0 : clampUnit((time - 600) / 1800);
     const travel = easeInOutCubic(progress);
     const point = heroRoutePoint(item, travel, heroInputTarget(item, items));
-    const fadeIn = clampUnit(time / 220);
     const fadeOut = 1 - clampUnit((progress - .86) / .14);
-    const opacity = fadeIn * fadeOut;
+    const opacity = restaged ? 1 : fadeOut;
     return {
       id: item.id,
       x: point.x,
@@ -259,8 +259,8 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
       // Cards compact as they converge on the single top gate, keeping their
       // separate source positions legible without turning the intake into a stack.
       scale: (.72 - .48 * travel) * opacity,
-      routeProgress: clampUnit(travel * 1.08),
-      routeOpacity: returning ? .22 : opacity * .62,
+      routeProgress: restaged ? 0 : clampUnit(travel * 1.08),
+      routeOpacity: restaged ? 0 : (returning ? .22 : opacity * .62),
     };
   });
 
