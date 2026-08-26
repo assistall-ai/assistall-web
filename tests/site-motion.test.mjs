@@ -50,13 +50,25 @@ test('hero motion uses the approved set of real work inputs and matching marks',
   assert.match(createHeroMotionMarkup(), /--signal-opacity:1;--signal-scale:\.72/, 'source cards should be painted before the first animation frame');
 });
 
-test('hero source icons form an even upper and side perimeter', () => {
+test('hero source icons form an ordered five-zone upper and side perimeter', () => {
   const xSpread = Math.max(...HERO_MOTION_ITEMS.map(({ x }) => x)) - Math.min(...HERO_MOTION_ITEMS.map(({ x }) => x));
   const ySpread = Math.max(...HERO_MOTION_ITEMS.map(({ y }) => y)) - Math.min(...HERO_MOTION_ITEMS.map(({ y }) => y));
   assert.ok(xSpread >= 600, 'sources must span the full usable perimeter');
   assert.ok(ySpread >= 220, 'sources must use both the top and side space');
   assert.ok(HERO_MOTION_ITEMS.every(({ x }) => x >= 540), 'sources stay clear of the hero headline');
-  assert.ok(HERO_MOTION_ITEMS.every(({ y }) => y <= 320), 'the lower hero space remains reserved for the output document');
+  assert.ok(HERO_MOTION_ITEMS.every(({ y }) => y <= 270), 'the lower hero space remains reserved for the output document');
+  const zoneCounts = [
+    HERO_MOTION_ITEMS.filter(({ x }) => x <= 600).length,
+    HERO_MOTION_ITEMS.filter(({ x, y }) => x > 600 && x < 750 && y <= 215).length,
+    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 800 && x <= 1030 && y <= 55).length,
+    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 1085 && y <= 120).length,
+    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 1080 && y >= 185).length,
+  ];
+  assert.deepEqual(zoneCounts, [3, 2, 3, 3, 3], 'source cards must occupy balanced, readable perimeter zones');
+  const workspace = { x: 870, y: 276 };
+  for (const item of HERO_MOTION_ITEMS.filter(({ id }) => ['jpg', 'json', 'pptx', 'pdf'].includes(id))) {
+    assert.ok(Math.hypot(item.x - workspace.x, item.y - workspace.y) >= 180, `${item.id} must stay clear of the workspace`);
+  }
   for (const item of HERO_MOTION_ITEMS) {
     for (const other of HERO_MOTION_ITEMS) {
       if (item.id === other.id) continue;
@@ -74,7 +86,7 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-light=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-charge=/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/data-hero-route=[^>]+d="[^"]+ 290"/g) ?? []).length, HERO_MOTION_ITEMS.length, 'each intake route must continue behind the workspace without dropping below it on squeezed screens');
+  assert.equal((markup.match(/data-hero-route=[^>]+d="[^"]+ 340"/g) ?? []).length, HERO_MOTION_ITEMS.length, 'each intake route must terminate well inside the workspace instead of ending above it');
   assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/connector-mark__svg/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/hero-signal-card__label/g) ?? []).length, HERO_MOTION_ITEMS.length, 'every source must pair its monochrome logo with a readable name');
@@ -132,6 +144,9 @@ test('hero sequence sends every input through the workspace top gate before its 
 
   const nearGate = siteModule.getHeroSequenceState(2000);
   assert.ok(nearGate.lights.every(({ opacity }) => opacity === 0), 'arrival dots must already be hidden behind the workspace before its top edge');
+
+  const buriedEndpoints = siteModule.getHeroSequenceState(2300).lights;
+  assert.ok(buriedEndpoints.every(({ y }) => y === 340), 'arrival lights must finish deep enough inside the workspace to be fully occluded');
 
   const cleared = siteModule.getHeroSequenceState(2800);
   assert.ok(cleared.inputs.every(({ x, y, opacity }) => x >= 836 && x <= 904 && y === 276 && opacity === 0), 'every input must clear through the workspace top gate');

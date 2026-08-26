@@ -5,27 +5,27 @@ const SECTION_GAP = 16;
 export const HERO_SEQUENCE_MS = 11800;
 // This coordinate is the centre of the workspace's top edge in the 1200 × 700 stage.
 const HERO_TARGET = Object.freeze({ x: 870, y: 276 });
-// Arrival lights continue into the workspace so their end point stays hidden.
-const HERO_ROUTE_TARGET_Y = 290;
+// Arrival lights terminate deep within the workspace so their end point stays fully occluded.
+const HERO_ROUTE_TARGET_Y = 340;
 
 export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 560, y: 105 },
-  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 560, y: 190 },
-  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 650, y: 260 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 690, y: 30 },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 800, y: 30 },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 910, y: 30 },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 1020, y: 30, mobileHidden: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 1130, y: 40, mobileHidden: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 1180, y: 120, mobileHidden: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 1180, y: 205 },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1100, y: 270 },
-  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 990, y: 260 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 880, y: 250, mobileHidden: true },
-  { id: 'json', icon: 'json', label: 'JSON', x: 760, y: 230, mobileHidden: true },
+  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 570, y: 70 },
+  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 570, y: 170 },
+  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 680, y: 210 },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 680, y: 55 },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 800, y: 25 },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 915, y: 25 },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 1030, y: 25, mobileHidden: true },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 1120, y: 35, mobileHidden: true },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 1185, y: 90, mobileHidden: true },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 1185, y: 185 },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1145, y: 270 },
+  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1080, y: 205 },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 1085, y: 120, mobileHidden: true },
+  { id: 'json', icon: 'json', label: 'JSON', x: 570, y: 270, mobileHidden: true },
 ]);
 
 const CAPABILITIES = Object.freeze([
