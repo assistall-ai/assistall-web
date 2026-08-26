@@ -10,20 +10,20 @@ export const WORKFLOW_ROTATION_MS = 8000;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 338, y: 92, cx: 500, cy: 74, delay: 0.00 },
-  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 548, y: 62, cx: 650, cy: 82, delay: 0.12 },
-  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 824, y: 76, cx: 792, cy: 94, delay: 0.20 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 1042, y: 118, cx: 914, cy: 132, delay: 0.34 },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 212, y: 202, cx: 438, cy: 194, delay: 0.18 },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 442, y: 198, cx: 576, cy: 192, delay: 0.30 },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 126, y: 252, cx: 462, cy: 326, delay: 0.44, mobileHidden: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 350, y: 244, cx: 540, cy: 355, delay: 0.54, mobileHidden: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 598, y: 238, cx: 646, cy: 362, delay: 0.62, mobileHidden: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 270, y: 132, cx: 550, cy: 438, delay: 0.58, mobileHidden: true },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1088, y: 212, cx: 940, cy: 214, delay: 0.26 },
-  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1140, y: 270, cx: 938, cy: 328, delay: 0.42 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 1010, y: 248, cx: 900, cy: 415, delay: 0.50, mobileHidden: true },
-  { id: 'json', icon: 'json', label: 'JSON', x: 1190, y: 154, cx: 946, cy: 438, delay: 0.60, mobileHidden: true },
+  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 115, y: 70 },
+  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 275, y: 70 },
+  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 440, y: 74 },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 600, y: 70 },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 760, y: 65 },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 920, y: 72 },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 120, y: 220, mobileHidden: true },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 300, y: 230, mobileHidden: true },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 480, y: 230, mobileHidden: true },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 650, y: 215, mobileHidden: true },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1080, y: 76 },
+  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 1120, y: 225 },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 960, y: 245, mobileHidden: true },
+  { id: 'json', icon: 'json', label: 'JSON', x: 1160, y: 150, mobileHidden: true },
 ]);
 
 const CAPABILITIES = Object.freeze([
@@ -142,11 +142,20 @@ function heroStarsMarkup() {
 }
 
 function connectorMarkMarkup(icon) {
-  const text = {
-    odoo: 'odoo', zoho: 'ZOHO', word: 'W', excel: 'X', csv: 'CSV', pdf: 'PDF',
-    powerpoint: 'PPT', txt: 'TXT', json: '{}',
+  const path = {
+    microsoft: '<path d="M2 2h9v9H2zm11 0h9v9h-9zM2 13h9v9H2zm11 0h9v9h-9z"/>',
+    gmail: '<path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L12 9.548l8.073-6.055C21.69 2.28 24 3.434 24 5.457z"/>',
+    whatsapp: '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>',
+    odoo: '<path d="M21.1 15.796a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8m-6.066 0a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8m-3.169-2.938a2.9 2.9 0 1 1-1.2-2.374V8.804a.6.6 0 0 1 1.2 0v4.054m-8.966 2.938a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8" fill="none" stroke="currentColor" stroke-width="1.2"/>',
+    zoho: '<path d="M2 5h7l-5 14H-3zM9 5h7l-5 14H4zm7 0h6l-5 14h-6z" transform="translate(2 0)"/><text x="3" y="19" fill="currentColor" font-size="5.3" font-weight="800" font-family="Arial, sans-serif">ZOHO</text>',
+    folder: '<path d="M2.5 6.5h7l2 2h10v10.5H2.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+    calendar: '<path d="M3 5h18v16H3zM3 10h18M7 2v6m10-6v6M7 14h3m4 0h3m-10 4h3m4 0h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    voice: '<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-6 8a6 6 0 0 0 12 0M12 17v4m-4 0h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    image: '<path d="M3 4h18v16H3zM6 16l4-4 3 3 2-2 3 3M8 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   }[icon];
-  return `<span class="connector-mark" data-connector-mark="${icon}">${text ? `<span class="connector-mark__text">${text}</span>` : '<span class="connector-mark__shape"></span>'}</span>`;
+  const label = { word: 'W', excel: 'X', csv: 'CSV', pdf: 'PDF', powerpoint: 'P', txt: 'TXT', json: '{}' }[icon];
+  const documentMark = label ? `<path d="M5 2h10l4 4v16H5z" fill="none" stroke="currentColor" stroke-width="1.8"/><text x="12" y="15" text-anchor="middle" fill="currentColor" font-size="${label.length > 1 ? '5.2' : '8'}" font-weight="800" font-family="Arial, sans-serif">${label}</text>` : path;
+  return `<span class="connector-mark" data-connector-mark="${icon}"><svg class="connector-mark__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${documentMark}</svg></span>`;
 }
 
 function clampUnit(value) {
@@ -179,8 +188,13 @@ function heroRoutePath(item) {
   return `M ${item.x} ${item.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${HERO_TARGET.x} ${HERO_TARGET.y}`;
 }
 
+function heroReturnPath(item) {
+  const control = heroRouteControl(item);
+  return `M ${HERO_TARGET.x} ${HERO_TARGET.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${item.x} ${item.y}`;
+}
+
 function heroRouteMapMarkup(items) {
-  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => `<path data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item)}"></path><circle data-hero-light="${item.id}" r="4" cx="${item.x}" cy="${item.y}"></circle>`).join('')}</svg>`;
+  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => `<path data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item)}"></path><path class="hero-route-charge" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item)}"></path><circle data-hero-light="${item.id}" r="3" cx="${item.x}" cy="${item.y}"></circle>`).join('')}</svg>`;
 }
 
 function heroSignalMarkup(item) {
@@ -208,11 +222,11 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
 export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
   const elapsed = Math.max(0, Number(elapsedMs) || 0);
   const time = elapsed % HERO_SEQUENCE_MS;
-  const phase = time < 5200 ? 'intake' : time < 6500 ? 'spin' : time < 9800 ? 'output' : 'settle';
+  const phase = time < 3500 ? 'intake' : time < 4700 ? 'spin' : time < 8000 ? 'output' : 'settle';
+  const returning = time >= 2600 && time < 3600;
 
   const inputs = items.map((item) => {
-    const slot = items.indexOf(item);
-    const progress = clampUnit((time - 650 - slot * 200) / 1150);
+    const progress = clampUnit((time - 600) / 1800);
     const travel = easeInOutCubic(progress);
     const point = heroRoutePoint(item, travel);
     const fadeIn = clampUnit(time / 220);
@@ -223,39 +237,47 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS) {
       x: point.x,
       y: point.y,
       opacity,
-      scale: .82 + .18 * opacity,
-      routeProgress: time < 3900 ? clampUnit(travel * 1.08) : 1,
-      routeOpacity: opacity,
+      // Cards compact as they converge on the single top gate, keeping their
+      // separate source positions legible without turning the intake into a stack.
+      scale: (.72 - .48 * travel) * opacity,
+      routeProgress: clampUnit(travel * 1.08),
+      routeOpacity: returning ? .22 : opacity * .62,
     };
   });
 
-  const reverseProgress = clampUnit((time - 4450) / 700);
-  const lights = items.map((item, index) => {
-    const inputProgress = clampUnit((time - 650 - index * 200) / 1150);
+  const lights = items.map((item) => {
+    const inputProgress = clampUnit((time - 600) / 1800);
     const inputTravel = easeInOutCubic(inputProgress);
-    const returning = time >= 4450;
-    const lightTravel = returning ? 1 - reverseProgress : Math.max(0, inputTravel - .045);
+    const lightTravel = Math.max(0, inputTravel - .045);
     const point = heroRoutePoint(item, lightTravel);
-    const returnFade = 1 - clampUnit((reverseProgress - .88) / .12);
-    const intakeFade = inputTravel > .045 && inputProgress < 1 ? 1 : 0;
+    const intakeFade = inputTravel > .045 ? 1 - clampUnit((inputProgress - .72) / .28) : 0;
     return {
       id: item.id,
       x: point.x,
       y: point.y,
-      direction: returning ? 'return' : (intakeFade > 0 ? 'intake' : 'hidden'),
-      opacity: time >= 5200 ? 0 : (returning ? returnFade : intakeFade),
-      scale: returning ? .75 + (1 - reverseProgress) * .35 : .72 + inputTravel * .28,
+      direction: intakeFade > 0 ? 'intake' : 'hidden',
+      opacity: intakeFade,
+      scale: .72 + inputTravel * .28,
     };
   });
 
-  const spinProgress = clampUnit((time - 5300) / 1100);
-  const documentProgress = clampUnit((time - 7000) / 1800);
-  const documentFade = time < 9600 ? 1 : 1 - clampUnit((time - 9600) / 500);
+  const charges = items.map((item, index) => {
+    // A staggered wave reads as a current travelling through related traces,
+    // instead of a burst radiating from the workspace.
+    const progress = clampUnit((time - 2600 - index * 36) / 520);
+    const active = time >= 2600 + index * 36 && time < 3120 + index * 36;
+    return { id: item.id, progress, opacity: active ? Math.sin(Math.PI * progress) : 0 };
+  });
+
+  const spinProgress = clampUnit((time - 3600) / 1100);
+  const documentProgress = clampUnit((time - 5200) / 1800);
+  const documentFade = time < 7800 ? 1 : 1 - clampUnit((time - 7800) / 500);
   return {
     phase,
     inputs,
     lights,
-    workspace: { rotationY: time < 5300 ? 0 : 360 * easeInOutCubic(spinProgress) },
+    charges,
+    workspace: { rotationY: time < 3600 ? 0 : 360 * easeInOutCubic(spinProgress) },
     document: {
       opacity: documentProgress * documentFade,
       translateY: -55 + 104 * easeOutCubic(documentProgress),
@@ -306,6 +328,7 @@ function enableHeroMotion() {
   const signalElements = new Map([...canvas.querySelectorAll('[data-hero-signal]')].map((element) => [element.dataset.heroSignal, element]));
   const routeElements = new Map([...canvas.querySelectorAll('[data-hero-route]')].map((element) => [element.dataset.heroRoute, element]));
   const lightElements = new Map([...canvas.querySelectorAll('[data-hero-light]')].map((element) => [element.dataset.heroLight, element]));
+  const chargeElements = new Map([...canvas.querySelectorAll('[data-hero-charge]')].map((element) => [element.dataset.heroCharge, element]));
   const workspace = canvas.querySelector('[data-hero-workspace]');
   const output = canvas.querySelector('[data-hero-output]');
   const startedAt = performance.now();
@@ -327,16 +350,18 @@ function enableHeroMotion() {
     }
     for (const lightState of state.lights) {
       const light = lightElements.get(lightState.id);
-      const route = routeElements.get(lightState.id);
       if (light) {
         light.setAttribute('cx', lightState.x.toFixed(2));
         light.setAttribute('cy', lightState.y.toFixed(2));
         light.style.setProperty('--light-opacity', lightState.opacity.toFixed(3));
         light.style.setProperty('--light-scale', lightState.scale.toFixed(3));
       }
-      if (route && lightState.opacity > 0) {
-        route.style.setProperty('--route-progress', '1');
-        route.style.setProperty('--route-opacity', (lightState.opacity * .28).toFixed(3));
+    }
+    for (const chargeState of state.charges) {
+      const charge = chargeElements.get(chargeState.id);
+      if (charge) {
+        charge.style.setProperty('--charge-offset', (-chargeState.progress).toFixed(3));
+        charge.style.setProperty('--charge-opacity', chargeState.opacity.toFixed(3));
       }
     }
     workspace?.style.setProperty('--workspace-turn', `${state.workspace.rotationY.toFixed(2)}deg`);
