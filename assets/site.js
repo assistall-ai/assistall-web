@@ -10,23 +10,24 @@ const HERO_ROUTE_TARGET_Y = 340;
 const HERO_VIEWBOX_HEIGHT = 700;
 const HERO_WORKSPACE_ENDPOINT_DEPTH = .58;
 
-export const WORKFLOW_ROTATION_MS = 8000;
+export const WORKFLOW_ROTATION_MS = 10000;
+export const WORKFLOW_PLAYBACK_RATE = 0.75;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 540, y: 70 },
-  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 540, y: 170 },
-  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 670, y: 150 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 670, y: 30, compact: true },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 770, y: 20, compact: true },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 910, y: 20, compact: true },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 1050, y: 20, compact: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 1180, y: 60, mobileHidden: true, compact: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 1180, y: 160, mobileHidden: true, compact: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 1180, y: 260, compact: true },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1060, y: 270, compact: true },
-  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 670, y: 270 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 1080, y: 140, mobileHidden: true },
+  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 540, y: 20 },
+  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 540, y: 145 },
+  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 660, y: 150 },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 660, y: 30, compact: true },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 785, y: 10, compact: true },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 915, y: 10, compact: true },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 1045, y: 10, compact: true },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 1170, y: 20, mobileHidden: true, compact: true },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 1195, y: 150, mobileHidden: true, compact: true },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 1190, y: 270, compact: true },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1070, y: 270, compact: true },
+  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 660, y: 270 },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 1080, y: 155, mobileHidden: true },
   { id: 'json', icon: 'json', label: 'JSON', x: 540, y: 270, mobileHidden: true },
 ]);
 
@@ -106,6 +107,12 @@ export function shouldRotateWorkflow({ visible, reducedMotion, interactionPaused
 
 export function shouldPlayWorkflowVideo({ visible, active, reducedMotion }) {
   return Boolean(visible && active && !reducedMotion);
+}
+
+export function setWorkflowPlaybackRate(video) {
+  if (!video) return;
+  video.defaultPlaybackRate = WORKFLOW_PLAYBACK_RATE;
+  video.playbackRate = WORKFLOW_PLAYBACK_RATE;
 }
 
 export function buildDemoPayload(values = {}) {
@@ -298,9 +305,8 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, route
   });
 
   const chargeDuration = 520;
-  const chargeStagger = 35;
-  const charges = items.map((item, index) => {
-    const launchedAt = 2600 + index * chargeStagger;
+  const charges = items.map((item) => {
+    const launchedAt = 2600;
     const progress = clampUnit((time - launchedAt) / chargeDuration);
     const active = time >= launchedAt && time < launchedAt + chargeDuration;
     return { id: item.id, progress, opacity: active ? Math.sin(Math.PI * progress) : 0 };
@@ -478,6 +484,7 @@ function enableWorkflowEvidence() {
     panels.forEach((panel) => {
       const video = panel.querySelector('[data-workflow-video]');
       if (!video) return;
+      setWorkflowPlaybackRate(video);
       const active = panel.dataset.workflowPanel === activeId;
       if (shouldPlayWorkflowVideo({ visible, active, reducedMotion: prefersReducedMotion() })) {
         video.play().catch(() => {});

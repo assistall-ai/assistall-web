@@ -77,7 +77,7 @@ test('hero source icons form an ordered five-zone upper and side perimeter', () 
   for (const item of HERO_MOTION_ITEMS) {
     for (const other of HERO_MOTION_ITEMS) {
       if (item.id === other.id) continue;
-      assert.ok(Math.hypot(item.x - other.x, item.y - other.y) >= 100, `${item.id} and ${other.id} must not bunch together`);
+      assert.ok(Math.hypot(item.x - other.x, item.y - other.y) >= 115, `${item.id} and ${other.id} must not bunch together`);
     }
   }
 });
@@ -168,7 +168,8 @@ test('hero sequence sends every input through the workspace top gate before its 
   assert.ok(cleared.inputs.every(({ x, y, opacity }) => x >= 836 && x <= 904 && y === 276 && opacity === 0), 'every input must clear through the workspace top gate');
   assert.ok(cleared.lights.every(({ opacity }) => opacity === 0), 'arrival lights must disappear behind the workspace before the return');
   const activeReturnCharges = cleared.charges.filter(({ opacity }) => opacity > 0);
-  assert.ok(activeReturnCharges.length > 0 && activeReturnCharges.length < HERO_MOTION_ITEMS.length, 'a circuit wave must avoid a firework-like all-path burst');
+  assert.equal(activeReturnCharges.length, HERO_MOTION_ITEMS.length, 'every circuit charge must leave the workspace together');
+  assert.ok(activeReturnCharges.every(({ progress }) => Math.abs(progress - activeReturnCharges[0].progress) < 0.0001), 'simultaneous return charges must share the same position along their paths');
   const laterReturn = siteModule.getHeroSequenceState(2900);
   const chargeTravel = activeReturnCharges.map(({ id, progress }) => laterReturn.charges.find((charge) => charge.id === id).progress - progress);
   assert.ok(chargeTravel.every((distance) => Math.abs(distance - chargeTravel[0]) < 0.0001), 'active return charges must share one travel speed');
@@ -187,7 +188,12 @@ test('hero sequence sends every input through the workspace top gate before its 
 });
 
 test('workflow evidence gives source viewers time to be understood before advancing', () => {
-  assert.equal(WORKFLOW_ROTATION_MS, 8000);
+  const video = { defaultPlaybackRate: 1, playbackRate: 1 };
+  assert.equal(typeof siteModule.setWorkflowPlaybackRate, 'function');
+  siteModule.setWorkflowPlaybackRate(video);
+  assert.equal(video.defaultPlaybackRate, 0.75);
+  assert.equal(video.playbackRate, 0.75);
+  assert.equal(WORKFLOW_ROTATION_MS, 10000);
   assert.match(captureScript, /WORKFLOW_VIEWER_ACTIONS/);
 });
 
