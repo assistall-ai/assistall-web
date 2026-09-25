@@ -191,9 +191,9 @@ test('workflow evidence gives source viewers time to be understood before advanc
   const video = { defaultPlaybackRate: 1, playbackRate: 1 };
   assert.equal(typeof siteModule.setWorkflowPlaybackRate, 'function');
   siteModule.setWorkflowPlaybackRate(video);
-  assert.equal(video.defaultPlaybackRate, 0.75);
-  assert.equal(video.playbackRate, 0.75);
-  assert.equal(WORKFLOW_ROTATION_MS, 10000);
+  assert.equal(video.defaultPlaybackRate, 0.65);
+  assert.equal(video.playbackRate, 0.65);
+  assert.equal(WORKFLOW_ROTATION_MS, 11000);
   assert.match(captureScript, /WORKFLOW_VIEWER_ACTIONS/);
 });
 

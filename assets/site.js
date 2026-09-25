@@ -10,8 +10,8 @@ const HERO_ROUTE_TARGET_Y = 340;
 const HERO_VIEWBOX_HEIGHT = 700;
 const HERO_WORKSPACE_ENDPOINT_DEPTH = .58;
 
-export const WORKFLOW_ROTATION_MS = 10000;
-export const WORKFLOW_PLAYBACK_RATE = 0.75;
+export const WORKFLOW_ROTATION_MS = 11000;
+export const WORKFLOW_PLAYBACK_RATE = 0.65;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
 export const HERO_MOTION_ITEMS = Object.freeze([
