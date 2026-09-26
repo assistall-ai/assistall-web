@@ -677,8 +677,40 @@ function enableTurnstile() {
   document.head.append(script);
 }
 
+function enableMobileNavigation() {
+  const header = document.querySelector('.site-header');
+  const toggle = header?.querySelector('[data-nav-toggle]');
+  const navigation = header?.querySelector('#primary-navigation');
+  if (!header || !toggle || !navigation) return;
+  const mobile = window.matchMedia('(max-width: 1060px)');
+  const setOpen = (open) => {
+    toggle.setAttribute('aria-expanded', String(open));
+    navigation.classList.toggle('is-open', open);
+  };
+  header.classList.add('navigation-enhanced');
+  toggle.hidden = false;
+  toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  header.addEventListener('click', (event) => {
+    if (event.target.closest('a')) setOpen(false);
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (!header.contains(event.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+  header.addEventListener('focusout', (event) => {
+    if (!header.contains(event.relatedTarget)) setOpen(false);
+  });
+  mobile.addEventListener('change', () => setOpen(false));
+}
+
 function initialiseSite() {
   applyMotionPreviewOverride();
+  enableMobileNavigation();
   enableSectionGlide();
   enableHeroMotion();
   enableCapabilitySwitcher();
