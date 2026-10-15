@@ -1,0 +1,5 @@
+Contact: mailto:security@assistall.ai
+Expires: 2027-08-16T00:00:00.000Z
+Canonical: https://assistall.ai/.well-known/security.txt
+Preferred-Languages: en
+Acknowledgments: https://assistall.ai/security.html

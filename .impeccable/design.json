@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-14T00:00:00+04:00",
+  "title": "Design System: Assistall AI website",
+  "extensions": {
+    "colorMeta": {
+      "deep-teal": { "role": "primary", "displayName": "Deep Teal" },
+      "muted-brass": { "role": "secondary", "displayName": "Muted Brass" },
+      "hero-night": { "role": "tertiary", "displayName": "Hero Night" },
+      "hero-gold-line": { "role": "tertiary", "displayName": "Hero Gold Line" },
+      "warm-ivory": { "role": "neutral", "displayName": "Warm Ivory" },
+      "pale-limestone": { "role": "neutral", "displayName": "Pale Limestone" },
+      "charcoal": { "role": "neutral", "displayName": "Charcoal" },
+      "white": { "role": "neutral", "displayName": "White" },
+      "muted": { "role": "neutral", "displayName": "Muted" },
+      "rule": { "role": "neutral", "displayName": "Rule" },
+      "teal-soft": { "role": "neutral", "displayName": "Teal Soft" }
+    },
+    "typographyMeta": {
+      "hero-display": { "displayName": "Hero display", "purpose": "Hero H1 only." },
+      "section-headline": { "displayName": "Section headline", "purpose": "Every section H2." },
+      "title": { "displayName": "Title", "purpose": "Card and panel H3s." },
+      "lede": { "displayName": "Lede", "purpose": "Paragraph under a section headline, muted colour." },
+      "body": { "displayName": "Body", "purpose": "Running copy, max 62ch." },
+      "label": { "displayName": "Label", "purpose": "Uppercase tracked labels: tabs, window bars, outcome terms." }
+    },
+    "shadows": [
+      { "name": "soft-lift", "value": "0 24px 80px color-mix(in srgb, #0E3A3D 15%, transparent)", "purpose": "Product windows on light sections." },
+      { "name": "evidence-drop", "value": "0 20px 54px rgba(0,0,0,.18)", "purpose": "Dark Living Work Queue panel." },
+      { "name": "hover-lift", "value": "0 16px 34px rgba(0,0,0,.2)", "purpose": "Connector cards on hover or focus only." },
+      { "name": "menu-drop", "value": "0 16px 40px rgba(0,0,0,.3)", "purpose": "Mobile navigation dropdown." }
+    ],
+    "motion": [
+      { "name": "section-glide", "value": "easeInOutCubic, 700-1400ms at 0.8ms/px", "purpose": "In-page anchor scrolling, header-aware." },
+      { "name": "reveal", "value": "opacity .75s ease, transform .75s cubic-bezier(.2,.8,.2,1), 24px rise", "purpose": "Section entrance when scrolled into view." },
+      { "name": "state", "value": ".22s ease", "purpose": "Button, tab and card hover/active transitions." },
+      { "name": "hero-loop", "value": "11800ms", "purpose": "Hero animation cycle; see DESIGN.md Components." },
+      { "name": "workflow-rotation", "value": "11000ms, playback 0.65x", "purpose": "Living Work Queue auto-advance and video speed." }
+    ],
+    "breakpoints": [
+      { "name": "nav-dropdown", "value": "1060px" },
+      { "name": "stack", "value": "820px" },
+      { "name": "phone", "value": "560px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single main action per view (Book a demo).",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Book a demo</a>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; min-height:48px; padding:.82rem 1.3rem; border:1px solid var(--brass,#C8A25D); border-radius:10px; background:var(--brass,#C8A25D); color:var(--charcoal,#172A2C); font:700 1rem/1 Aptos,'Segoe UI',Arial,sans-serif; letter-spacing:-.01em; text-decoration:none; transition:transform .22s ease, background .22s ease; } .ds-btn-primary:hover { transform:translateY(-2px); background:color-mix(in srgb,#C8A25D 86%,#fff); } .ds-btn-primary:focus-visible { outline:3px solid #C8A25D; outline-offset:2px; }"
+    },
+    {
+      "name": "Outline Button (on dark)",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action on teal or hero surfaces.",
+      "html": "<div style=\"background:#0E3A3D;padding:16px\"><a class=\"ds-btn-outline\" href=\"#\">See what Assistall can do</a></div>",
+      "css": ".ds-btn-outline { display:inline-flex; align-items:center; min-height:48px; padding:.82rem 1.3rem; border:1px solid color-mix(in srgb,#C8A25D 78%,transparent); border-radius:10px; background:rgba(14,58,61,.42); color:#FFFDF8; font:700 1rem/1 Aptos,'Segoe UI',Arial,sans-serif; text-decoration:none; transition:transform .22s ease, background .22s ease; } .ds-btn-outline:hover { transform:translateY(-2px); background:rgba(200,162,93,.14); } .ds-btn-outline:focus-visible { outline:3px solid #C8A25D; outline-offset:2px; }"
+    },
+    {
+      "name": "Connector Card",
+      "kind": "card",
+      "refersTo": "connector-card",
+      "description": "Monochrome source mark, name and honest status label.",
+      "html": "<div style=\"background:#0E3A3D;padding:16px\"><article class=\"ds-connector\" tabindex=\"0\"><div class=\"ds-connector__mark\"><svg viewBox=\"0 0 24 24\" width=\"30\" height=\"30\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"><path d=\"M2.5 6.5h7l2 2h10v10.5H2.5z\"/></svg></div><h3>Local folders and selected files</h3><p>Imported source</p></article></div>",
+      "css": ".ds-connector { width:240px; min-height:190px; padding:1.4rem; border:1px solid color-mix(in srgb,#172A2C 14%,transparent); border-radius:12px; background:#F4EFE4; color:#172A2C; font-family:Aptos,'Segoe UI',Arial,sans-serif; transition:transform .24s ease, border-color .24s ease, box-shadow .24s ease; } .ds-connector h3 { margin:1rem 0 0; font-size:1.05rem; } .ds-connector p { margin:.55rem 0 0; font-size:.86rem; font-weight:650; color:color-mix(in srgb,#172A2C 74%,#F4EFE4); } .ds-connector__mark { width:52px; height:52px; display:grid; place-items:center; border-radius:9px; background:#172A2C; color:#F4EFE4; } .ds-connector:hover, .ds-connector:focus-visible { transform:translateY(-4px); border-color:color-mix(in srgb,#C8A25D 84%,#172A2C); box-shadow:0 16px 34px rgba(0,0,0,.2); outline:none; } .ds-connector:hover .ds-connector__mark, .ds-connector:focus-visible .ds-connector__mark { color:#C8A25D; }"
+    },
+    {
+      "name": "Step Card",
+      "kind": "card",
+      "refersTo": "card-outline",
+      "description": "Numbered step in the workday story.",
+      "html": "<ol class=\"ds-steps\"><li><span>01</span><div><strong>Connect the work</strong><p>Email, files, contracts and business systems.</p></div></li></ol>",
+      "css": ".ds-steps { list-style:none; padding:0; margin:0; width:360px; font-family:Aptos,'Segoe UI',Arial,sans-serif; } .ds-steps li { display:grid; grid-template-columns:38px 1fr; gap:.8rem; padding:1rem; border:1px solid color-mix(in srgb,#172A2C 14%,transparent); border-radius:12px; background:#FFFDF8; transition:transform .25s ease, border-color .25s ease; } .ds-steps li:hover { transform:translateX(6px); border-color:#C8A25D; } .ds-steps span { color:#C8A25D; font-size:.76rem; font-weight:800; } .ds-steps strong { display:block; color:#0E3A3D; font-size:1.08rem; } .ds-steps p { margin:.15rem 0 0; color:color-mix(in srgb,#172A2C 66%,#FFFDF8); font-size:.88rem; }"
+    },
+    {
+      "name": "Form Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Demo form field on the dark form panel.",
+      "html": "<div style=\"background:color-mix(in srgb,#0E3A3D 90%,black);padding:20px;border:1px solid #C8A25D;border-radius:18px;width:320px\"><label class=\"ds-field\">Work email<input type=\"email\" placeholder=\"name@company.com\"></label></div>",
+      "css": ".ds-field { display:grid; gap:.45rem; color:#FFFDF8; font:700 .82rem Aptos,'Segoe UI',Arial,sans-serif; } .ds-field input { padding:.9rem 1rem; border:1px solid transparent; border-radius:10px; background:#FFFDF8; color:#172A2C; font:400 1rem Aptos,'Segoe UI',Arial,sans-serif; } .ds-field input:focus { outline:3px solid rgba(200,162,93,.3); border-color:#C8A25D; }"
+    },
+    {
+      "name": "Header Navigation",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "Fixed translucent teal header with wordmark, links and one brass action.",
+      "html": "<header class=\"ds-header\"><span class=\"ds-wordmark\">Assistall <b>AI</b></span><nav><a href=\"#\">How it works</a><a href=\"#\">Capabilities</a><a href=\"#\">Trust</a></nav><a class=\"ds-header__cta\" href=\"#\">Book a demo</a></header>",
+      "css": ".ds-header { display:flex; align-items:center; gap:2rem; height:76px; padding:0 1.5rem; background:color-mix(in srgb,#0E3A3D 88%,transparent); border-bottom:1px solid rgba(255,255,255,.12); font-family:Aptos,'Segoe UI',Arial,sans-serif; } .ds-wordmark { color:#FFFDF8; font-size:1.32rem; font-weight:700; letter-spacing:-.025em; } .ds-wordmark b { color:#C8A25D; } .ds-header nav { margin-left:auto; display:flex; gap:1.5rem; } .ds-header nav a { color:color-mix(in srgb,#FFFDF8 82%,transparent); font-size:.88rem; font-weight:600; text-decoration:none; } .ds-header nav a:hover { color:#fff; } .ds-header nav a:focus-visible { outline:2px solid #C8A25D; outline-offset:4px; } .ds-header__cta { padding:.72rem 1.15rem; border-radius:10px; background:#C8A25D; color:#172A2C; font-size:.9rem; font-weight:700; text-decoration:none; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Quiet Authority",
+    "overview": "A calm, premium operations brand for non-technical business owners. Deep teal and warm limestone surfaces, one brass accent, generous space and plain, specific language. Confidence comes from restraint and real product evidence, never hype. The hero is the one owner-approved exception: a dark night-teal scene with glowing routes and a Y-axis box spin; every section below returns to flat, quiet surfaces.",
+    "keyCharacteristics": [
+      "Two-surface world: deep teal and warm light (ivory / limestone), with brass as the single accent.",
+      "One system font stack (Aptos → Segoe UI → Arial); no webfonts.",
+      "Large, tight, negatively tracked headlines over calm body copy capped at 62ch.",
+      "Thin 1px rules and borders instead of shadows outside the hero.",
+      "Motion is slow and purposeful, with full reduced-motion and no-JavaScript fallbacks.",
+      "English only today (lang=\"en\"); Arabic right-to-left is a standing brand requirement not yet built."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Brass is the only accent. No new hues; any missing colour is a question for the owner, not a new token.", "section": "colors" },
+      { "name": "The Brass Is Not Ink Rule", "body": "Brass text passes contrast on teal (5.2:1) but fails on ivory (2.4:1) and limestone (2.1:1). Current eyebrows, step numbers and outcome labels on light surfaces break this; treat them as known defects, not as precedent.", "section": "colors" },
+      { "name": "The Mixed, Not Invented Rule", "body": "Tints are made with color-mix() from the six brand colours, never new hex values.", "section": "colors" },
+      { "name": "The Fixed Scale Rule", "body": "Only --step--1 to --step-4, plus the two documented headline clamps.", "section": "typography" },
+      { "name": "The Glow Stays Home Rule", "body": "Gradients, glows and halos are approved for the hero scene alone.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use only the six brand colours and color-mix() tints of them.",
+      "Do keep brass for fills, borders, rules and focus; put text on brass in charcoal.",
+      "Do keep body copy at 62ch or narrower and headlines balanced.",
+      "Do give every motion a reduced-motion and no-JavaScript fallback, and keep ?motion=on|off working for review.",
+      "Do label connectors honestly (\"Setup-dependent\", \"Imported source\") and keep provider marks monochrome.",
+      "Do bump the ?v= marker on brand.css, page.css or site.js whenever they change.",
+      "Do plan every new surface for Arabic right-to-left as well as English, and for WCAG AA contrast."
+    ],
+    "donts": [
+      "Don't add new hues, webfonts or type sizes.",
+      "Don't use brass as text on ivory or limestone (fails AA).",
+      "Don't add more eyebrow labels above headings; the existing ones conflict with the owner's standing design rules and await a decision.",
+      "Don't add coloured side-bars to cards or rows; the capability tab marker is an existing case awaiting the same decision.",
+      "Don't spread the hero's glow, gradients or night background to other sections.",
+      "Don't use provider brand colours, the old WadiH \"W\" marks, black-hole, orbit or printer imagery, or an x-axis spin in the hero.",
+      "Don't publish invented metrics, testimonials, customer names or \"fully autonomous\" claims.",
+      "Don't use gradient text, glass or blob decoration, nested cards or emoji as icons."
+    ]
+  }
+}

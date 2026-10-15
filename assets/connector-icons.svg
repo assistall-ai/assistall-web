@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="connector-microsoft" viewBox="0 0 32 32">
+    <path fill="currentColor" d="M3 3h12v12H3zm14 0h12v12H17zM3 17h12v12H3zm14 0h12v12H17z"/>
+  </symbol>
+  <symbol id="connector-gmail" viewBox="0 0 32 32">
+    <rect x="3" y="7" width="26" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <path d="m5 9 11 9L27 9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="connector-whatsapp" viewBox="0 0 32 32">
+    <path d="M16 3.5a12.5 12.5 0 0 0-10.7 19l-1.7 6 6.2-1.6A12.5 12.5 0 1 0 16 3.5Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M11.5 9.7c.3-.7.7-.8 1.2-.8h.8l1.3 3-1.2 1.2c.8 1.8 2.1 3.1 3.9 3.9l1.2-1.2 3 1.3v.8c0 .6-.2 1-.8 1.2-1.1.5-2.3.5-3.6.1-4.3-1.3-7.2-4.2-8.5-8.5-.4-1.3-.4-2.5.1-3.6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="connector-odoo" viewBox="0 0 32 32">
+    <text x="3" y="20" fill="currentColor" font-family="Arial Rounded MT Bold,Arial,sans-serif" font-size="14" font-weight="700" textLength="26" lengthAdjust="spacingAndGlyphs">odoo</text>
+  </symbol>
+  <symbol id="connector-zoho" viewBox="0 0 32 32">
+    <g fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="8" width="6.5" height="15" rx="1.4"/><rect x="9.2" y="6" width="6.5" height="15" rx="1.4"/><rect x="16.4" y="9" width="6.5" height="15" rx="1.4"/><rect x="23.6" y="7" width="6.5" height="15" rx="1.4"/></g>
+    <text x="3.6" y="18.7" fill="currentColor" font-family="Arial,sans-serif" font-size="5.8" font-weight="700">Z</text><text x="10.8" y="17.2" fill="currentColor" font-family="Arial,sans-serif" font-size="5.8" font-weight="700">O</text><text x="18" y="20" fill="currentColor" font-family="Arial,sans-serif" font-size="5.8" font-weight="700">H</text><text x="25.2" y="18.4" fill="currentColor" font-family="Arial,sans-serif" font-size="5.8" font-weight="700">O</text>
+  </symbol>
+  <symbol id="connector-folder" viewBox="0 0 32 32">
+    <path d="M3 9a3 3 0 0 1 3-3h7l3 3h10a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3Z" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="connector-calendar" viewBox="0 0 32 32">
+    <rect x="4" y="6" width="24" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M4 12h24M10 3v6M22 3v6M9 17h3m4 0h3m4 0h1M9 22h3m4 0h3m4 0h1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="connector-pdf" viewBox="0 0 32 32">
+    <path d="M7 3h12l6 6v20H7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 3v7h6" fill="none" stroke="currentColor" stroke-width="2"/><text x="9" y="23" fill="currentColor" font-family="Arial,sans-serif" font-size="8" font-weight="700">PDF</text>
+  </symbol>
+  <symbol id="connector-word" viewBox="0 0 32 32">
+    <path d="M11 4h15v24H11Z" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="8" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><text x="6" y="20" fill="currentColor" font-family="Arial,sans-serif" font-size="11" font-weight="700">W</text>
+  </symbol>
+  <symbol id="connector-excel" viewBox="0 0 32 32">
+    <path d="M11 4h15v24H11Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M17 9h9M17 15h9M17 21h9M20 4v24" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="8" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><text x="6" y="20" fill="currentColor" font-family="Arial,sans-serif" font-size="11" font-weight="700">X</text>
+  </symbol>
+  <symbol id="connector-csv" viewBox="0 0 32 32">
+    <path d="M6 3h14l6 6v20H6Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 3v7h6M10 14h12M10 19h12M10 24h12M14 12v14M19 12v14" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+  <symbol id="connector-voice" viewBox="0 0 32 32">
+    <path d="M16 4a4 4 0 0 0-4 4v8a4 4 0 0 0 8 0V8a4 4 0 0 0-4-4Zm-8 12a8 8 0 0 0 16 0M16 24v5M11 29h10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="connector-txt" viewBox="0 0 32 32">
+    <path d="M7 3h12l6 6v20H7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 3v7h6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 16h10M11 21h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="connector-powerpoint" viewBox="0 0 32 32">
+    <path d="M11 4h15v24H11Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M17 9h9M17 15h9M17 21h9" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="8" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><text x="6" y="20" fill="currentColor" font-family="Arial,sans-serif" font-size="11" font-weight="700">P</text>
+  </symbol>
+  <symbol id="connector-image" viewBox="0 0 32 32">
+    <rect x="4" y="5" width="24" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11" cy="12" r="2.2" fill="currentColor"/><path d="m6 24 7-7 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="connector-json" viewBox="0 0 32 32">
+    <path d="M13 5c-4 0-4 3-4 6v2c0 2-1 3-3 3 2 0 3 1 3 3v2c0 3 0 6 4 6M19 5c4 0 4 3 4 6v2c0 2 1 3 3 3-2 0-3 1-3 3v2c0 3 0 6-4 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+</svg>
