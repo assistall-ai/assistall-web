@@ -56,6 +56,8 @@ The PHP endpoint requires PHP 8.1+ with cURL. PHP, Deno and the Supabase CLI are
 
 cPanel Git deployment copies only the public website files. Real secrets live at `/home/YOUR_CPANEL_USER/.assistall-secrets.php`, outside `public_html` and outside Git. Follow [docs/LAUNCH_SECURITY.md](docs/LAUNCH_SECURITY.md) in order; the form intentionally fails closed until Turnstile, Supabase and the cPanel secret file are configured.
 
+Deploys are started by hand from GitHub Actions (**Deploy website**); merging to `main` publishes nothing. See [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Non-negotiable rules
 
 - Do not place Supabase keys, Turnstile secrets or HMAC values in HTML, JavaScript or Git.
