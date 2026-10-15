@@ -1,0 +1,105 @@
+name: Deploy website
+
+# Runs only when someone starts it from the Actions tab. Never on push or merge.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "check-connection reads cPanel and the live site without changing anything; deploy publishes main"
+        type: choice
+        options: [check-connection, deploy]
+        default: check-connection
+      confirm:
+        description: "For deploy, type DEPLOY"
+        required: false
+        default: ""
+      allow_placeholder_turnstile:
+        description: "Deploy even though the Turnstile site key is still a placeholder (the demo form will refuse submissions)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-website
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Preflight checks
+    runs-on: windows-latest
+    steps:
+      - name: Only main can be deployed
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Start this workflow from the main branch (it was started from $GITHUB_REF)."
+            exit 1
+          fi
+      - name: Deploy needs typed confirmation
+        if: inputs.action == 'deploy'
+        shell: bash
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM" != "DEPLOY" ]; then
+            echo "::error::Type DEPLOY in the confirm box to publish."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Turnstile key is set
+        if: inputs.action == 'deploy'
+        shell: bash
+        env:
+          ALLOW_PLACEHOLDER: ${{ inputs.allow_placeholder_turnstile }}
+        run: |
+          if grep -q 'REPLACE_WITH_TURNSTILE_SITE_KEY' index.html; then
+            if [ "$ALLOW_PLACEHOLDER" = "true" ]; then
+              echo "::warning::Deploying with the placeholder Turnstile key. The demo form will refuse submissions."
+            else
+              echo "::error::index.html still has the placeholder Turnstile site key. Set the real key, or tick allow_placeholder_turnstile."
+              exit 1
+            fi
+          fi
+      - name: Tests
+        shell: bash
+        run: node --test tests/*.test.mjs
+      - name: Site verifier
+        shell: pwsh
+        run: ./tools/verify-site.ps1
+
+  cpanel:
+    name: ${{ inputs.action == 'deploy' && 'Deploy to cPanel' || 'Check cPanel connection' }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://assistall.ai/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: ${{ inputs.action == 'deploy' && 'Pull and deploy' || 'Read cPanel repository status' }}
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+          CPANEL_REPO_ROOT: ${{ secrets.CPANEL_REPO_ROOT }}
+          EXPECTED_SHA: ${{ github.sha }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          if [ "$ACTION" = "deploy" ]; then
+            node tools/cpanel-deploy.mjs
+          else
+            node tools/cpanel-deploy.mjs --check-only
+          fi
+      - name: Check the live site
+        # In check-connection mode this only reports; after a deploy it must pass.
+        continue-on-error: ${{ inputs.action != 'deploy' }}
+        run: node tools/check-live-site.mjs https://assistall.ai
