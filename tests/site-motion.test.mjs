@@ -440,3 +440,11 @@ test('an undrawn route paints nothing, so no dots flash at its ends before it dr
   assert.match(pageCss, /\.hero-route-map path \{[^}]*stroke-linecap: butt;/, 'drawn routes have square ends, so a short dash never paints a dot');
   assert.doesNotMatch(pageCss, /\.hero-route-map circle/);
 });
+
+test('the return light never wraps back to the start of its route near the workspace', () => {
+  const pattern = pageCss.match(/\.hero-route-charge \{[^}]*stroke-dasharray: ([^;]+);/)[1].split(/\s+/).map(Number);
+  const period = pattern.reduce((sum, value) => sum + value, 0);
+  // With pathLength 1 and dashoffset running 0 to -1, a period of at least 2 keeps the pattern's
+  // next repeat off the route, so no stub of light reappears at the workspace end.
+  assert.ok(period >= 2, `charge dash pattern repeats every ${period}; it must be at least 2`);
+});
