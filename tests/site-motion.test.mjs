@@ -278,7 +278,7 @@ test('measured spread fills the free space evenly without touching the copy, wor
     const page = modelHero(viewWidth, viewHeight);
     const items = planHeroSpread(page);
     const label = `${viewWidth}x${viewHeight}`;
-    const minimum = viewWidth >= 1366 ? 14 : viewWidth >= 1024 ? 12 : 10;
+    const minimum = viewWidth >= 1920 ? 13 : viewWidth >= 1366 ? 14 : viewWidth >= 1024 ? 11 : 10;
     assert.ok(items.length >= minimum, `${label}: at least ${minimum} sources`);
     assert.ok(items.length >= 8, `${label}: never fewer than eight sources`);
     assert.equal(new Set(items.map(({ id }) => id)).size, items.length, `${label}: each source once`);
@@ -397,11 +397,30 @@ test('hero routes never cross, enter through the workspace top and never cut ove
     assert.deepEqual(routeCrossings(items, width, height, box), [], `${label}: routes must not cross`);
     for (const curve of siteModule.heroRouteCurves(items, box)) {
       assert.ok(Math.abs(curve.to.y - box.top) < 1e-6 && curve.normal.y === -1 && curve.to.x > box.left && curve.to.x < box.right, `${label}: ${curve.id} enters through the workspace's top edge`);
-      assert.equal(curve.c2.x, curve.to.x, `${label}: ${curve.id} drops straight down into its entry point`);
+      assert.ok(curve.c2.y < curve.to.y && curve.spoke.y < 0, `${label}: ${curve.id} comes down into its entry point from above`);
       if (curve.from.y > box.top) assert.ok(curve.c1.y < box.top, `${label}: ${curve.id} beside the workspace rises before it drops in`);
       for (let step = 0; step < 48; step += 1) {
         const { x, y } = siteModule.heroCurvePoint(curve, step / 50);
         assert.ok(!(x > box.left + 1 && x < box.right - 1 && y > box.top + 1 && y < box.bottom - 1), `${label}: ${curve.id} must not cut over the workspace`);
+      }
+    }
+  }
+});
+
+test('hero routes keep a little room between each other all the way into the workspace', () => {
+  const cases = VIEWPORTS.map(([viewWidth, viewHeight]) => {
+    const page = modelHero(viewWidth, viewHeight);
+    return { label: `${viewWidth}x${viewHeight}`, items: planHeroSpread(page), width: page.width, height: page.height, box: boxInUnits(page.box, page.width, page.height) };
+  }).concat([360, 390, 820].map((width) => ({ label: `phone ${width}px`, items: heroItemsForLayout('squeezed'), width, height: 900, box: phoneBox(width) })));
+  for (const { label, items, width, height, box } of cases) {
+    const routes = siteModule.heroRouteCurves(items, box).map((curve) => ({
+      id: curve.id,
+      points: Array.from({ length: 41 }, (_, step) => siteModule.heroCurvePoint(curve, step / 40)).map(({ x, y }) => ({ x: x / 1200 * width, y: y / 700 * height })),
+    }));
+    for (let i = 0; i < routes.length; i += 1) {
+      for (let j = i + 1; j < routes.length; j += 1) {
+        const closest = Math.min(...routes[i].points.flatMap((p) => routes[j].points.map((q) => Math.hypot(p.x - q.x, p.y - q.y))));
+        assert.ok(closest >= 5, `${label}: ${routes[i].id} and ${routes[j].id} come within ${closest.toFixed(1)}px`);
       }
     }
   }

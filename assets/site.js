@@ -93,7 +93,7 @@ export function planHeroSpread(page = {}) {
   return best;
 }
 
-// Drops the source involved in the most crossings until no routes cross.
+// Drops the source involved in the most crossings or near-touches until every route has room.
 function untangleSpread(placed, box) {
   let current = placed;
   for (;;) {
@@ -101,7 +101,7 @@ function untangleSpread(placed, box) {
     const tally = new Map();
     for (let a = 0; a < curves.length; a += 1) {
       for (let b = a + 1; b < curves.length; b += 1) {
-        if (curvesCross(curves[a], curves[b])) {
+        if (curvesCross(curves[a], curves[b]) || curvesTooClose(curves[a], curves[b])) {
           tally.set(a, (tally.get(a) ?? 0) + 1);
           tally.set(b, (tally.get(b) ?? 0) + 1);
         }
@@ -136,14 +136,16 @@ function spreadWithGap({ width, height, copy, box, safeTop = 12, items, maxItems
   };
 
   const random = seededRandom(seed);
-  const stepX = (cardW + gapX) / 2;
-  const stepY = (cardH + gapY) / 1.4;
+  // Staggered rows (a brick pattern) with a light nudge: organised, with some asymmetry.
+  const stepX = (cardW + gapX) * .75;
+  const stepY = cardH + gapY;
   const candidates = [];
   for (const zone of zones) {
-    for (let y = zone.top; y <= zone.bottom; y += stepY) {
-      for (let x = zone.left; x <= zone.right; x += stepX) {
-        const cx = Math.min(zone.right, Math.max(zone.left, x + (random() - .5) * stepX));
-        const cy = Math.min(zone.bottom, Math.max(zone.top, y + (random() - .5) * stepY));
+    let row = 0;
+    for (let y = zone.top; y <= zone.bottom; y += stepY, row += 1) {
+      for (let x = zone.left + (row % 2) * stepX / 2; x <= zone.right; x += stepX) {
+        const cx = Math.min(zone.right, Math.max(zone.left, x + (random() - .5) * stepX * .24));
+        const cy = Math.min(zone.bottom, Math.max(zone.top, y + (random() - .5) * stepY * .2));
         if (clear(cx, cy)) candidates.push({ x: cx, y: cy });
       }
     }
@@ -365,28 +367,38 @@ function easeOutCubic(progress) {
 const HERO_DEFAULT_BOX = Object.freeze({ left: 815, right: 925, top: 276, bottom: 378.7 });
 let heroBox = HERO_DEFAULT_BOX;
 
-const HERO_APPROACH = 42;
+// Minimum room between any two routes, in stage units (about 5–6px on screen).
+export const HERO_ROUTE_GAP = 4.5;
 
 function heroTopEdge(box) {
-  const corner = (box.right - box.left) * .2;
+  const corner = (box.right - box.left) * .12;
   return { left: box.left + corner, width: Math.max(0, box.right - box.left - corner * 2), y: box.top };
 }
 
+// Entry points sit evenly along the top edge. Each route arrives along its own spoke of a
+// fan centred below the edge, so neighbouring routes keep apart all the way in.
 function entryPoint(edge, rank, count) {
-  return { x: edge.left + edge.width * (rank + .5) / Math.max(1, count), y: edge.y, normal: { x: 0, y: -1 } };
+  const x = edge.left + edge.width * (rank + .5) / Math.max(1, count);
+  const focus = { x: edge.left + edge.width / 2, y: edge.y + edge.width * .45 };
+  const length = Math.hypot(x - focus.x, edge.y - focus.y) || 1;
+  return { x, y: edge.y, normal: { x: 0, y: -1 }, spoke: { x: (x - focus.x) / length, y: (edge.y - focus.y) / length } };
 }
 
-// A rise-then-drop curve: it leaves the source heading up (or across, for sources already
-// above the approach height), crosses over, and arrives straight down into its entry point.
+// A rise-then-drop curve: it leaves the source heading up (sources beside the workspace) or
+// across (sources above), then comes down its spoke into the top edge.
 function curveTo(source, entry) {
-  const apex = entry.y - HERO_APPROACH;
-  const lift = source.y > apex ? apex - 10 : source.y;
+  const reach = Math.min(110, Math.max(18, Math.hypot(source.x - entry.x, source.y - entry.y) * .38));
+  const c2 = { x: entry.x + entry.spoke.x * reach, y: entry.y + entry.spoke.y * reach };
+  const rising = source.y > c2.y;
   return {
     from: { x: source.x, y: source.y },
-    c1: { x: source.x + (entry.x - source.x) * .28, y: lift },
-    c2: { x: entry.x, y: apex },
+    c1: rising
+      ? { x: source.x + (c2.x - source.x) * .15, y: c2.y - 12 }
+      : { x: source.x + (c2.x - source.x) * .35, y: source.y + (c2.y - source.y) * .35 },
+    c2,
     to: { x: entry.x, y: entry.y },
     normal: entry.normal,
+    spoke: entry.spoke,
   };
 }
 
@@ -414,6 +426,15 @@ function curveBounds(curve) {
   const xs = [curve.from.x, curve.c1.x, curve.c2.x, curve.to.x];
   const ys = [curve.from.y, curve.c1.y, curve.c2.y, curve.to.y];
   return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+}
+
+function curvesTooClose(first, second, gap = HERO_ROUTE_GAP) {
+  const p = curveBounds(first);
+  const q = curveBounds(second);
+  if (p.right + gap < q.left || q.right + gap < p.left || p.bottom + gap < q.top || q.bottom + gap < p.top) return false;
+  const a = Array.from({ length: 25 }, (_, step) => curvePoint(first, step / 24));
+  const b = Array.from({ length: 25 }, (_, step) => curvePoint(second, step / 24));
+  return a.some((point) => b.some((other) => Math.hypot(point.x - other.x, point.y - other.y) < gap));
 }
 
 function curvesCross(first, second) {
@@ -475,7 +496,7 @@ export function heroDefaultBox() {
 
 // Lines end a few units under the workspace's edge so the join hides beneath its border.
 function tucked(curve) {
-  return { x: curve.to.x - curve.normal.x * 3, y: curve.to.y - curve.normal.y * 3 };
+  return { x: curve.to.x - curve.spoke.x * 3, y: curve.to.y - curve.spoke.y * 3 };
 }
 
 const fixed = (point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
