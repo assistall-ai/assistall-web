@@ -44,7 +44,14 @@ export function heroLayoutForWidth(width) {
 // lattice over the free space (the strip above the copy and the area right of it),
 // sampled so the cards spread evenly without touching the copy, the workspace or the
 // document's path below it. All values are stage pixels; results are stage units.
-const HERO_CARD = Object.freeze({ width: 74, height: 26, gapX: 30, gapY: 20 });
+const HERO_CARD = Object.freeze({ width: 74, height: 26 });
+// Gaps between cards, widest first. Each screen uses the widest gap that still fits its
+// minimum number of sources, so large screens get generous space and tablets keep eight.
+const HERO_GAPS = Object.freeze([[110, 48], [90, 42], [72, 36], [56, 30], [42, 24], [30, 20]]);
+export function heroSourceTarget(width) {
+  if (width >= 1440) return 12;
+  return width >= 1280 ? 10 : 8;
+}
 const HERO_PRIORITY = ['email', 'docx', 'xlsx', 'csv', 'voice', 'folder', 'txt', 'pdf', 'whatsapp', 'odoo', 'zoho', 'jpg', 'pptx', 'json'];
 const HERO_SPREAD_ORDER = ['zoho', 'email', 'docx', 'whatsapp', 'odoo', 'xlsx', 'pdf', 'voice', 'csv', 'jpg', 'folder', 'pptx', 'txt', 'json'];
 
@@ -56,8 +63,19 @@ function seededRandom(seed) {
   };
 }
 
-export function planHeroSpread({ width, height, copy, box, safeTop = 12, items = HERO_MOTION_ITEMS, maxItems = 14 } = {}) {
-  const { width: cardW, height: cardH, gapX, gapY } = HERO_CARD;
+export function planHeroSpread(page = {}) {
+  const { items = HERO_MOTION_ITEMS, minItems = heroSourceTarget(page.width) } = page;
+  let best = [];
+  for (const [gapX, gapY] of HERO_GAPS) {
+    const placed = spreadWithGap({ ...page, items, gapX, gapY });
+    if (placed.length >= Math.min(minItems, items.length)) return placed;
+    if (placed.length > best.length) best = placed;
+  }
+  return best;
+}
+
+function spreadWithGap({ width, height, copy, box, safeTop = 12, items, maxItems = 14, gapX, gapY }) {
+  const { width: cardW, height: cardH } = HERO_CARD;
   const halfW = cardW / 2;
   const halfH = cardH / 2;
   const right = width - 28 - halfW;

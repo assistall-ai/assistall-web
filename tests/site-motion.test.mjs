@@ -281,9 +281,8 @@ test('measured spread fills the free space evenly without touching the copy, wor
     const page = modelHero(viewWidth, viewHeight);
     const items = planHeroSpread(page);
     const label = `${viewWidth}x${viewHeight}`;
-    assert.ok(items.length >= 8, `${label}: at least eight sources`);
-    if (viewWidth >= 1280) assert.ok(items.length >= 12, `${label}: desktop shows at least twelve sources`);
-    if (viewWidth >= 1440) assert.equal(items.length, 14, `${label}: large desktops show every source`);
+    assert.ok(items.length >= siteModule.heroSourceTarget(viewWidth), `${label}: at least ${siteModule.heroSourceTarget(viewWidth)} sources`);
+    assert.ok(items.length >= 8, `${label}: never fewer than eight sources`);
     assert.equal(new Set(items.map(({ id }) => id)).size, items.length, `${label}: each source once`);
     const px = items.map((item) => ({ id: item.id, x: item.x / 1200 * page.width, y: item.y / 700 * page.height }));
     const boxCentre = (page.box.left + page.box.right) / 2;
@@ -299,6 +298,8 @@ test('measured spread fills the free space evenly without touching the copy, wor
     }
     for (const a of px) for (const b of px) {
       if (a.id < b.id) assert.ok(Math.abs(a.x - b.x) >= 100 || Math.abs(a.y - b.y) >= 42, `${label}: ${a.id} and ${b.id} must not touch`);
+      // Large screens get generous room: at least a card's width, or two card heights, between neighbours.
+      if (a.id < b.id && viewWidth >= 1440) assert.ok(Math.abs(a.x - b.x) >= 130 || Math.abs(a.y - b.y) >= 56, `${label}: ${a.id} and ${b.id} need more space`);
     }
     const xs = px.map(({ x }) => x);
     assert.ok(Math.max(...xs) - Math.min(...xs) >= page.width * .5, `${label}: sources spread across the screen, not one side`);
