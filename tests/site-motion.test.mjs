@@ -57,7 +57,7 @@ test('hero motion uses the approved set of real work inputs and matching marks',
   const markup = createHeroMotionMarkup();
   assert.match(markup, /--signal-opacity:1;--signal-scale:\.72/, 'source cards should be painted before the first animation frame');
   assert.equal((markup.match(/hero-signal-card--compact/g) ?? []).length, 8, 'the responsive source set must be explicit in the animation markup');
-  assert.equal((markup.match(/hero-route--compact-hidden/g) ?? []).length, 18, 'only the six omitted sources may lose their intake, return, and light routes');
+  assert.equal((markup.match(/hero-route--compact-hidden/g) ?? []).length, 12, 'only the six omitted sources lose their intake and return routes');
 });
 
 test('hero source icons form an ordered five-zone upper and side perimeter', () => {
@@ -95,7 +95,7 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.equal((markup.match(/<div class="hero-signal-card/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.match(markup, /<svg class="hero-route-map"[^>]*viewBox="0 0 1200 700"/);
   assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/data-hero-light=/g) ?? []).length, HERO_MOTION_ITEMS.length);
+  assert.doesNotMatch(markup, /<circle|data-hero-light/, 'only the source cards travel the routes; no lead lights');
   assert.equal((markup.match(/data-hero-charge=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   const box = siteModule.heroDefaultBox();
   const ends = [...markup.matchAll(/data-hero-route="[^"]+" pathLength="1" d="M [^C]+C [-\d.]+ [-\d.]+ [-\d.]+ [-\d.]+ ([-\d.]+) ([-\d.]+)"/g)];
@@ -161,18 +161,12 @@ test('hero sequence sends every input through the workspace top gate before its 
   const finalIntake = siteModule.getHeroSequenceState(2300);
   assert.ok(finalIntake.inputs.every(({ opacity }) => opacity === 0), 'cards have faded before they bunch together at the workspace top');
   assert.ok(siteModule.getHeroSequenceState(1500).inputs.every(({ opacity }) => opacity > .9), 'cards stay fully visible for most of their glide');
-  assert.ok(finalIntake.lights.every(({ direction }) => direction !== 'return'), 'return lights must wait until the full intake is clear');
 
-  const nearGate = siteModule.getHeroSequenceState(2000);
-  assert.ok(nearGate.lights.every(({ opacity }) => opacity === 0), 'arrival dots must already be hidden behind the workspace before its top edge');
-
-  const arrived = siteModule.getHeroSequenceState(2300).lights;
   const entries = new Map(siteModule.heroRouteCurves().map((curve) => [curve.id, curve.to]));
-  assert.ok(arrived.every(({ id, x, y }) => Math.abs(x - entries.get(id).x) < 1e-6 && Math.abs(y - entries.get(id).y) < 1e-6), 'arrival lights finish on their entry point at the workspace edge');
+  assert.equal(siteModule.getHeroSequenceState(2000).lights, undefined, 'there are no lead lights to show');
 
   const cleared = siteModule.getHeroSequenceState(2800);
   assert.ok(cleared.inputs.every(({ id, x, y, opacity }) => Math.abs(x - entries.get(id).x) < 1e-6 && Math.abs(y - entries.get(id).y) < 1e-6 && opacity === 0), 'every input must arrive at its own entry point on the workspace edge');
-  assert.ok(cleared.lights.every(({ opacity }) => opacity === 0), 'arrival lights must disappear behind the workspace before the return');
   const activeReturnCharges = cleared.charges.filter(({ opacity }) => opacity > 0);
   assert.equal(activeReturnCharges.length, HERO_MOTION_ITEMS.length, 'every circuit charge must leave the workspace together');
   assert.ok(activeReturnCharges.every(({ progress }) => Math.abs(progress - activeReturnCharges[0].progress) < 0.0001), 'simultaneous return charges must share the same position along their paths');
@@ -436,4 +430,13 @@ test('return lights ease in as they leave the workspace and the routes are clipp
   assert.match(markup, /<clipPath id="hero-route-clip"[^>]*><rect data-hero-route-clip x="0" y="0" width="1200" height="276\.0"><\/rect><\/clipPath>/, 'nothing of a route draws below the workspace top edge');
   assert.match(markup, /<g clip-path="url\(#hero-route-clip\)">/);
   assert.match(pageCss, /\.hero-route-charge \{[^}]*stroke-width: 2\.2;/, 'the return light is a little brighter and bolder than the resting lines');
+});
+
+test('an undrawn route paints nothing, so no dots flash at its ends before it draws', () => {
+  for (const time of [0, 300, 599, 620]) {
+    assert.ok(siteModule.getHeroSequenceState(time).inputs.every(({ routeOpacity }) => routeOpacity === 0), `routes are invisible before they start drawing (${time}ms)`);
+  }
+  assert.ok(siteModule.getHeroSequenceState(1200).inputs.every(({ routeOpacity, routeProgress }) => routeOpacity > 0 && routeProgress > 0), 'routes show once drawing is under way');
+  assert.match(pageCss, /\.hero-route-map path \{[^}]*stroke-linecap: butt;/, 'drawn routes have square ends, so a short dash never paints a dot');
+  assert.doesNotMatch(pageCss, /\.hero-route-map circle/);
 });

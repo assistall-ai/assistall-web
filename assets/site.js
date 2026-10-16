@@ -515,7 +515,7 @@ function heroRouteMapMarkup(items) {
   const top = heroBox.top.toFixed(1);
   return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="hero-route-clip" clipPathUnits="userSpaceOnUse"><rect data-hero-route-clip x="0" y="0" width="1200" height="${top}"></rect></clipPath></defs><g clip-path="url(#hero-route-clip)">${items.map((item) => {
     const compactHidden = item.compact ? '' : ' hero-route--compact-hidden';
-    return `<path class="hero-route${compactHidden}" data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item, items)}"></path><path class="hero-route-charge${compactHidden}" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item, items)}"></path><circle class="hero-route-light${compactHidden}" data-hero-light="${item.id}" r="3" cx="${item.x}" cy="${item.y}"></circle>`;
+    return `<path class="hero-route${compactHidden}" data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item, items)}"></path><path class="hero-route-charge${compactHidden}" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item, items)}"></path>`;
   }).join('')}</g></svg>`;
 }
 
@@ -562,8 +562,9 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, box =
     const progress = restaged ? 0 : clampUnit((time - 600) / 1800);
     const travel = easeInOutCubic(progress);
     const point = curvePoint(routes.get(item.id), travel);
-    // Cards are gone before they bunch together at the workspace top, so nothing flickers there.
-    const fadeOut = 1 - clampUnit((progress - .56) / .18);
+    // Cards fade by distance travelled, and are gone while still spread out, so nothing gathers
+    // or flickers above the workspace before they arrive.
+    const fadeOut = 1 - clampUnit((travel - .5) / .22);
     const opacity = restaged ? 1 : fadeOut;
     return {
       id: item.id,
@@ -575,23 +576,8 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, box =
       scale: (.72 - .48 * travel) * opacity,
       // Routes draw once, then stay as faint lines; each intake and return lifts them briefly.
       routeProgress: drawn ? 1 : clampUnit(travel * 1.08),
-      routeOpacity: HERO_ROUTE_REST_OPACITY + .08 * bump(time, 600, 2600) + .05 * bump(time, 2600, 3500),
-    };
-  });
-
-  const lights = items.map((item) => {
-    const inputProgress = clampUnit((time - 600) / 1800);
-    const inputTravel = easeInOutCubic(inputProgress);
-    const lightTravel = Math.min(1, inputTravel + .08);
-    const point = curvePoint(routes.get(item.id), lightTravel);
-    const intakeFade = inputTravel > .045 ? 1 - clampUnit((inputProgress - .48) / .18) : 0;
-    return {
-      id: item.id,
-      x: point.x,
-      y: point.y,
-      direction: intakeFade > 0 ? 'intake' : 'hidden',
-      opacity: intakeFade,
-      scale: .72 + inputTravel * .28,
+      // Hidden until it starts drawing: a zero-length round-capped dash paints a dot at both ends.
+      routeOpacity: (drawn || travel > .02) ? HERO_ROUTE_REST_OPACITY + .08 * bump(time, 600, 2600) + .05 * bump(time, 2600, 3500) : 0,
     };
   });
 
@@ -601,7 +587,7 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, box =
     const progress = clampUnit((time - launchedAt) / chargeDuration);
     const active = time >= launchedAt && time < launchedAt + chargeDuration;
     // Ease in over the first stretch (the fan spreads the charges apart first), fade at the source.
-    const easeIn = clampUnit(progress / .22);
+    const easeIn = clampUnit(progress / .3);
     const easeOut = 1 - clampUnit((progress - .8) / .2);
     return { id: item.id, progress, opacity: active ? easeIn * easeIn * (3 - 2 * easeIn) * easeOut : 0 };
   });
@@ -612,7 +598,6 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, box =
   return {
     phase,
     inputs,
-    lights,
     charges,
     workspace: { rotationY: time < 3600 ? 0 : 360 * easeInOutCubic(spinProgress) },
     document: {
@@ -666,13 +651,12 @@ function enableHeroMotion() {
   figure.classList.add('hero-motion--enhanced');
   const signalElements = new Map([...canvas.querySelectorAll('[data-hero-signal]')].map((element) => [element.dataset.heroSignal, element]));
   const routeElements = new Map([...canvas.querySelectorAll('[data-hero-route]')].map((element) => [element.dataset.heroRoute, element]));
-  const lightElements = new Map([...canvas.querySelectorAll('[data-hero-light]')].map((element) => [element.dataset.heroLight, element]));
   const chargeElements = new Map([...canvas.querySelectorAll('[data-hero-charge]')].map((element) => [element.dataset.heroCharge, element]));
   const field = canvas.querySelector('.hero-motion__field');
   const workspace = canvas.querySelector('[data-hero-workspace]');
   const output = canvas.querySelector('[data-hero-output]');
   let layoutItems = HERO_MOTION_ITEMS;
-  // Cards, routes, lights and charges all read the same layout coordinates, so every
+  // Cards, routes and charges all read the same layout coordinates, so every
   // visible route starts at its own card at every width.
   const heroCopy = document.querySelector('.hero-copy');
   const header = document.querySelector('.site-header');
@@ -724,7 +708,6 @@ function enableHeroMotion() {
     for (const [id, element] of signalElements) element.style.display = placed.has(id) ? '' : 'none';
     for (const [id, element] of routeElements) element.style.display = placed.has(id) ? '' : 'none';
     for (const [id, element] of chargeElements) element.style.display = placed.has(id) ? '' : 'none';
-    for (const [id, element] of lightElements) element.style.display = placed.has(id) ? '' : 'none';
     for (const item of layoutItems) {
       routeElements.get(item.id)?.setAttribute('d', heroRoutePath(item, layoutItems));
       chargeElements.get(item.id)?.setAttribute('d', heroReturnPath(item, layoutItems));
@@ -755,15 +738,6 @@ function enableHeroMotion() {
       if (route) {
         route.style.setProperty('--route-progress', input.routeProgress.toFixed(3));
         route.style.setProperty('--route-opacity', input.routeOpacity.toFixed(3));
-      }
-    }
-    for (const lightState of state.lights) {
-      const light = lightElements.get(lightState.id);
-      if (light) {
-        light.setAttribute('cx', lightState.x.toFixed(2));
-        light.setAttribute('cy', lightState.y.toFixed(2));
-        light.style.setProperty('--light-opacity', lightState.opacity.toFixed(3));
-        light.style.setProperty('--light-scale', lightState.scale.toFixed(3));
       }
     }
     for (const chargeState of state.charges) {
