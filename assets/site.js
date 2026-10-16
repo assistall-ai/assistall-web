@@ -543,6 +543,9 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS, layout = 'spre
 }
 
 export const HERO_ROUTE_REST_OPACITY = .06;
+// Share of the glide spent on the route; the rest carries each card under the workspace edge.
+const HERO_CARD_ENTRY = .86;
+const HERO_CARD_DIVE = 30;
 
 function bump(time, start, end) {
   if (time <= start || time >= end) return 0;
@@ -561,10 +564,14 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, box =
   const inputs = items.map((item) => {
     const progress = restaged ? 0 : clampUnit((time - 600) / 1800);
     const travel = easeInOutCubic(progress);
-    const point = curvePoint(routes.get(item.id), travel);
-    // Cards fade by distance travelled, and are gone while still spread out, so nothing gathers
-    // or flickers above the workspace before they arrive.
-    const fadeOut = 1 - clampUnit((travel - .5) / .22);
+    // Cards run the whole route into the top edge, then carry on a little way under it, where
+    // the workspace hides them as they fade: they visibly enter the logo.
+    const route = routes.get(item.id);
+    const dive = clampUnit((travel - HERO_CARD_ENTRY) / (1 - HERO_CARD_ENTRY)) * HERO_CARD_DIVE;
+    const point = travel <= HERO_CARD_ENTRY
+      ? curvePoint(route, travel / HERO_CARD_ENTRY)
+      : { x: route.to.x - route.spoke.x * dive, y: route.to.y - route.spoke.y * dive };
+    const fadeOut = 1 - clampUnit((travel - .93) / .06);
     const opacity = restaged ? 1 : fadeOut;
     return {
       id: item.id,
@@ -573,7 +580,7 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, box =
       opacity,
       // Cards compact as they converge on the workspace, keeping their separate
       // source positions legible without turning the intake into a stack.
-      scale: (.72 - .48 * travel) * opacity,
+      scale: (.72 - .56 * clampUnit(travel / HERO_CARD_ENTRY)) * opacity,
       // Routes draw once, then stay as faint lines; each intake and return lifts them briefly.
       routeProgress: drawn ? 1 : clampUnit(travel * 1.08),
       // Hidden until it starts drawing: a zero-length round-capped dash paints a dot at both ends.

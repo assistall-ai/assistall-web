@@ -159,14 +159,16 @@ test('hero sequence sends every input through the workspace top gate before its 
   assert.ok(earlyIntake.filter(({ y }) => y < 125).length >= 3, 'the composition needs a visible top row of inputs');
 
   const finalIntake = siteModule.getHeroSequenceState(2300);
-  assert.ok(finalIntake.inputs.every(({ opacity }) => opacity === 0), 'cards have faded before they bunch together at the workspace top');
+  const workspace = siteModule.heroDefaultBox();
+  assert.ok(finalIntake.inputs.every(({ y, opacity }) => y > workspace.top + 5 && opacity < .1), 'cards reach the workspace and carry on under its top edge, hidden by the box, as they fade');
   assert.ok(siteModule.getHeroSequenceState(1500).inputs.every(({ opacity }) => opacity > .9), 'cards stay fully visible for most of their glide');
 
   const entries = new Map(siteModule.heroRouteCurves().map((curve) => [curve.id, curve.to]));
   assert.equal(siteModule.getHeroSequenceState(2000).lights, undefined, 'there are no lead lights to show');
 
   const cleared = siteModule.getHeroSequenceState(2800);
-  assert.ok(cleared.inputs.every(({ id, x, y, opacity }) => Math.abs(x - entries.get(id).x) < 1e-6 && Math.abs(y - entries.get(id).y) < 1e-6 && opacity === 0), 'every input must arrive at its own entry point on the workspace edge');
+  assert.ok(cleared.inputs.every(({ x, y, opacity }) => x > workspace.left && x < workspace.right && y > workspace.top + 5 && y < workspace.bottom && opacity === 0), 'every card finishes inside the workspace, out of sight');
+  assert.ok(siteModule.getHeroSequenceState(1800).inputs.every(({ y, opacity }) => opacity === 1 && y <= workspace.top + 1), 'cards stay fully visible right up to the workspace edge');
   const activeReturnCharges = cleared.charges.filter(({ opacity }) => opacity > 0);
   assert.equal(activeReturnCharges.length, HERO_MOTION_ITEMS.length, 'every circuit charge must leave the workspace together');
   assert.ok(activeReturnCharges.every(({ progress }) => Math.abs(progress - activeReturnCharges[0].progress) < 0.0001), 'simultaneous return charges must share the same position along their paths');
