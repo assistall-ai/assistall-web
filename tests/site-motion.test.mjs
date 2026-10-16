@@ -159,7 +159,8 @@ test('hero sequence sends every input through the workspace top gate before its 
   assert.ok(earlyIntake.filter(({ y }) => y < 125).length >= 3, 'the composition needs a visible top row of inputs');
 
   const finalIntake = siteModule.getHeroSequenceState(2300);
-  assert.ok(finalIntake.inputs.some(({ opacity }) => opacity > 0), 'the inputs must finish before lights can return');
+  assert.ok(finalIntake.inputs.every(({ opacity }) => opacity === 0), 'cards have faded before they bunch together at the workspace top');
+  assert.ok(siteModule.getHeroSequenceState(1500).inputs.every(({ opacity }) => opacity > .9), 'cards stay fully visible for most of their glide');
   assert.ok(finalIntake.lights.every(({ direction }) => direction !== 'return'), 'return lights must wait until the full intake is clear');
 
   const nearGate = siteModule.getHeroSequenceState(2000);
@@ -424,4 +425,15 @@ test('hero routes keep a little room between each other all the way into the wor
       }
     }
   }
+});
+
+test('return lights ease in as they leave the workspace and the routes are clipped at its top edge', () => {
+  const start = siteModule.getHeroSequenceState(2610).charges;
+  const travelling = siteModule.getHeroSequenceState(2600 + 520 * .4).charges;
+  assert.ok(start.every(({ opacity }) => opacity < .05), 'charges start dim while they are still bunched at the workspace');
+  assert.ok(travelling.every(({ opacity }) => opacity > .95), 'charges are at full strength once they have spread apart');
+  const markup = createHeroMotionMarkup();
+  assert.match(markup, /<clipPath id="hero-route-clip"[^>]*><rect data-hero-route-clip x="0" y="0" width="1200" height="276\.0"><\/rect><\/clipPath>/, 'nothing of a route draws below the workspace top edge');
+  assert.match(markup, /<g clip-path="url\(#hero-route-clip\)">/);
+  assert.match(pageCss, /\.hero-route-charge \{[^}]*stroke-width: 2\.2;/, 'the return light is a little brighter and bolder than the resting lines');
 });

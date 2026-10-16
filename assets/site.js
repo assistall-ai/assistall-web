@@ -512,10 +512,11 @@ function heroReturnPath(item, items) {
 }
 
 function heroRouteMapMarkup(items) {
-  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => {
+  const top = heroBox.top.toFixed(1);
+  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="hero-route-clip" clipPathUnits="userSpaceOnUse"><rect data-hero-route-clip x="0" y="0" width="1200" height="${top}"></rect></clipPath></defs><g clip-path="url(#hero-route-clip)">${items.map((item) => {
     const compactHidden = item.compact ? '' : ' hero-route--compact-hidden';
     return `<path class="hero-route${compactHidden}" data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item, items)}"></path><path class="hero-route-charge${compactHidden}" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item, items)}"></path><circle class="hero-route-light${compactHidden}" data-hero-light="${item.id}" r="3" cx="${item.x}" cy="${item.y}"></circle>`;
-  }).join('')}</svg>`;
+  }).join('')}</g></svg>`;
 }
 
 function heroSignalMarkup(item) {
@@ -561,7 +562,8 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, box =
     const progress = restaged ? 0 : clampUnit((time - 600) / 1800);
     const travel = easeInOutCubic(progress);
     const point = curvePoint(routes.get(item.id), travel);
-    const fadeOut = 1 - clampUnit((progress - .86) / .14);
+    // Cards are gone before they bunch together at the workspace top, so nothing flickers there.
+    const fadeOut = 1 - clampUnit((progress - .56) / .18);
     const opacity = restaged ? 1 : fadeOut;
     return {
       id: item.id,
@@ -598,7 +600,10 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, box =
     const launchedAt = 2600;
     const progress = clampUnit((time - launchedAt) / chargeDuration);
     const active = time >= launchedAt && time < launchedAt + chargeDuration;
-    return { id: item.id, progress, opacity: active ? Math.sin(Math.PI * progress) : 0 };
+    // Ease in over the first stretch (the fan spreads the charges apart first), fade at the source.
+    const easeIn = clampUnit(progress / .22);
+    const easeOut = 1 - clampUnit((progress - .8) / .2);
+    return { id: item.id, progress, opacity: active ? easeIn * easeIn * (3 - 2 * easeIn) * easeOut : 0 };
   });
 
   const spinProgress = clampUnit((time - 3600) / 1100);
@@ -702,6 +707,7 @@ function enableHeroMotion() {
       const toX = (value) => value / stageBounds.width * 1200;
       const toY = (value) => value / stageBounds.height * 700;
       heroBox = { left: toX(boxPx.left), right: toX(boxPx.right), top: toY(boxPx.top), bottom: toY(boxPx.bottom) };
+      canvas.querySelector('[data-hero-route-clip]')?.setAttribute('height', heroBox.top.toFixed(1));
     }
     const copy = layout === 'squeezed' ? null : measureCopy(stageBounds);
     layoutItems = copy && boxPx
