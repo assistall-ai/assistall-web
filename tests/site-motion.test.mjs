@@ -6,7 +6,8 @@ import {
   FILE_MARKS,
   HERO_MOTION_ITEMS,
   HERO_SQUEEZED_MAX_WIDTH,
-  HERO_WIDE_MIN_WIDTH,
+  HERO_ROUTE_REST_OPACITY,
+  planHeroSpread,
   heroItemsForLayout,
   heroLayoutForWidth,
   calculateHeroRouteTargetY,
@@ -121,7 +122,7 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.match(pageCss, /backface-visibility: hidden/);
   assert.match(pageCss, /\.hero-motion \{ z-index: 2; \}/, 'hero signals must remain visible above the dark film while staying behind copy');
   assert.match(pageCss, /\.hero-motion__stage \{[^}]*translateY\(/, 'the animation field must sit lower than the header crop');
-  assert.match(pageCss, /\.hero-motion__field:not\(\[data-hero-layout="wide"\]\) \.hero-signal-card:not\(\.hero-signal-card--compact\),\s*\.hero-motion__field:not\(\[data-hero-layout="wide"\]\) \.hero-route--compact-hidden \{ display: none; \}/, 'narrower layouts must suppress cards and paths outside the compact source set');
+  assert.match(pageCss, /\.hero-motion__field\[data-hero-layout="squeezed"\] \.hero-signal-card:not\(\.hero-signal-card--compact\),\s*\.hero-motion__field\[data-hero-layout="squeezed"\] \.hero-route--compact-hidden \{ display: none; \}/, 'narrower layouts must suppress cards and paths outside the compact source set');
   assert.doesNotMatch(pageCss, /\.hero-signal-card--compact \{ top:/, 'cards must not be offset away from the routes that start at them');
   assert.doesNotMatch(pageCss + siteScript, /mobile-hidden|mobileHidden/, 'every compact source stays visible on phones');
   assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
@@ -232,74 +233,108 @@ function overlaps(a, b) {
   return a.left < b.left + CARD.width + CARD.gap && b.left < a.left + CARD.width + CARD.gap
     && a.top < b.top + CARD.height + CARD.gap && b.top < a.top + CARD.height + CARD.gap;
 }
+// Page geometry in stage pixels, modelled from brand.css and page.css for a viewport.
+function modelHero(viewWidth, viewHeight) {
+  const gutter = Math.min(48, Math.max(20, viewWidth * .04));
+  const wrapLeft = (viewWidth - Math.min(viewWidth - gutter * 2, 1296)) / 2;
+  const stageOffset = Math.min(80, Math.max(56, viewWidth * .06));
+  const height = Math.max(Math.min(900, viewHeight), 76 + 64 + 470 + 80);
+  const copyTop = 140 + Math.max(0, (height - 220 - 520) / 2);
+  const boxWidth = Math.min(132, Math.max(82, viewWidth * .11));
+  return {
+    width: viewWidth,
+    height,
+    copy: { left: wrapLeft, right: wrapLeft + Math.min(650, viewWidth * .58), top: copyTop - stageOffset, bottom: copyTop + 520 - stageOffset },
+    box: { left: viewWidth * .725 - boxWidth / 2, right: viewWidth * .725 + boxWidth / 2, top: height * .394, bottom: height * .394 + boxWidth },
+    safeTop: 76 - stageOffset + 10,
+  };
+}
+const VIEWPORTS = [[1920, 1080], [1440, 900], [1366, 768], [1280, 720], [1024, 768], [900, 1000], [821, 900]];
 
 test('hero chooses its source layout from the viewport width', () => {
   assert.equal(heroLayoutForWidth(360), 'squeezed');
   assert.equal(heroLayoutForWidth(HERO_SQUEEZED_MAX_WIDTH), 'squeezed');
-  assert.equal(heroLayoutForWidth(HERO_SQUEEZED_MAX_WIDTH + 1), 'mid');
-  assert.equal(heroLayoutForWidth(HERO_WIDE_MIN_WIDTH - 1), 'mid');
-  assert.equal(heroLayoutForWidth(HERO_WIDE_MIN_WIDTH), 'wide');
-  assert.equal(heroItemsForLayout('wide').length, 14);
-  for (const layout of ['mid', 'squeezed']) {
-    assert.deepEqual(heroItemsForLayout(layout).map(({ id }) => id), ['email', 'docx', 'xlsx', 'csv', 'voice', 'folder', 'txt', 'pdf'], `${layout} keeps all eight compact sources`);
-  }
+  assert.equal(heroLayoutForWidth(HERO_SQUEEZED_MAX_WIDTH + 1), 'spread');
+  assert.equal(heroLayoutForWidth(1920), 'spread');
+  assert.deepEqual(heroItemsForLayout('squeezed').map(({ id }) => id), ['email', 'docx', 'xlsx', 'csv', 'voice', 'folder', 'txt', 'pdf'], 'phones keep all eight compact sources');
   const markup = createHeroMotionMarkup(HERO_MOTION_ITEMS, 'squeezed');
   assert.match(markup, /data-hero-layout="squeezed"/);
   assert.match(markup, /data-hero-signal="docx" style="--signal-x:31\.667%;--signal-y:6\.429%/, 'cards are painted at their layout position before the first frame');
 });
 
-test('every hero layout keeps sources apart, above the document and clear of the workspace', () => {
-  const cases = [['wide', [1340, 1440, 1920], 900], ['mid', [821, 1024, 1339], 900], ['squeezed', [360, 390, 820], 900]];
-  for (const [layout, widths, height] of cases) {
-    const items = heroItemsForLayout(layout);
-    for (const item of items) {
-      assert.ok(Math.hypot(item.x - 870, item.y - 276) >= 180, `${layout}: ${item.id} must stay clear of the workspace`);
-      assert.ok(item.y <= 270, `${layout}: ${item.id} keeps the lower hero for the document`);
-    }
-    for (const width of widths) {
-      const rects = cardRects(items, width, height);
-      for (const a of rects) for (const b of rects) {
-        if (a.id < b.id) assert.ok(!overlaps(a, b), `${layout} at ${width}px: ${a.id} and ${b.id} must not touch`);
-      }
-    }
+test('the squeezed rows keep sources apart, below the header and clear of the workspace', () => {
+  const items = heroItemsForLayout('squeezed');
+  for (const item of items) {
+    assert.ok(Math.hypot(item.x - 870, item.y - 276) >= 180, `${item.id} must stay clear of the workspace`);
+    assert.ok(item.y <= 270, `${item.id} keeps the lower hero for the document`);
+  }
+  for (const width of [360, 390, 820]) {
+    const rects = cardRects(items, width, 900);
+    for (const a of rects) for (const b of rects) if (a.id < b.id) assert.ok(!overlaps(a, b), `${width}px: ${a.id} and ${b.id} must not touch`);
+    for (const rect of rects) assert.ok(rect.top + 40 >= 68, `${width}px: ${rect.id} must sit below the fixed header`);
   }
 });
 
-test('the mid layout stays right of the copy column and the squeezed top row clears the header', () => {
-  for (const width of [821, 1024, 1060, 1200, 1339]) {
-    const gutter = Math.min(48, Math.max(20, width * .04));
-    const wrapLeft = (width - Math.min(width - gutter * 2, 1296)) / 2;
-    const copyRight = wrapLeft + Math.min(680, width * .58);
-    for (const rect of cardRects(heroItemsForLayout('mid'), width, 900)) {
-      assert.ok(rect.left >= copyRight, `mid at ${width}px: ${rect.id} must not enter the copy column`);
+test('measured spread fills the free space evenly without touching the copy, workspace or document path', () => {
+  for (const [viewWidth, viewHeight] of VIEWPORTS) {
+    const page = modelHero(viewWidth, viewHeight);
+    const items = planHeroSpread(page);
+    const label = `${viewWidth}x${viewHeight}`;
+    assert.ok(items.length >= 8, `${label}: at least eight sources`);
+    if (viewWidth >= 1280) assert.equal(items.length, 14, `${label}: desktop shows every source`);
+    assert.equal(new Set(items.map(({ id }) => id)).size, items.length, `${label}: each source once`);
+    const px = items.map((item) => ({ id: item.id, x: item.x / 1200 * page.width, y: item.y / 700 * page.height }));
+    const boxCentre = (page.box.left + page.box.right) / 2;
+    for (const card of px) {
+      const left = card.x - 37;
+      const right = card.x + 37;
+      const top = card.y - 13;
+      const bottom = card.y + 13;
+      assert.ok(!(right > page.copy.left && left < page.copy.right && bottom > page.copy.top && top < page.copy.bottom), `${label}: ${card.id} must not touch the copy`);
+      assert.ok(bottom <= page.box.bottom + 1, `${label}: ${card.id} keeps the lower hero for the document`);
+      assert.ok(!(Math.abs(card.x - boxCentre) < (page.box.right - page.box.left) / 2 + 37 && bottom > page.box.top - 40), `${label}: ${card.id} must not sit in the document column`);
+      assert.ok(top >= page.safeTop - 1 && right <= page.width - 20, `${label}: ${card.id} stays on screen below the header`);
     }
-  }
-  const headerBottom = 68;
-  const stageOffset = 40;
-  for (const rect of cardRects(heroItemsForLayout('squeezed'), 390, 900)) {
-    assert.ok(rect.top + stageOffset >= headerBottom, `squeezed: ${rect.id} must sit below the fixed header`);
+    for (const a of px) for (const b of px) {
+      if (a.id < b.id) assert.ok(Math.abs(a.x - b.x) >= 100 || Math.abs(a.y - b.y) >= 42, `${label}: ${a.id} and ${b.id} must not touch`);
+    }
+    const xs = px.map(({ x }) => x);
+    assert.ok(Math.max(...xs) - Math.min(...xs) >= page.width * .5, `${label}: sources spread across the screen, not one side`);
+    if (page.copy.top - page.safeTop > 60) assert.ok(px.some(({ x }) => x < page.copy.right), `${label}: the strip above the copy is used`);
   }
 });
 
-test('the static fallback mirrors the animated layout positions', () => {
+test('hero routes stay as faint lines after the light passes', () => {
+  assert.equal(siteModule.getHeroSequenceState(0).inputs[0].routeProgress, 0, 'routes are not drawn before the first intake');
+  for (const time of [3800, 6000, 9000, 11800 + 200, 11800 * 3 + 5000]) {
+    const state = siteModule.getHeroSequenceState(time);
+    assert.ok(state.inputs.every(({ routeProgress }) => routeProgress === 1), `routes remain drawn at ${time}ms`);
+    assert.ok(state.inputs.every(({ routeOpacity }) => routeOpacity >= HERO_ROUTE_REST_OPACITY - 1e-9), `routes remain visible at ${time}ms`);
+  }
+  const levels = Array.from({ length: 118 }, (_, step) => siteModule.getHeroSequenceState(step * 100).inputs[0].routeOpacity);
+  assert.ok(Math.max(...levels) <= .3, 'route lines stay translucent even at their brightest');
+  assert.ok(siteModule.getHeroSequenceState(9000).inputs[0].routeOpacity <= HERO_ROUTE_REST_OPACITY + 1e-9, 'lines settle to the faint resting level');
+  assert.match(pageCss, /\.hero-route-map path \{[^}]*stroke-width: 1;/, 'routes are hairlines, not cables');
+});
+
+test('the static fallback spreads its chips in the strip above the copy and keeps the phone frame calm', () => {
   const chips = [...pageHtml.matchAll(/<span class="fallback-signal" style="([^"]+)">([^<]+)<\/span>/g)];
   assert.equal(chips.length, 5);
-  const pct = (value, total) => `${Number((value / total * 100).toFixed(3))}%`;
   for (const [, style, label] of chips) {
     const vars = Object.fromEntries(style.split(';').map((pair) => pair.split(':')));
-    const item = HERO_MOTION_ITEMS.find((entry) => entry.label === label);
-    assert.ok(item?.compact, `${label} must be a compact source`);
-    assert.equal(vars['--wide-x'], pct(item.x, 1200));
-    assert.equal(vars['--wide-y'], pct(item.y, 700));
-    assert.equal(vars['--mid-x'], pct(item.compact.mid.x, 1200));
-    assert.equal(vars['--mid-y'], pct(item.compact.mid.y, 700));
-    if (vars['--squeezed-display'] !== 'none') {
-      assert.equal(vars['--squeezed-x'], pct(item.compact.squeezed.x, 1200));
-      assert.equal(vars['--squeezed-y'], pct(item.compact.squeezed.y, 700));
-      assert.ok(item.compact.squeezed.y <= 45, `${label}: the phone still frame only uses the row above the headline`);
-    }
+    const x = parseFloat(vars['--x']);
+    const y = parseFloat(vars['--y']);
+    assert.ok(y <= 5 || x >= 85, `${label}: desktop chips sit above the copy or at the far right`);
+    if (vars['--squeezed-display'] !== 'none') assert.ok(parseFloat(vars['--squeezed-y']) <= 6.5, `${label}: the phone still frame only uses the row above the headline`);
   }
   assert.match(pageCss, /\.hero-motion__fallback img \{ position: absolute; left: 72\.5%; top: 39\.428571%;/, 'the still logo sits where the animated workspace sits');
+});
+
+test('the workspace is a quiet tile rather than a framed badge', () => {
+  const markup = createHeroMotionMarkup();
+  assert.doesNotMatch(markup, /hero-workspace__edge/);
+  assert.doesNotMatch(pageCss, /hero-workspace__edge|linear-gradient\(135deg, #24585a/);
+  assert.match(pageCss, /\.hero-workspace \{[^}]*aspect-ratio: 1;/, 'the tile matches the square logo');
 });
 
 test('file formats use distinct drawn marks, not lettered text or one generic page', () => {

@@ -14,37 +14,108 @@ export const WORKFLOW_ROTATION_MS = 11000;
 export const WORKFLOW_PLAYBACK_RATE = 0.65;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
-// x/y place each source in the 1200 × 700 stage on wide screens (≥ 1340px), where all
-// fourteen fit around the workspace without entering the headline column. Sources left
-// of x 640 sit in the strip above the copy. Narrower screens show only the eight
-// `compact` sources, at their own coordinates: `mid` keeps them right of the copy
-// (821–1339px), `squeezed` spreads them over the full width on tablets and phones.
-export const HERO_WIDE_MIN_WIDTH = 1340;
+// x/y are each source's default place in the 1200 × 700 stage (used before measuring).
+// Above 820px the page measures the copy and workspace and spreads the sources over the
+// free space (planHeroSpread). At 820px and below the copy fills the width, so the eight
+// `compact` sources use fixed `squeezed` rows across the full width instead.
 export const HERO_SQUEEZED_MAX_WIDTH = 820;
 export const HERO_MOTION_ITEMS = Object.freeze([
   { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 540, y: 20 },
   { id: 'odoo', icon: 'odoo', label: 'odoo', x: 420, y: 30 },
   { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 660, y: 150 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 660, y: 30, compact: { mid: { x: 856, y: 92 }, squeezed: { x: 280, y: 150 } } },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 785, y: 10, compact: { mid: { x: 800, y: 20 }, squeezed: { x: 380, y: 45 } } },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 915, y: 10, compact: { mid: { x: 913, y: 20 }, squeezed: { x: 640, y: 45 } } },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 1045, y: 10, compact: { mid: { x: 1026, y: 20 }, squeezed: { x: 900, y: 45 } } },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 1170, y: 20, compact: { mid: { x: 1139, y: 20 }, squeezed: { x: 540, y: 150 } } },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 1195, y: 150, compact: { mid: { x: 1083, y: 92 }, squeezed: { x: 500, y: 230 } } },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 1190, y: 270, compact: { mid: { x: 1110, y: 190 }, squeezed: { x: 1040, y: 150 } } },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1070, y: 270, compact: { mid: { x: 970, y: 92 }, squeezed: { x: 1160, y: 45 } } },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 660, y: 30, compact: { squeezed: { x: 280, y: 150 } } },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 785, y: 10, compact: { squeezed: { x: 380, y: 45 } } },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 915, y: 10, compact: { squeezed: { x: 640, y: 45 } } },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 1045, y: 10, compact: { squeezed: { x: 900, y: 45 } } },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 1170, y: 20, compact: { squeezed: { x: 540, y: 150 } } },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 1195, y: 150, compact: { squeezed: { x: 500, y: 230 } } },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 1190, y: 270, compact: { squeezed: { x: 1040, y: 150 } } },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1070, y: 270, compact: { squeezed: { x: 1160, y: 45 } } },
   { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 660, y: 270 },
   { id: 'jpg', icon: 'image', label: 'JPG', x: 1080, y: 155 },
   { id: 'json', icon: 'json', label: 'JSON', x: 300, y: 22 },
 ]);
 
 export function heroLayoutForWidth(width) {
-  if (width <= HERO_SQUEEZED_MAX_WIDTH) return 'squeezed';
-  return width < HERO_WIDE_MIN_WIDTH ? 'mid' : 'wide';
+  return width <= HERO_SQUEEZED_MAX_WIDTH ? 'squeezed' : 'spread';
+}
+
+// On wide and mid screens the sources are placed from the measured page: an uneven
+// lattice over the free space (the strip above the copy and the area right of it),
+// sampled so the cards spread evenly without touching the copy, the workspace or the
+// document's path below it. All values are stage pixels; results are stage units.
+const HERO_CARD = Object.freeze({ width: 74, height: 26, gapX: 30, gapY: 20 });
+const HERO_PRIORITY = ['email', 'docx', 'xlsx', 'csv', 'voice', 'folder', 'txt', 'pdf', 'whatsapp', 'odoo', 'zoho', 'jpg', 'pptx', 'json'];
+const HERO_SPREAD_ORDER = ['zoho', 'email', 'docx', 'whatsapp', 'odoo', 'xlsx', 'pdf', 'voice', 'csv', 'jpg', 'folder', 'pptx', 'txt', 'json'];
+
+function seededRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
+export function planHeroSpread({ width, height, copy, box, safeTop = 12, items = HERO_MOTION_ITEMS, maxItems = 14 } = {}) {
+  const { width: cardW, height: cardH, gapX, gapY } = HERO_CARD;
+  const halfW = cardW / 2;
+  const halfH = cardH / 2;
+  const right = width - 28 - halfW;
+  const top = safeTop + halfH;
+  const stripBottom = copy.top - 20 - halfH;
+  const boxCentre = (box.left + box.right) / 2;
+  const boxWidth = box.right - box.left;
+  const zones = [{ left: copy.right + 40 + halfW, right, top, bottom: box.bottom - halfH }];
+  if (stripBottom >= top) zones.unshift({ left: copy.left + halfW, right, top, bottom: stripBottom });
+
+  const clear = (x, y) => {
+    const hitsCopy = x + halfW > copy.left - 16 && x - halfW < copy.right + 32 && y + halfH > copy.top - 16 && y - halfH < copy.bottom + 16;
+    const inDocumentColumn = Math.abs(x - boxCentre) < boxWidth / 2 + halfW + 48 && y + halfH > box.top - 56;
+    const nearWorkspace = Math.hypot(x - boxCentre, y - box.top) < boxWidth * .9 + 72;
+    return !hitsCopy && !inDocumentColumn && !nearWorkspace;
+  };
+
+  const random = seededRandom(20261016);
+  const stepX = (cardW + gapX) / 2;
+  const stepY = (cardH + gapY) / 1.4;
+  const candidates = [];
+  for (const zone of zones) {
+    for (let y = zone.top; y <= zone.bottom; y += stepY) {
+      for (let x = zone.left; x <= zone.right; x += stepX) {
+        const cx = Math.min(zone.right, Math.max(zone.left, x + (random() - .5) * stepX));
+        const cy = Math.min(zone.bottom, Math.max(zone.top, y + (random() - .5) * stepY));
+        if (clear(cx, cy)) candidates.push({ x: cx, y: cy });
+      }
+    }
+  }
+
+  const apart = (a, b) => Math.abs(a.x - b.x) >= cardW + gapX || Math.abs(a.y - b.y) >= cardH + gapY;
+  const spread = (a, b) => Math.hypot((a.x - b.x) / (cardW + gapX), (a.y - b.y) / (cardH + gapY));
+  const chosen = [];
+  const remaining = [...candidates].sort((a, b) => a.y - b.y || a.x - b.x);
+  if (remaining.length) chosen.push(remaining.shift());
+  while (chosen.length < Math.min(maxItems, items.length) && remaining.length) {
+    let best = -1;
+    let bestScore = -Infinity;
+    remaining.forEach((candidate, index) => {
+      if (!chosen.every((point) => apart(point, candidate))) return;
+      const score = Math.min(...chosen.map((point) => spread(point, candidate)));
+      if (score > bestScore) { bestScore = score; best = index; }
+    });
+    if (best < 0) break;
+    chosen.push(remaining.splice(best, 1)[0]);
+  }
+
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const selected = HERO_PRIORITY.slice(0, chosen.length);
+  const ordered = HERO_SPREAD_ORDER.filter((id) => selected.includes(id));
+  return chosen
+    .sort((a, b) => a.x - b.x || a.y - b.y)
+    .map((point, index) => ({ ...byId.get(ordered[index]), x: point.x / width * 1200, y: point.y / height * 700 }));
 }
 
 export function heroItemsForLayout(layout, items = HERO_MOTION_ITEMS) {
-  if (layout === 'wide') return items;
+  if (layout !== 'squeezed') return items;
   return items.filter((item) => item.compact?.[layout]).map((item) => ({ ...item, ...item.compact[layout] }));
 }
 
@@ -278,7 +349,7 @@ function heroSignalMarkup(item) {
   return `<div class="hero-signal-card${compact}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}<span class="hero-signal-card__label">${item.label}</span></div>`;
 }
 
-export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS, layout = 'wide') {
+export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS, layout = 'spread') {
   const placed = new Map(heroItemsForLayout(layout, items).map((item) => [item.id, item]));
   const positioned = items.map((item) => placed.get(item.id) ?? item);
   return `<div class="hero-motion__field" data-hero-layout="${layout}" aria-hidden="true">
@@ -289,10 +360,17 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS, layout = 'wide
       <div class="hero-output__paper"><span class="hero-output__preview"></span><span class="hero-output__line hero-output__line--one"></span><span class="hero-output__line hero-output__line--two"></span><span class="hero-output__approved">Ready</span></div>
     </div>
     <div class="hero-workspace" data-hero-workspace>
-      <div class="hero-workspace__face hero-workspace__face--front"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div><span class="hero-workspace__edge"></span></div>
-      <div class="hero-workspace__face hero-workspace__face--back"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div><span class="hero-workspace__edge"></span></div>
+      <div class="hero-workspace__face hero-workspace__face--front"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div></div>
+      <div class="hero-workspace__face hero-workspace__face--back"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div></div>
     </div>
   </div>`;
+}
+
+export const HERO_ROUTE_REST_OPACITY = .1;
+
+function bump(time, start, end) {
+  if (time <= start || time >= end) return 0;
+  return Math.sin(Math.PI * (time - start) / (end - start));
 }
 
 export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, routeTargetY = HERO_ROUTE_TARGET_Y) {
@@ -301,6 +379,7 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, route
   const phase = time < 3600 ? 'intake' : time < 4700 ? 'spin' : time < 8000 ? 'output' : 'settle';
   const returning = time >= 2600 && time < 3600;
   const restaged = time >= 8300;
+  const drawn = elapsed >= 2400;
 
   const inputs = items.map((item) => {
     const progress = restaged ? 0 : clampUnit((time - 600) / 1800);
@@ -316,8 +395,9 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, route
       // Cards compact as they converge on the single top gate, keeping their
       // separate source positions legible without turning the intake into a stack.
       scale: (.72 - .48 * travel) * opacity,
-      routeProgress: restaged ? 0 : clampUnit(travel * 1.08),
-      routeOpacity: restaged ? 0 : (returning ? .22 : opacity * .62),
+      // Routes draw once, then stay as faint lines; each intake and return lifts them briefly.
+      routeProgress: drawn ? 1 : clampUnit(travel * 1.08),
+      routeOpacity: HERO_ROUTE_REST_OPACITY + .14 * bump(time, 600, 2600) + .08 * bump(time, 2600, 3500),
     };
   });
 
@@ -412,12 +492,44 @@ function enableHeroMotion() {
   let layoutItems = HERO_MOTION_ITEMS;
   // Cards, routes, lights and charges all read the same layout coordinates, so every
   // visible route starts at its own card at every width.
+  const heroCopy = document.querySelector('.hero-copy');
+  const header = document.querySelector('.site-header');
+  // The copy's text extent in stage pixels, ignoring its reveal slide-in.
+  const measureCopy = (stageBounds) => {
+    const slide = heroCopy ? new DOMMatrixReadOnly(getComputedStyle(heroCopy).transform === 'none' ? undefined : getComputedStyle(heroCopy).transform).m42 : 0;
+    const rects = [...(heroCopy?.children ?? [])].map((child) => {
+      const range = document.createRange();
+      range.selectNodeContents(child);
+      return range.getBoundingClientRect();
+    }).filter((rect) => rect.width > 0);
+    if (!rects.length) return null;
+    return {
+      left: Math.min(...rects.map((r) => r.left)) - stageBounds.left,
+      right: Math.max(...rects.map((r) => r.right)) - stageBounds.left,
+      top: Math.min(...rects.map((r) => r.top)) - slide - stageBounds.top,
+      bottom: Math.max(...rects.map((r) => r.bottom)) - slide - stageBounds.top,
+    };
+  };
   const updateRouteGeometry = () => {
     const layout = heroLayoutForWidth(window.innerWidth);
     if (field) field.dataset.heroLayout = layout;
-    layoutItems = heroItemsForLayout(layout);
     const stageBounds = canvas.getBoundingClientRect();
     const workspaceBounds = workspace?.getBoundingClientRect();
+    const copy = layout === 'squeezed' ? null : measureCopy(stageBounds);
+    layoutItems = copy && workspaceBounds
+      ? planHeroSpread({
+        width: stageBounds.width,
+        height: stageBounds.height,
+        copy,
+        box: { left: workspaceBounds.left - stageBounds.left, right: workspaceBounds.right - stageBounds.left, top: workspaceBounds.top - stageBounds.top, bottom: workspaceBounds.bottom - stageBounds.top },
+        safeTop: (header?.getBoundingClientRect().bottom ?? 0) - stageBounds.top + 10,
+      })
+      : heroItemsForLayout('squeezed');
+    const placed = new Set(layoutItems.map(({ id }) => id));
+    for (const [id, element] of signalElements) element.style.display = placed.has(id) ? '' : 'none';
+    for (const [id, element] of routeElements) element.style.display = placed.has(id) ? '' : 'none';
+    for (const [id, element] of chargeElements) element.style.display = placed.has(id) ? '' : 'none';
+    for (const [id, element] of lightElements) element.style.display = placed.has(id) ? '' : 'none';
     routeTargetY = calculateHeroRouteTargetY({
       stageHeight: stageBounds.height,
       workspaceOffsetY: workspaceBounds ? workspaceBounds.top - stageBounds.top : undefined,
