@@ -46,7 +46,7 @@ export function heroSourceTarget(width) {
   if (width >= 1280) return 14;
   return width >= 1024 ? 12 : 10;
 }
-const HERO_SEEDS = Object.freeze([20261016, 4127, 90210, 2718, 31337, 1618]);
+const HERO_SEEDS = Object.freeze([20261016, 4127, 90210, 2718, 31337, 1618, 8128, 6174, 1729, 4096, 7919, 2026]);
 const HERO_PRIORITY = ['email', 'docx', 'xlsx', 'csv', 'voice', 'folder', 'txt', 'pdf', 'whatsapp', 'odoo', 'zoho', 'jpg', 'pptx', 'json'];
 const HERO_SPREAD_ORDER = ['zoho', 'email', 'docx', 'whatsapp', 'odoo', 'xlsx', 'pdf', 'voice', 'csv', 'jpg', 'folder', 'pptx', 'txt', 'json'];
 
@@ -68,13 +68,27 @@ export function planHeroSpread(page = {}) {
     top: page.box.top / page.height * 700,
     bottom: page.box.bottom / page.height * 700,
   };
-  let best = [];
+  const target = Math.min(minItems, items.length);
+  const fallbacks = [];
   for (const [gapX, gapY] of HERO_GAPS) {
     for (const seed of HERO_SEEDS) {
-      const placed = untangleSpread(spreadWithGap({ ...page, items, gapX, gapY, seed }), boxUnits);
-      if (placed.length >= Math.min(minItems, items.length)) return placed;
-      if (placed.length > best.length) best = placed;
+      const spread = spreadWithGap({ ...page, items, gapX, gapY, seed });
+      // Only spreads big enough to meet the target are worth untangling on the first pass.
+      if (spread.length < target) {
+        fallbacks.push(spread);
+        continue;
+      }
+      const placed = untangleSpread(spread, boxUnits);
+      if (placed.length >= target) return placed;
+      fallbacks.push(placed);
     }
+  }
+  // Nothing met the target: untangle the largest spreads and keep the fullest clean one.
+  let best = [];
+  for (const spread of fallbacks.sort((a, b) => b.length - a.length)) {
+    if (spread.length <= best.length) break;
+    const placed = untangleSpread(spread, boxUnits);
+    if (placed.length > best.length) best = placed;
   }
   return best;
 }
@@ -135,7 +149,7 @@ function spreadWithGap({ width, height, copy, box, safeTop = 12, items, maxItems
     }
   }
 
-  const gate = { x: boxCentre, y: boxMiddle };
+  const gate = { x: boxCentre, y: box.top };
   const distanceToPath = (point, from) => {
     const dx = gate.x - from.x;
     const dy = gate.y - from.y;
@@ -343,51 +357,51 @@ function easeOutCubic(progress) {
   return 1 - (1 - clampUnit(progress)) ** 3;
 }
 
-// Routes end on the workspace's edge: its top, or a side down to the middle. Entry points
-// are handed out in the order the sources sit around the workspace (left side, over the
-// top, to the right side). Each route curves in square to its edge, and any crossing pair
-// is untangled, so lines fan in side by side without crossing or cutting over the box.
+// Every route enters through the workspace's top edge. Sources beside the workspace rise a
+// little, arc over and drop in; sources above glide across and drop in. Entry points are
+// handed out in the order the sources sit around the workspace, and any crossing pair is
+// untangled, so lines fan in side by side without crossing or cutting over the box.
 // Values are stage units; the box is the workspace's resting rectangle.
 const HERO_DEFAULT_BOX = Object.freeze({ left: 815, right: 925, top: 276, bottom: 378.7 });
 let heroBox = HERO_DEFAULT_BOX;
 
-function heroPerimeter(box) {
-  const width = box.right - box.left;
-  const corner = width * .2;
-  const middle = (box.top + box.bottom) / 2;
-  const side = Math.max(0, middle - (box.top + corner));
-  const top = Math.max(0, width - corner * 2);
-  return { box, corner, middle, side, top, length: side * 2 + top };
+const HERO_APPROACH = 42;
+
+function heroTopEdge(box) {
+  const corner = (box.right - box.left) * .2;
+  return { left: box.left + corner, width: Math.max(0, box.right - box.left - corner * 2), y: box.top };
 }
 
-function entryPoint(perimeter, distance) {
-  const { box, corner, middle, side, top } = perimeter;
-  if (distance <= side) return { x: box.left, y: middle - distance, normal: { x: -1, y: 0 } };
-  if (distance <= side + top) return { x: box.left + corner + (distance - side), y: box.top, normal: { x: 0, y: -1 } };
-  return { x: box.right, y: box.top + corner + (distance - side - top), normal: { x: 1, y: 0 } };
+function entryPoint(edge, rank, count) {
+  return { x: edge.left + edge.width * (rank + .5) / Math.max(1, count), y: edge.y, normal: { x: 0, y: -1 } };
 }
 
+// A rise-then-drop curve: it leaves the source heading up (or across, for sources already
+// above the approach height), crosses over, and arrives straight down into its entry point.
 function curveTo(source, entry) {
-  const reach = Math.min(170, Math.max(24, Math.hypot(source.x - entry.x, source.y - entry.y) * .45));
+  const apex = entry.y - HERO_APPROACH;
+  const lift = source.y > apex ? apex - 10 : source.y;
   return {
     from: { x: source.x, y: source.y },
-    control: { x: entry.x + entry.normal.x * reach, y: entry.y + entry.normal.y * reach },
+    c1: { x: source.x + (entry.x - source.x) * .28, y: lift },
+    c2: { x: entry.x, y: apex },
     to: { x: entry.x, y: entry.y },
     normal: entry.normal,
   };
 }
 
-function curvePoint(curve, progress) {
+export function heroCurvePoint(curve, progress) {
   const t = clampUnit(progress);
-  const inverse = 1 - t;
+  const u = 1 - t;
   return {
-    x: inverse ** 2 * curve.from.x + 2 * inverse * t * curve.control.x + t ** 2 * curve.to.x,
-    y: inverse ** 2 * curve.from.y + 2 * inverse * t * curve.control.y + t ** 2 * curve.to.y,
+    x: u ** 3 * curve.from.x + 3 * u * u * t * curve.c1.x + 3 * u * t * t * curve.c2.x + t ** 3 * curve.to.x,
+    y: u ** 3 * curve.from.y + 3 * u * u * t * curve.c1.y + 3 * u * t * t * curve.c2.y + t ** 3 * curve.to.y,
   };
 }
+const curvePoint = heroCurvePoint;
 
 function curveSegments(curve) {
-  const points = Array.from({ length: 29 }, (_, step) => curvePoint(curve, step / 28));
+  const points = Array.from({ length: 21 }, (_, step) => curvePoint(curve, step / 20));
   return points.slice(1).map((point, index) => [points[index], point]);
 }
 
@@ -396,7 +410,16 @@ function segmentsCross([a, b], [c, d]) {
   return side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0;
 }
 
+function curveBounds(curve) {
+  const xs = [curve.from.x, curve.c1.x, curve.c2.x, curve.to.x];
+  const ys = [curve.from.y, curve.c1.y, curve.c2.y, curve.to.y];
+  return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+}
+
 function curvesCross(first, second) {
+  const p = curveBounds(first);
+  const q = curveBounds(second);
+  if (p.right < q.left || q.right < p.left || p.bottom < q.top || q.bottom < p.top) return false;
   const a = curveSegments(first);
   const b = curveSegments(second);
   return a.some((segment) => b.some((other) => segmentsCross(segment, other)));
@@ -406,16 +429,16 @@ const routeCache = new WeakMap();
 function heroRoutes(items, box = heroBox) {
   const cached = routeCache.get(items);
   if (cached?.box === box) return cached.routes;
-  const perimeter = heroPerimeter(box);
+  const edge = heroTopEdge(box);
   const count = items.length;
-  const entry = (rank) => entryPoint(perimeter, perimeter.length * (rank + .5) / Math.max(1, count));
-  const centre = { x: (box.left + box.right) / 2, y: perimeter.middle };
+  const entry = (rank) => entryPoint(edge, rank, count);
+  const centre = { x: (box.left + box.right) / 2, y: (box.top + box.bottom) / 2 };
   const angle = ({ x, y }) => Math.atan2(y - centre.y, x - centre.x);
   const order = [...items].sort((first, second) => angle(first) - angle(second) || first.x - second.x);
   // Pairwise first: which of two neighbouring entry points each source needs to stay clear of the other.
-  const step = perimeter.length / Math.max(1, count);
-  const left = entryPoint(perimeter, perimeter.length / 2 - step / 2);
-  const right = entryPoint(perimeter, perimeter.length / 2 + step / 2);
+  const middle = Math.max(0, Math.floor(count / 2) - 1);
+  const left = entryPoint(edge, middle, count);
+  const right = entryPoint(edge, middle + 1, count);
   order.sort((first, second) => {
     const firstLeft = curvesCross(curveTo(first, left), curveTo(second, right));
     const secondLeft = curvesCross(curveTo(second, left), curveTo(first, right));
@@ -440,7 +463,7 @@ function heroRoutes(items, box = heroBox) {
   return routes;
 }
 
-// Each route's curve, for checks: source, control point, entry point and the edge's outward normal.
+// Each route's curve, for checks: source, two control points, entry point and the edge's outward normal.
 export function heroRouteCurves(items = HERO_MOTION_ITEMS, box = heroBox) {
   const routes = heroRoutes(items, box);
   return items.map((item) => ({ id: item.id, ...routes.get(item.id) }));
@@ -455,16 +478,16 @@ function tucked(curve) {
   return { x: curve.to.x - curve.normal.x * 3, y: curve.to.y - curve.normal.y * 3 };
 }
 
+const fixed = (point) => `${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
+
 function heroRoutePath(item, items) {
   const curve = heroRoutes(items).get(item.id);
-  const end = tucked(curve);
-  return `M ${item.x.toFixed(1)} ${item.y.toFixed(1)} Q ${curve.control.x.toFixed(1)} ${curve.control.y.toFixed(1)} ${end.x.toFixed(1)} ${end.y.toFixed(1)}`;
+  return `M ${fixed(curve.from)} C ${fixed(curve.c1)} ${fixed(curve.c2)} ${fixed(tucked(curve))}`;
 }
 
 function heroReturnPath(item, items) {
   const curve = heroRoutes(items).get(item.id);
-  const end = tucked(curve);
-  return `M ${end.x.toFixed(1)} ${end.y.toFixed(1)} Q ${curve.control.x.toFixed(1)} ${curve.control.y.toFixed(1)} ${item.x.toFixed(1)} ${item.y.toFixed(1)}`;
+  return `M ${fixed(tucked(curve))} C ${fixed(curve.c2)} ${fixed(curve.c1)} ${fixed(curve.from)}`;
 }
 
 function heroRouteMapMarkup(items) {
@@ -611,6 +634,8 @@ function enableHeroMotion() {
   const figure = document.querySelector('[data-hero-motion]');
   const canvas = figure?.querySelector('[data-hero-motion-canvas]');
   if (!figure || !canvas || prefersReducedMotion()) return;
+  // Review aid: with ?frame= the hero is a held still, so it appears without its fade-in.
+  if (new URLSearchParams(window.location.search).has('frame')) canvas.style.transition = 'none';
   canvas.innerHTML = createHeroMotionMarkup(HERO_MOTION_ITEMS, heroLayoutForWidth(window.innerWidth));
   figure.classList.add('hero-motion--enhanced');
   const signalElements = new Map([...canvas.querySelectorAll('[data-hero-signal]')].map((element) => [element.dataset.heroSignal, element]));
@@ -679,7 +704,12 @@ function enableHeroMotion() {
     }
   };
   updateRouteGeometry();
-  window.addEventListener('resize', updateRouteGeometry, { passive: true });
+  // Re-plan once resizing settles, not on every resize event.
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(updateRouteGeometry, 160);
+  }, { passive: true });
   const startedAt = performance.now();
   // Review aid, like ?motion=: ?frame=2700 holds the loop at 2.7 seconds for screenshots.
   const frameParam = new URLSearchParams(window.location.search).get('frame');
@@ -1005,7 +1035,8 @@ function initialiseSite() {
   applyMotionPreviewOverride();
   enableMobileNavigation();
   enableSectionGlide();
-  enableHeroMotion();
+  // The hero plans its layout from measurements; start it after the first paint so the copy shows at once.
+  window.requestAnimationFrame(() => window.setTimeout(enableHeroMotion, 0));
   enableCapabilitySwitcher();
   enableConnectorKeyboardScroll();
   enableWorkflowEvidence();

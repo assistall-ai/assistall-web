@@ -98,10 +98,10 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.equal((markup.match(/data-hero-light=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-charge=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   const box = siteModule.heroDefaultBox();
-  for (const [, x, y] of markup.matchAll(/data-hero-route="[^"]+" pathLength="1" d="M [^Q]+Q [-\d.]+ [-\d.]+ ([-\d.]+) ([-\d.]+)"/g)) {
-    const insideX = Number(x) >= box.left && Number(x) <= box.right;
-    const insideY = Number(y) >= box.top && Number(y) <= (box.top + box.bottom) / 2 + 1;
-    assert.ok(insideX && insideY, 'each route ends tucked just under the workspace edge, on its top or upper sides');
+  const ends = [...markup.matchAll(/data-hero-route="[^"]+" pathLength="1" d="M [^C]+C [-\d.]+ [-\d.]+ [-\d.]+ [-\d.]+ ([-\d.]+) ([-\d.]+)"/g)];
+  assert.equal(ends.length, HERO_MOTION_ITEMS.length, 'every route is one rise-then-drop curve');
+  for (const [, x, y] of ends) {
+    assert.ok(Number(x) > box.left && Number(x) < box.right && Number(y) > box.top && Number(y) < box.top + 4, 'each route ends tucked just under the workspace top edge');
   }
   assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/connector-mark__svg/g) ?? []).length, HERO_MOTION_ITEMS.length);
@@ -297,8 +297,8 @@ test('measured spread fills the free space evenly without touching the copy, wor
     }
     for (const a of px) for (const b of px) {
       if (a.id < b.id) assert.ok(Math.abs(a.x - b.x) >= 100 || Math.abs(a.y - b.y) >= 42, `${label}: ${a.id} and ${b.id} must not touch`);
-      // Large screens get generous room: at least a card's width, or two card heights, between neighbours.
-      if (a.id < b.id && viewWidth >= 1440) assert.ok(Math.abs(a.x - b.x) >= 130 || Math.abs(a.y - b.y) >= 56, `${label}: ${a.id} and ${b.id} need more space`);
+      // Large screens keep clear room between neighbours while showing all fourteen sources.
+      if (a.id < b.id && viewWidth >= 1440) assert.ok(Math.abs(a.x - b.x) >= 116 || Math.abs(a.y - b.y) >= 50, `${label}: ${a.id} and ${b.id} need more space`);
     }
     const xs = px.map(({ x }) => x);
     const stripUsable = page.copy.top - page.safeTop > 60;
@@ -318,7 +318,8 @@ test('hero routes stay as faint lines after the light passes', () => {
   const levels = Array.from({ length: 118 }, (_, step) => siteModule.getHeroSequenceState(step * 100).inputs[0].routeOpacity);
   assert.ok(Math.max(...levels) <= .3, 'route lines stay translucent even at their brightest');
   assert.ok(siteModule.getHeroSequenceState(9000).inputs[0].routeOpacity <= HERO_ROUTE_REST_OPACITY + 1e-9, 'lines settle to the faint resting level');
-  assert.match(pageCss, /\.hero-route-map path \{[^}]*stroke-width: 1;/, 'routes are hairlines, not cables');
+  assert.match(pageCss, /\.hero-route-map path \{[^}]*stroke-width: .85;/, 'routes are hairlines, not cables');
+  assert.doesNotMatch(pageCss, /vector-effect: non-scaling-stroke/, 'dash lengths must match the drawn path so lines reach the workspace');
 });
 
 test('the static fallback spreads its chips in the strip above the copy and keeps the phone frame calm', () => {
@@ -360,8 +361,7 @@ function routeSegments(curve, width, height) {
   const points = [];
   for (let step = 0; step <= 80; step += 1) {
     const t = step / 80;
-    const x = (1 - t) ** 2 * curve.from.x + 2 * t * (1 - t) * curve.control.x + t * t * curve.to.x;
-    const y = (1 - t) ** 2 * curve.from.y + 2 * t * (1 - t) * curve.control.y + t * t * curve.to.y;
+    const { x, y } = siteModule.heroCurvePoint(curve, t);
     points.push({ x: x / 1200 * width, y: y / 700 * height });
   }
   return points.slice(1).map((point, index) => [points[index], point]);
@@ -388,7 +388,7 @@ function routeCrossings(items, width, height, box) {
   return found;
 }
 
-test('hero routes never cross one another and curve into the workspace edge without cutting over it', () => {
+test('hero routes never cross, enter through the workspace top and never cut over it', () => {
   const cases = VIEWPORTS.map(([viewWidth, viewHeight]) => {
     const page = modelHero(viewWidth, viewHeight);
     return { label: `${viewWidth}x${viewHeight}`, items: planHeroSpread(page), width: page.width, height: page.height, box: boxInUnits(page.box, page.width, page.height) };
@@ -396,14 +396,11 @@ test('hero routes never cross one another and curve into the workspace edge with
   for (const { label, items, width, height, box } of cases) {
     assert.deepEqual(routeCrossings(items, width, height, box), [], `${label}: routes must not cross`);
     for (const curve of siteModule.heroRouteCurves(items, box)) {
-      const onTop = Math.abs(curve.to.y - box.top) < 1e-6 && curve.normal.y === -1;
-      const onSide = (Math.abs(curve.to.x - box.left) < 1e-6 && curve.normal.x === -1) || (Math.abs(curve.to.x - box.right) < 1e-6 && curve.normal.x === 1);
-      assert.ok(onTop || onSide, `${label}: ${curve.id} ends on the workspace's top or side edge`);
-      assert.ok(curve.to.y <= (box.top + box.bottom) / 2 + 1e-6, `${label}: ${curve.id} enters no lower than the middle of the sides`);
+      assert.ok(Math.abs(curve.to.y - box.top) < 1e-6 && curve.normal.y === -1 && curve.to.x > box.left && curve.to.x < box.right, `${label}: ${curve.id} enters through the workspace's top edge`);
+      assert.equal(curve.c2.x, curve.to.x, `${label}: ${curve.id} drops straight down into its entry point`);
+      if (curve.from.y > box.top) assert.ok(curve.c1.y < box.top, `${label}: ${curve.id} beside the workspace rises before it drops in`);
       for (let step = 0; step < 48; step += 1) {
-        const t = step / 50;
-        const x = (1 - t) ** 2 * curve.from.x + 2 * t * (1 - t) * curve.control.x + t * t * curve.to.x;
-        const y = (1 - t) ** 2 * curve.from.y + 2 * t * (1 - t) * curve.control.y + t * t * curve.to.y;
+        const { x, y } = siteModule.heroCurvePoint(curve, step / 50);
         assert.ok(!(x > box.left + 1 && x < box.right - 1 && y > box.top + 1 && y < box.bottom - 1), `${label}: ${curve.id} must not cut over the workspace`);
       }
     }
