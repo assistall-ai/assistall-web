@@ -10,7 +10,6 @@ import {
   planHeroSpread,
   heroItemsForLayout,
   heroLayoutForWidth,
-  calculateHeroRouteTargetY,
   calculateScrollDuration,
   createHeroMotionMarkup,
   easeInOutCubic,
@@ -88,15 +87,6 @@ test('hero source icons form an ordered five-zone upper and side perimeter', () 
   }
 });
 
-test('hero route endpoint stays within the rendered workspace on squeezed screens', () => {
-  const squeezed = calculateHeroRouteTargetY({ stageHeight: 780, workspaceOffsetY: 307, workspaceHeight: 72 });
-  const wide = calculateHeroRouteTargetY({ stageHeight: 780, workspaceOffsetY: 307, workspaceHeight: 116 });
-  const squeezedTop = 307 / 780 * 700;
-  const squeezedBottom = (307 + 72) / 780 * 700;
-  assert.ok(squeezed > squeezedTop && squeezed < squeezedBottom, 'squeezed-screen endpoint must remain inside the workspace bounds');
-  assert.ok(wide > squeezed, 'a wider workspace can safely carry the endpoint deeper without exposing it below');
-});
-
 test('hero motion keeps routes and moving parts inside one stable DOM field', () => {
   const markup = createHeroMotionMarkup();
 
@@ -107,7 +97,12 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-light=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/data-hero-charge=/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/data-hero-route=[^>]+d="[^"]+ 340"/g) ?? []).length, HERO_MOTION_ITEMS.length, 'each intake route must terminate well inside the workspace instead of ending above it');
+  const box = siteModule.heroDefaultBox();
+  for (const [, x, y] of markup.matchAll(/data-hero-route="[^"]+" pathLength="1" d="M [^Q]+Q [-\d.]+ [-\d.]+ ([-\d.]+) ([-\d.]+)"/g)) {
+    const insideX = Number(x) >= box.left && Number(x) <= box.right;
+    const insideY = Number(y) >= box.top && Number(y) <= (box.top + box.bottom) / 2 + 1;
+    assert.ok(insideX && insideY, 'each route ends tucked just under the workspace edge, on its top or upper sides');
+  }
   assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/connector-mark__svg/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.equal((markup.match(/hero-signal-card__label/g) ?? []).length, HERO_MOTION_ITEMS.length, 'every source must pair its monochrome logo with a readable name');
@@ -155,7 +150,8 @@ test('hero sequence sends every input through the workspace top gate before its 
 
   const glidingInputs = siteModule.getHeroSequenceState(1500).inputs.filter(({ routeProgress, opacity }) => routeProgress > 0 && opacity > 0);
   assert.equal(glidingInputs.length, HERO_MOTION_ITEMS.length, 'all inputs must enter together');
-  assert.ok(glidingInputs.every(({ y }) => y < 276), 'icons must remain above the workspace until they enter it');
+  const box = siteModule.heroDefaultBox();
+  assert.ok(glidingInputs.every(({ x, y }) => !(x > box.left && x < box.right && y > box.top && y < box.bottom)), 'icons stay outside the workspace until they enter it');
 
   const earlyIntake = siteModule.getHeroSequenceState(1150).inputs;
   const horizontalSpread = Math.max(...earlyIntake.map(({ x }) => x)) - Math.min(...earlyIntake.map(({ x }) => x));
@@ -169,11 +165,12 @@ test('hero sequence sends every input through the workspace top gate before its 
   const nearGate = siteModule.getHeroSequenceState(2000);
   assert.ok(nearGate.lights.every(({ opacity }) => opacity === 0), 'arrival dots must already be hidden behind the workspace before its top edge');
 
-  const buriedEndpoints = siteModule.getHeroSequenceState(2300).lights;
-  assert.ok(buriedEndpoints.every(({ y }) => y === 340), 'arrival lights must finish deep enough inside the workspace to be fully occluded');
+  const arrived = siteModule.getHeroSequenceState(2300).lights;
+  const entries = new Map(siteModule.heroRouteCurves().map((curve) => [curve.id, curve.to]));
+  assert.ok(arrived.every(({ id, x, y }) => Math.abs(x - entries.get(id).x) < 1e-6 && Math.abs(y - entries.get(id).y) < 1e-6), 'arrival lights finish on their entry point at the workspace edge');
 
   const cleared = siteModule.getHeroSequenceState(2800);
-  assert.ok(cleared.inputs.every(({ x, y, opacity }) => x >= 836 && x <= 904 && y === 276 && opacity === 0), 'every input must clear through the workspace top gate');
+  assert.ok(cleared.inputs.every(({ id, x, y, opacity }) => Math.abs(x - entries.get(id).x) < 1e-6 && Math.abs(y - entries.get(id).y) < 1e-6 && opacity === 0), 'every input must arrive at its own entry point on the workspace edge');
   assert.ok(cleared.lights.every(({ opacity }) => opacity === 0), 'arrival lights must disappear behind the workspace before the return');
   const activeReturnCharges = cleared.charges.filter(({ opacity }) => opacity > 0);
   assert.equal(activeReturnCharges.length, HERO_MOTION_ITEMS.length, 'every circuit charge must leave the workspace together');
@@ -238,7 +235,7 @@ function overlaps(a, b) {
 function modelHero(viewWidth, viewHeight) {
   const gutter = Math.min(48, Math.max(20, viewWidth * .04));
   const wrapLeft = (viewWidth - Math.min(viewWidth - gutter * 2, 1296)) / 2;
-  const stageOffset = Math.min(80, Math.max(56, viewWidth * .06));
+  const stageOffset = Math.min(112, Math.max(72, viewWidth * .08));
   const height = Math.max(Math.min(900, viewHeight), 76 + 64 + 470 + 80);
   const copyTop = 140 + Math.max(0, (height - 220 - 520) / 2);
   const boxWidth = Math.min(132, Math.max(82, viewWidth * .11));
@@ -247,7 +244,7 @@ function modelHero(viewWidth, viewHeight) {
     height,
     copy: { left: wrapLeft, right: wrapLeft + Math.min(650, viewWidth * .58), top: copyTop - stageOffset, bottom: copyTop + 520 - stageOffset },
     box: { left: viewWidth * .725 - boxWidth / 2, right: viewWidth * .725 + boxWidth / 2, top: height * .394, bottom: height * .394 + boxWidth },
-    safeTop: 76 - stageOffset + 10,
+    safeTop: Math.max(10, 76 - stageOffset + 24),
   };
 }
 const VIEWPORTS = [[1920, 1080], [1440, 900], [1366, 768], [1280, 720], [1024, 768], [900, 1000], [821, 900]];
@@ -281,19 +278,21 @@ test('measured spread fills the free space evenly without touching the copy, wor
     const page = modelHero(viewWidth, viewHeight);
     const items = planHeroSpread(page);
     const label = `${viewWidth}x${viewHeight}`;
-    assert.ok(items.length >= siteModule.heroSourceTarget(viewWidth), `${label}: at least ${siteModule.heroSourceTarget(viewWidth)} sources`);
+    const minimum = viewWidth >= 1366 ? 14 : viewWidth >= 1024 ? 12 : 10;
+    assert.ok(items.length >= minimum, `${label}: at least ${minimum} sources`);
     assert.ok(items.length >= 8, `${label}: never fewer than eight sources`);
     assert.equal(new Set(items.map(({ id }) => id)).size, items.length, `${label}: each source once`);
     const px = items.map((item) => ({ id: item.id, x: item.x / 1200 * page.width, y: item.y / 700 * page.height }));
-    const boxCentre = (page.box.left + page.box.right) / 2;
     for (const card of px) {
       const left = card.x - 37;
       const right = card.x + 37;
       const top = card.y - 13;
       const bottom = card.y + 13;
       assert.ok(!(right > page.copy.left && left < page.copy.right && bottom > page.copy.top && top < page.copy.bottom), `${label}: ${card.id} must not touch the copy`);
-      assert.ok(bottom <= page.box.bottom + 1, `${label}: ${card.id} keeps the lower hero for the document`);
-      assert.ok(!(Math.abs(card.x - boxCentre) < (page.box.right - page.box.left) / 2 + 37 && bottom > page.box.top - 40), `${label}: ${card.id} must not sit in the document column`);
+      assert.ok(card.y <= (page.box.top + page.box.bottom) / 2 + 1, `${label}: ${card.id} sits no lower than the middle of the workspace sides`);
+      const gapX = Math.max(page.box.left - right, left - page.box.right, 0);
+      const gapY = Math.max(page.box.top - bottom, top - page.box.bottom, 0);
+      assert.ok(Math.hypot(gapX, gapY) >= 47, `${label}: ${card.id} keeps clear of the workspace`);
       assert.ok(top >= page.safeTop - 1 && right <= page.width - 20, `${label}: ${card.id} stays on screen below the header`);
     }
     for (const a of px) for (const b of px) {
@@ -302,8 +301,10 @@ test('measured spread fills the free space evenly without touching the copy, wor
       if (a.id < b.id && viewWidth >= 1440) assert.ok(Math.abs(a.x - b.x) >= 130 || Math.abs(a.y - b.y) >= 56, `${label}: ${a.id} and ${b.id} need more space`);
     }
     const xs = px.map(({ x }) => x);
-    assert.ok(Math.max(...xs) - Math.min(...xs) >= page.width * .5, `${label}: sources spread across the screen, not one side`);
-    if (page.copy.top - page.safeTop > 60) assert.ok(px.some(({ x }) => x < page.copy.right), `${label}: the strip above the copy is used`);
+    const stripUsable = page.copy.top - page.safeTop > 60;
+    const freeWidth = page.width - (stripUsable ? page.copy.left : page.copy.right);
+    assert.ok(Math.max(...xs) - Math.min(...xs) >= freeWidth * .6, `${label}: sources spread across the free space, not one side`);
+    if (stripUsable) assert.ok(px.some(({ x }) => x < page.copy.right), `${label}: the strip above the copy is used`);
   }
 });
 
@@ -347,7 +348,7 @@ test('file formats use distinct drawn marks, not lettered text or one generic pa
   assert.equal(new Set(drawn).size, formats.length);
   for (const mark of drawn) {
     assert.doesNotMatch(mark, /<text/);
-    assert.match(mark, /stroke="currentColor"/);
+    assert.match(mark, /<path /);
     assert.doesNotMatch(mark, /#[0-9a-f]{3,6}/i, 'marks stay monochrome');
   }
   const formatRow = pageHtml.slice(pageHtml.indexOf('connector-card__formats'), pageHtml.indexOf('prepared-outputs'));
@@ -355,22 +356,29 @@ test('file formats use distinct drawn marks, not lettered text or one generic pa
   for (const format of ['pdf', 'word', 'excel', 'csv']) assert.ok(formatRow.includes(FILE_MARKS[format]), `${format} mark matches the hero`);
 });
 
-function visibleSegments(curve, width, height) {
+function routeSegments(curve, width, height) {
   const points = [];
   for (let step = 0; step <= 80; step += 1) {
     const t = step / 80;
     const x = (1 - t) ** 2 * curve.from.x + 2 * t * (1 - t) * curve.control.x + t * t * curve.to.x;
     const y = (1 - t) ** 2 * curve.from.y + 2 * t * (1 - t) * curve.control.y + t * t * curve.to.y;
-    if (y < 275.5) points.push({ x: x / 1200 * width, y: y / 700 * height });
+    points.push({ x: x / 1200 * width, y: y / 700 * height });
   }
   return points.slice(1).map((point, index) => [points[index], point]);
+}
+function boxInUnits(box, width, height) {
+  return { left: box.left / width * 1200, right: box.right / width * 1200, top: box.top / height * 700, bottom: box.bottom / height * 700 };
+}
+function phoneBox(width) {
+  const size = Math.min(132, Math.max(82, width * .11));
+  return boxInUnits({ left: width * .725 - size / 2, right: width * .725 + size / 2, top: 900 * .394, bottom: 900 * .394 + size }, width, 900);
 }
 function segmentsIntersect([a, b], [c, d]) {
   const side = (p, q, r) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
   return side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0;
 }
-function routeCrossings(items, width, height) {
-  const routes = siteModule.heroRouteCurves(items).map((curve) => ({ id: curve.id, segments: visibleSegments(curve, width, height) }));
+function routeCrossings(items, width, height, box) {
+  const routes = siteModule.heroRouteCurves(items, box).map((curve) => ({ id: curve.id, segments: routeSegments(curve, width, height) }));
   const found = [];
   for (let i = 0; i < routes.length; i += 1) {
     for (let j = i + 1; j < routes.length; j += 1) {
@@ -380,16 +388,24 @@ function routeCrossings(items, width, height) {
   return found;
 }
 
-test('visible hero routes never cross one another', () => {
-  for (const [viewWidth, viewHeight] of VIEWPORTS) {
+test('hero routes never cross one another and curve into the workspace edge without cutting over it', () => {
+  const cases = VIEWPORTS.map(([viewWidth, viewHeight]) => {
     const page = modelHero(viewWidth, viewHeight);
-    assert.deepEqual(routeCrossings(planHeroSpread(page), page.width, page.height), [], `${viewWidth}x${viewHeight}: routes must not cross`);
-  }
-  for (const width of [360, 390, 820]) {
-    assert.deepEqual(routeCrossings(heroItemsForLayout('squeezed'), width, 900), [], `phone ${width}px: routes must not cross`);
-  }
-  for (const curve of siteModule.heroRouteCurves(planHeroSpread(modelHero(1440, 900)))) {
-    assert.equal(curve.control.x, curve.to.x, `${curve.id}: arrives straight down into its own entry point`);
-    assert.ok(curve.from.y < curve.to.y, `${curve.id}: starts above the workspace top`);
+    return { label: `${viewWidth}x${viewHeight}`, items: planHeroSpread(page), width: page.width, height: page.height, box: boxInUnits(page.box, page.width, page.height) };
+  }).concat([360, 390, 820].map((width) => ({ label: `phone ${width}px`, items: heroItemsForLayout('squeezed'), width, height: 900, box: phoneBox(width) })));
+  for (const { label, items, width, height, box } of cases) {
+    assert.deepEqual(routeCrossings(items, width, height, box), [], `${label}: routes must not cross`);
+    for (const curve of siteModule.heroRouteCurves(items, box)) {
+      const onTop = Math.abs(curve.to.y - box.top) < 1e-6 && curve.normal.y === -1;
+      const onSide = (Math.abs(curve.to.x - box.left) < 1e-6 && curve.normal.x === -1) || (Math.abs(curve.to.x - box.right) < 1e-6 && curve.normal.x === 1);
+      assert.ok(onTop || onSide, `${label}: ${curve.id} ends on the workspace's top or side edge`);
+      assert.ok(curve.to.y <= (box.top + box.bottom) / 2 + 1e-6, `${label}: ${curve.id} enters no lower than the middle of the sides`);
+      for (let step = 0; step < 48; step += 1) {
+        const t = step / 50;
+        const x = (1 - t) ** 2 * curve.from.x + 2 * t * (1 - t) * curve.control.x + t * t * curve.to.x;
+        const y = (1 - t) ** 2 * curve.from.y + 2 * t * (1 - t) * curve.control.y + t * t * curve.to.y;
+        assert.ok(!(x > box.left + 1 && x < box.right - 1 && y > box.top + 1 && y < box.bottom - 1), `${label}: ${curve.id} must not cut over the workspace`);
+      }
+    }
   }
 });

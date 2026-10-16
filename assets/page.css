@@ -39,12 +39,13 @@ button, .button { border-radius: 10px; }
 .hero-motion, .hero__film { position: absolute; inset: 0; margin: 0; }
 .hero-motion { z-index: 2; }
 .hero-motion__stage, .hero-motion__svg { width: 100%; height: 100%; display: block; }
-.hero-motion__stage { position: relative; opacity: 0; transform: translateY(clamp(3.5rem, 6vw, 5rem)); transition: opacity .45s ease; }
+.hero-motion__stage { position: relative; opacity: 0; transform: translateY(clamp(4.5rem, 8vw, 7rem)); transition: opacity .45s ease; }
 .hero-motion--enhanced .hero-motion__stage { opacity: 1; }
-.hero-motion--enhanced .hero-motion__fallback { opacity: 0; }
+/* Once the animation runs, the still frame leaves the page at once, so a throttled timeline can never leave both showing. */
+.hero-motion--enhanced .hero-motion__fallback { display: none; }
 .hero__film { z-index: 1; background: linear-gradient(90deg, rgba(6, 25, 27, .65) 0%, rgba(7, 33, 35, .52) 43%, rgba(14, 58, 61, .18) 62%, rgba(6, 25, 27, .04) 100%); }
 /* The static frame mirrors the animation's opening layout, so it never sits on the headline. */
-.hero-motion__fallback { position: absolute; inset: 0; transform: translateY(clamp(3.5rem, 6vw, 5rem)); transition: opacity .35s ease; opacity: .74; }
+.hero-motion__fallback { position: absolute; inset: 0; transform: translateY(clamp(4.5rem, 8vw, 7rem)); transition: opacity .35s ease; opacity: .74; }
 .hero-motion__fallback-stamp { position: absolute; left: 72.5%; top: 39.428571%; width: clamp(82px, 11vw, 132px); aspect-ratio: 1; transform: translateX(-50%); }
 .fallback-signal, .fallback-result { position: absolute; padding: .45rem .75rem; border: 1px solid rgba(244,239,228,.26); border-radius: 999px; color: var(--limestone); background: rgba(14,58,61,.68); font-size: .8rem; white-space: nowrap; }
 .fallback-signal { left: var(--x); top: var(--y); transform: translate(-50%, -50%); }
@@ -271,14 +272,14 @@ html.reveal-enhanced [data-reveal].is-visible { opacity: 1; transform: none; }
 @media (max-width: 820px) {
   :root { --header-h: 68px; }
   /* Copy fills the width here, so the still workspace and result move below it. */
-  .hero-motion__fallback { transform: translateY(2.5rem); }
-  .hero-motion__fallback-stamp { top: auto; left: 50%; bottom: calc(1.5rem + 2.5rem); width: 56px; transform: translateX(calc(-100% - .375rem)); }
-  .fallback-result { top: auto; left: 50%; bottom: calc(1.5rem + 2.5rem + 10px); transform: translateX(.375rem); }
+  .hero-motion__fallback { transform: translateY(3.5rem); }
+  .hero-motion__fallback-stamp { top: auto; left: 50%; bottom: calc(1.5rem + 3.5rem); width: 56px; transform: translateX(calc(-100% - .375rem)); }
+  .fallback-result { top: auto; left: 50%; bottom: calc(1.5rem + 3.5rem + 10px); transform: translateX(.375rem); }
   .fallback-signal { display: var(--squeezed-display, block); left: var(--squeezed-x); top: var(--squeezed-y); }
   .header-inner { justify-content: space-between; }
   .hero { min-height: 950px; align-items: start; padding-top: calc(var(--header-h) + 4rem); }
   .hero__film { background: linear-gradient(180deg, rgba(6,25,27,.9) 0%, rgba(6,25,27,.58) 52%, rgba(14,58,61,.14) 100%); }
-  .hero-motion__stage { transform: translateY(2.5rem); }
+  .hero-motion__stage { transform: translateY(3.5rem); }
   .hero-copy { width: 100%; }.hero h1 { max-width: 11ch; font-size: clamp(3.25rem, 10vw, 5.5rem); }
   .section-grid--workday, .capability-experience, .final-cta-grid { grid-template-columns: 1fr; }
   .product-window--sticky { position: relative; top: auto; }
@@ -324,7 +325,7 @@ html.reveal-enhanced [data-reveal].is-visible { opacity: 1; transform: none; }
 }
 
 html[data-motion-preview="on"] .hero-motion__stage { display: block; }
-html[data-motion-preview="on"] .hero-motion--enhanced .hero-motion__fallback { opacity: 0; }
+html[data-motion-preview="on"] .hero-motion--enhanced .hero-motion__fallback { display: none; }
 @media (prefers-reduced-motion: reduce) {
   html[data-motion-preview="on"] .hero-star { animation-duration: 3400ms !important; }
 }
