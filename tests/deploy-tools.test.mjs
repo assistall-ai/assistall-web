@@ -14,6 +14,10 @@ test('deploy settings are required and normalised', () => {
   assert.equal(settings.port, '2083');
   assert.equal(settings.repositoryRoot, '/home/u/repositories/site');
   assert.equal(settings.branch, 'main');
+  const base = { CPANEL_HOST: 'h', CPANEL_USER: 'u', CPANEL_API_TOKEN: 't' };
+  assert.equal(readSettings({ ...base, CPANEL_REPO_ROOT: '~/repositories/site' }).repositoryRoot, '/home/u/repositories/site');
+  assert.equal(readSettings({ ...base, CPANEL_REPO_ROOT: 'repositories/site' }).repositoryRoot, '/home/u/repositories/site');
+  assert.equal(readSettings({ ...base, CPANEL_REPO_ROOT: '"/home/u/repositories/site"' }).repositoryRoot, '/home/u/repositories/site');
 });
 
 test('a deploy only proceeds when cPanel has the exact commit', () => {

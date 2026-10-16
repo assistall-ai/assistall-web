@@ -22,12 +22,17 @@ export function readSettings(env = process.env) {
   const missing = required.filter((name) => !env[name]?.trim());
   if (missing.length) throw new Error(`Missing settings: ${missing.join(', ')}`);
   const host = env.CPANEL_HOST.trim().replace(/^https?:\/\//, '').replace(/[:/].*$/, '');
+  const user = env.CPANEL_USER.trim();
+  // Accept "/home/user/repositories/x", "~/repositories/x" or "repositories/x".
+  let repositoryRoot = env.CPANEL_REPO_ROOT.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+  if (repositoryRoot.startsWith('~/')) repositoryRoot = `/home/${user}/${repositoryRoot.slice(2)}`;
+  else if (!repositoryRoot.startsWith('/')) repositoryRoot = `/home/${user}/${repositoryRoot}`;
   return {
     host,
     port: env.CPANEL_PORT?.trim() || '2083',
-    user: env.CPANEL_USER.trim(),
+    user,
     token: env.CPANEL_API_TOKEN.trim(),
-    repositoryRoot: env.CPANEL_REPO_ROOT.trim().replace(/\/+$/, ''),
+    repositoryRoot,
     branch: env.DEPLOY_BRANCH?.trim() || 'main',
     expectedSha: env.EXPECTED_SHA?.trim() || '',
   };
@@ -71,7 +76,10 @@ async function uapi(settings, module, fn, params = {}) {
 async function findRepository(settings) {
   const repositories = await uapi(settings, 'VersionControl', 'retrieve');
   const repository = (repositories || []).find((item) => item.repository_root?.replace(/\/+$/, '') === settings.repositoryRoot);
-  if (!repository) throw new Error(`No cPanel repository at ${settings.repositoryRoot}. Copy "Repository Path" from Git Version Control > Manage.`);
+  if (!repository) {
+    const known = (repositories || []).map((item) => item.repository_root).filter(Boolean);
+    throw new Error(`No cPanel repository at ${settings.repositoryRoot}. cPanel has: ${known.length ? known.join(', ') : 'no repositories'}. Set CPANEL_REPO_ROOT to one of these.`);
+  }
   return repository;
 }
 
