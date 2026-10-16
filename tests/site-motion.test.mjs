@@ -3,7 +3,12 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
+  FILE_MARKS,
   HERO_MOTION_ITEMS,
+  HERO_SQUEEZED_MAX_WIDTH,
+  HERO_WIDE_MIN_WIDTH,
+  heroItemsForLayout,
+  heroLayoutForWidth,
   calculateHeroRouteTargetY,
   calculateScrollDuration,
   createHeroMotionMarkup,
@@ -60,7 +65,7 @@ test('hero source icons form an ordered five-zone upper and side perimeter', () 
   const ySpread = Math.max(...HERO_MOTION_ITEMS.map(({ y }) => y)) - Math.min(...HERO_MOTION_ITEMS.map(({ y }) => y));
   assert.ok(xSpread >= 600, 'sources must span the full usable perimeter');
   assert.ok(ySpread >= 220, 'sources must use both the top and side space');
-  assert.ok(HERO_MOTION_ITEMS.every(({ x }) => x >= 540), 'sources stay clear of the hero headline');
+  assert.ok(HERO_MOTION_ITEMS.every(({ x, y }) => y <= 40 || x >= 640), 'sources left of the workspace column stay in the strip above the copy');
   assert.ok(HERO_MOTION_ITEMS.every(({ y }) => y <= 270), 'the lower hero space remains reserved for the output document');
   const zoneCounts = [
     HERO_MOTION_ITEMS.filter(({ x }) => x <= 540).length,
@@ -116,8 +121,9 @@ test('hero motion keeps routes and moving parts inside one stable DOM field', ()
   assert.match(pageCss, /backface-visibility: hidden/);
   assert.match(pageCss, /\.hero-motion \{ z-index: 2; \}/, 'hero signals must remain visible above the dark film while staying behind copy');
   assert.match(pageCss, /\.hero-motion__stage \{[^}]*translateY\(/, 'the animation field must sit lower than the header crop');
-  assert.match(pageCss, /\.hero-signal-card:not\(\.hero-signal-card--compact\), \.hero-route--compact-hidden \{ display: none; \}/, 'squeezed screens must suppress cards and paths outside the readable source row');
-  assert.match(pageCss, /\.hero-signal-card--compact \{ top: calc\(var\(--signal-y\) \+ 1\.5rem\); \}/, 'the squeezed source row must clear the fixed header');
+  assert.match(pageCss, /\.hero-motion__field:not\(\[data-hero-layout="wide"\]\) \.hero-signal-card:not\(\.hero-signal-card--compact\),\s*\.hero-motion__field:not\(\[data-hero-layout="wide"\]\) \.hero-route--compact-hidden \{ display: none; \}/, 'narrower layouts must suppress cards and paths outside the compact source set');
+  assert.doesNotMatch(pageCss, /\.hero-signal-card--compact \{ top:/, 'cards must not be offset away from the routes that start at them');
+  assert.doesNotMatch(pageCss + siteScript, /mobile-hidden|mobileHidden/, 'every compact source stays visible on phones');
   assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
   assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
   assert.match(pageCss, /\.hero-output__paper[^}]*0 0 64px/);
@@ -215,4 +221,97 @@ test('workflow rotation keeps pointer and focus pauses independent', () => {
   assert.match(siteScript, /let pointerPaused = false;/);
   assert.match(siteScript, /let focusPaused = false;/);
   assert.match(siteScript, /interactionPaused: pointerPaused \|\| focusPaused/);
+});
+
+// Card footprint at the .72 opening scale, plus a small breathing gap, in CSS pixels.
+const CARD = { width: 70, height: 24, gap: 6 };
+function cardRects(items, width, height) {
+  return items.map((item) => ({ id: item.id, left: item.x / 1200 * width - CARD.width / 2, top: item.y / 700 * height - CARD.height / 2 }));
+}
+function overlaps(a, b) {
+  return a.left < b.left + CARD.width + CARD.gap && b.left < a.left + CARD.width + CARD.gap
+    && a.top < b.top + CARD.height + CARD.gap && b.top < a.top + CARD.height + CARD.gap;
+}
+
+test('hero chooses its source layout from the viewport width', () => {
+  assert.equal(heroLayoutForWidth(360), 'squeezed');
+  assert.equal(heroLayoutForWidth(HERO_SQUEEZED_MAX_WIDTH), 'squeezed');
+  assert.equal(heroLayoutForWidth(HERO_SQUEEZED_MAX_WIDTH + 1), 'mid');
+  assert.equal(heroLayoutForWidth(HERO_WIDE_MIN_WIDTH - 1), 'mid');
+  assert.equal(heroLayoutForWidth(HERO_WIDE_MIN_WIDTH), 'wide');
+  assert.equal(heroItemsForLayout('wide').length, 14);
+  for (const layout of ['mid', 'squeezed']) {
+    assert.deepEqual(heroItemsForLayout(layout).map(({ id }) => id), ['email', 'docx', 'xlsx', 'csv', 'voice', 'folder', 'txt', 'pdf'], `${layout} keeps all eight compact sources`);
+  }
+  const markup = createHeroMotionMarkup(HERO_MOTION_ITEMS, 'squeezed');
+  assert.match(markup, /data-hero-layout="squeezed"/);
+  assert.match(markup, /data-hero-signal="docx" style="--signal-x:31\.667%;--signal-y:6\.429%/, 'cards are painted at their layout position before the first frame');
+});
+
+test('every hero layout keeps sources apart, above the document and clear of the workspace', () => {
+  const cases = [['wide', [1340, 1440, 1920], 900], ['mid', [821, 1024, 1339], 900], ['squeezed', [360, 390, 820], 900]];
+  for (const [layout, widths, height] of cases) {
+    const items = heroItemsForLayout(layout);
+    for (const item of items) {
+      assert.ok(Math.hypot(item.x - 870, item.y - 276) >= 180, `${layout}: ${item.id} must stay clear of the workspace`);
+      assert.ok(item.y <= 270, `${layout}: ${item.id} keeps the lower hero for the document`);
+    }
+    for (const width of widths) {
+      const rects = cardRects(items, width, height);
+      for (const a of rects) for (const b of rects) {
+        if (a.id < b.id) assert.ok(!overlaps(a, b), `${layout} at ${width}px: ${a.id} and ${b.id} must not touch`);
+      }
+    }
+  }
+});
+
+test('the mid layout stays right of the copy column and the squeezed top row clears the header', () => {
+  for (const width of [821, 1024, 1060, 1200, 1339]) {
+    const gutter = Math.min(48, Math.max(20, width * .04));
+    const wrapLeft = (width - Math.min(width - gutter * 2, 1296)) / 2;
+    const copyRight = wrapLeft + Math.min(680, width * .58);
+    for (const rect of cardRects(heroItemsForLayout('mid'), width, 900)) {
+      assert.ok(rect.left >= copyRight, `mid at ${width}px: ${rect.id} must not enter the copy column`);
+    }
+  }
+  const headerBottom = 68;
+  const stageOffset = 40;
+  for (const rect of cardRects(heroItemsForLayout('squeezed'), 390, 900)) {
+    assert.ok(rect.top + stageOffset >= headerBottom, `squeezed: ${rect.id} must sit below the fixed header`);
+  }
+});
+
+test('the static fallback mirrors the animated layout positions', () => {
+  const chips = [...pageHtml.matchAll(/<span class="fallback-signal" style="([^"]+)">([^<]+)<\/span>/g)];
+  assert.equal(chips.length, 5);
+  const pct = (value, total) => `${Number((value / total * 100).toFixed(3))}%`;
+  for (const [, style, label] of chips) {
+    const vars = Object.fromEntries(style.split(';').map((pair) => pair.split(':')));
+    const item = HERO_MOTION_ITEMS.find((entry) => entry.label === label);
+    assert.ok(item?.compact, `${label} must be a compact source`);
+    assert.equal(vars['--wide-x'], pct(item.x, 1200));
+    assert.equal(vars['--wide-y'], pct(item.y, 700));
+    assert.equal(vars['--mid-x'], pct(item.compact.mid.x, 1200));
+    assert.equal(vars['--mid-y'], pct(item.compact.mid.y, 700));
+    if (vars['--squeezed-display'] !== 'none') {
+      assert.equal(vars['--squeezed-x'], pct(item.compact.squeezed.x, 1200));
+      assert.equal(vars['--squeezed-y'], pct(item.compact.squeezed.y, 700));
+      assert.ok(item.compact.squeezed.y <= 45, `${label}: the phone still frame only uses the row above the headline`);
+    }
+  }
+  assert.match(pageCss, /\.hero-motion__fallback img \{ position: absolute; left: 72\.5%; top: 39\.428571%;/, 'the still logo sits where the animated workspace sits');
+});
+
+test('file formats use distinct drawn marks, not lettered text or one generic page', () => {
+  const formats = ['word', 'excel', 'powerpoint', 'pdf', 'csv', 'txt', 'json'];
+  const drawn = formats.map((format) => FILE_MARKS[format]);
+  assert.equal(new Set(drawn).size, formats.length);
+  for (const mark of drawn) {
+    assert.doesNotMatch(mark, /<text/);
+    assert.match(mark, /stroke="currentColor"/);
+    assert.doesNotMatch(mark, /#[0-9a-f]{3,6}/i, 'marks stay monochrome');
+  }
+  const formatRow = pageHtml.slice(pageHtml.indexOf('connector-card__formats'), pageHtml.indexOf('prepared-outputs'));
+  assert.doesNotMatch(formatRow, /<text/, 'the Connections format row uses the same drawn marks');
+  for (const format of ['pdf', 'word', 'excel', 'csv']) assert.ok(formatRow.includes(FILE_MARKS[format]), `${format} mark matches the hero`);
 });

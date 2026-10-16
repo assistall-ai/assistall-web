@@ -218,7 +218,12 @@ Softly rounded, never pill-heavy. Controls 10px, cards and tiles 12px, framed pr
 - Fixed translucent teal header with an 18px blur, ivory wordmark with brass "AI", 0.88rem semibold links at 82% ivory, and a brass "Book a demo" button. At 1060px and below, links collapse into a "Menu" dropdown panel (teal, brass border, 48px rows) that closes on link, outside click, Escape, focus leaving or resize. Without JavaScript the links stay visible.
 
 ### Hero animation (signature)
-An 11.8-second loop generated in DOM/SVG/CSS by `assets/site.js`: 14 named monochrome source cards sit above and beside the box, glide together into its top edge, an ivory charge returns along every route at once, the box spins once on its Y-axis, and a small "Ready" document descends and fades. A static fallback (logo plus labelled chips) shows for reduced motion or no JavaScript. Treat the whole build (markup, CSS, JS, tests) as one unit; refine it, never rebuild it.
+An 11.8-second loop generated in DOM/SVG/CSS by `assets/site.js`: named monochrome source cards sit above and beside the box, glide together into its top edge, an ivory charge returns along every route at once, the box spins once on its Y-axis, and a small "Ready" document descends and fades. Treat the whole build (markup, CSS, JS, tests) as one unit; refine it, never rebuild it.
+
+- **Three source layouts, chosen by viewport width.** Wide (1340px and up) shows all 14 cards, with anything left of the workspace column kept in the strip above the copy. Mid (821–1339px) shows the 8 compact cards right of the copy. Squeezed (820px and below) spreads the same 8 across the full width in three rows below the header. Cards, routes, lights and charges all read the same coordinates, so a route always starts at its card.
+- **Static fallback** (reduced motion or no JavaScript) mirrors the opening frame: labelled chips at the same positions, the logo where the box sits, and "Ready for review" beneath it. On phones only the top chip row stays, and the logo and result sit side by side below the copy.
+- **File marks** are drawn, not lettered text: Word, Excel and PowerPoint use a lettered tile over a page, PDF a lettered badge, CSV a table, TXT text lines and JSON braces. The Connections format row uses the same drawings.
+- **Review aids:** `?motion=on|off` forces or stops the motion, and `?frame=<ms>` holds the loop at one moment for screenshots.
 
 ### Living Work Queue (signature)
 A dark teal panel with three tabs, each pairing a muted, looping product recording (played at 0.65× speed, 11-second rotation, paused when off-screen or hovered) with a limestone note card and a "Replay workflow" button. Recordings use fictional data only.

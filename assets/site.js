@@ -14,22 +14,39 @@ export const WORKFLOW_ROTATION_MS = 11000;
 export const WORKFLOW_PLAYBACK_RATE = 0.65;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
+// x/y place each source in the 1200 × 700 stage on wide screens (≥ 1340px), where all
+// fourteen fit around the workspace without entering the headline column. Sources left
+// of x 640 sit in the strip above the copy. Narrower screens show only the eight
+// `compact` sources, at their own coordinates: `mid` keeps them right of the copy
+// (821–1339px), `squeezed` spreads them over the full width on tablets and phones.
+export const HERO_WIDE_MIN_WIDTH = 1340;
+export const HERO_SQUEEZED_MAX_WIDTH = 820;
 export const HERO_MOTION_ITEMS = Object.freeze([
   { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 540, y: 20 },
-  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 540, y: 145 },
+  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 420, y: 30 },
   { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 660, y: 150 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 660, y: 30, compact: true },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 785, y: 10, compact: true },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 915, y: 10, compact: true },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 1045, y: 10, compact: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 1170, y: 20, mobileHidden: true, compact: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 1195, y: 150, mobileHidden: true, compact: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 1190, y: 270, compact: true },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1070, y: 270, compact: true },
+  { id: 'email', icon: 'gmail', label: 'Email', x: 660, y: 30, compact: { mid: { x: 856, y: 92 }, squeezed: { x: 280, y: 150 } } },
+  { id: 'docx', icon: 'word', label: 'DOCX', x: 785, y: 10, compact: { mid: { x: 800, y: 20 }, squeezed: { x: 380, y: 45 } } },
+  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 915, y: 10, compact: { mid: { x: 913, y: 20 }, squeezed: { x: 640, y: 45 } } },
+  { id: 'csv', icon: 'csv', label: 'CSV', x: 1045, y: 10, compact: { mid: { x: 1026, y: 20 }, squeezed: { x: 900, y: 45 } } },
+  { id: 'voice', icon: 'voice', label: 'Voice', x: 1170, y: 20, compact: { mid: { x: 1139, y: 20 }, squeezed: { x: 540, y: 150 } } },
+  { id: 'folder', icon: 'folder', label: 'Folder', x: 1195, y: 150, compact: { mid: { x: 1083, y: 92 }, squeezed: { x: 500, y: 230 } } },
+  { id: 'txt', icon: 'txt', label: 'TXT', x: 1190, y: 270, compact: { mid: { x: 1110, y: 190 }, squeezed: { x: 1040, y: 150 } } },
+  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1070, y: 270, compact: { mid: { x: 970, y: 92 }, squeezed: { x: 1160, y: 45 } } },
   { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 660, y: 270 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 1080, y: 155, mobileHidden: true },
-  { id: 'json', icon: 'json', label: 'JSON', x: 540, y: 270, mobileHidden: true },
+  { id: 'jpg', icon: 'image', label: 'JPG', x: 1080, y: 155 },
+  { id: 'json', icon: 'json', label: 'JSON', x: 300, y: 22 },
 ]);
+
+export function heroLayoutForWidth(width) {
+  if (width <= HERO_SQUEEZED_MAX_WIDTH) return 'squeezed';
+  return width < HERO_WIDE_MIN_WIDTH ? 'mid' : 'wide';
+}
+
+export function heroItemsForLayout(layout, items = HERO_MOTION_ITEMS) {
+  if (layout === 'wide') return items;
+  return items.filter((item) => item.compact?.[layout]).map((item) => ({ ...item, ...item.compact[layout] }));
+}
 
 const CAPABILITIES = Object.freeze([
   { id: 'inbox', label: 'Inbox and controlled replies', summary: 'Messages in. Checked replies ready.', input: 'Email or business message', preparation: 'A clear reply draft', result: 'Nothing sends without you' },
@@ -152,6 +169,23 @@ function heroStarsMarkup() {
   }).join('');
 }
 
+// File-format marks, drawn in one monochrome stroke. Office formats use a lettered tile
+// over the page, PDF a lettered badge, and CSV, TXT and JSON their own content glyphs.
+// The same drawings appear in index.html's Connections cards.
+const FILE_STROKE = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+const OFFICE_PAGE = 'M8.5 9V3h7.5l4.5 4.5V21H8.5v-2M16 3v4.5h4.5';
+const OFFICE_TILE = 'M4 9h7a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 11 19H4a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 4 9z';
+const FULL_PAGE = 'M6 3h9l4.5 4.5V21H6zM15 3v4.5h4.5';
+export const FILE_MARKS = Object.freeze({
+  word: `<g ${FILE_STROKE}><path d="${OFFICE_PAGE}M14.5 12h3.5M14.5 15h3.5M14.5 18h2"/><path d="${OFFICE_TILE}"/><path d="M4.6 11.6l1.3 5 1.6-3.6 1.6 3.6 1.3-5" stroke-width="1.4"/></g>`,
+  excel: `<g ${FILE_STROKE}><path d="${OFFICE_PAGE}M14.5 11.5h3.5v7h-3.5zM14.5 15h3.5"/><path d="${OFFICE_TILE}"/><path d="M5.2 11.7l4.6 5.6M9.8 11.7l-4.6 5.6" stroke-width="1.4"/></g>`,
+  powerpoint: `<g ${FILE_STROKE}><path d="${OFFICE_PAGE}M14.5 11.5h3.5v3.5h-3.5zM14.5 18h3.5"/><path d="${OFFICE_TILE}"/><path d="M6.2 17.2v-5.4h1.9a1.6 1.6 0 0 1 0 3.2H6.2" stroke-width="1.4"/></g>`,
+  pdf: `<g ${FILE_STROKE}><path d="M6 11V3h9l4.5 4.5V21H6v-4M15 3v4.5h4.5"/><path d="M4.7 11h10.6a1.2 1.2 0 0 1 1.2 1.2v3.6a1.2 1.2 0 0 1-1.2 1.2H4.7a1.2 1.2 0 0 1-1.2-1.2v-3.6a1.2 1.2 0 0 1 1.2-1.2z"/><path d="M5.6 15.6v-3.2h1a.95.95 0 0 1 0 1.9h-1M8.8 12.4v3.2h.6a1.6 1.6 0 0 0 0-3.2zM12.3 15.6v-3.2h2M12.3 14h1.5" stroke-width="1.15"/></g>`,
+  csv: `<g ${FILE_STROKE}><path d="${FULL_PAGE}"/><path d="M8.5 11h8.5v7H8.5zM8.5 14.5h8.5M11.3 11v7M14.2 11v7" stroke-width="1.4"/></g>`,
+  txt: `<g ${FILE_STROKE}><path d="${FULL_PAGE}M9 11.5h7M9 14.5h7M9 17.5h4.5"/></g>`,
+  json: `<g ${FILE_STROKE}><path d="M9 4.5c-1.6 0-2.2.8-2.2 2.2v2.6c0 1.2-.7 2.2-2.1 2.7 1.4.5 2.1 1.5 2.1 2.7v2.6c0 1.4.6 2.2 2.2 2.2M15 4.5c1.6 0 2.2.8 2.2 2.2v2.6c0 1.2.7 2.2 2.1 2.7-1.4.5-2.1 1.5-2.1 2.7v2.6c0 1.4-.6 2.2-2.2 2.2M10.5 12h.01M13.5 12h.01"/></g>`,
+});
+
 function connectorMarkMarkup(icon) {
   const path = {
     microsoft: '<path d="M2 2h9v9H2zm11 0h9v9h-9zM2 13h9v9H2zm11 0h9v9h-9z"/>',
@@ -164,10 +198,8 @@ function connectorMarkMarkup(icon) {
     voice: '<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-6 8a6 6 0 0 0 12 0M12 17v4m-4 0h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
     image: '<path d="M3 4h18v16H3zM6 16l4-4 3 3 2-2 3 3M8 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   }[icon];
-  const documentMark = ['word', 'excel', 'csv', 'pdf', 'powerpoint', 'txt', 'json'].includes(icon)
-    ? '<path d="M5 2h10l4 4v16H5zM15 2v5h4M8 12h8m-8 4h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
-    : path;
-  return `<span class="connector-mark" data-connector-mark="${icon}"><svg class="connector-mark__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${documentMark}</svg></span>`;
+  const mark = FILE_MARKS[icon] ?? path;
+  return `<span class="connector-mark" data-connector-mark="${icon}"><svg class="connector-mark__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${mark}</svg></span>`;
 }
 
 function clampUnit(value) {
@@ -241,17 +273,18 @@ function heroRouteMapMarkup(items, routeTargetY = HERO_ROUTE_TARGET_Y) {
 }
 
 function heroSignalMarkup(item) {
-  const mobile = item.mobileHidden ? ' hero-signal-card--mobile-hidden' : '';
   const compact = item.compact ? ' hero-signal-card--compact' : '';
   const style = `--signal-x:${(item.x / 12).toFixed(3)}%;--signal-y:${(item.y / 7).toFixed(3)}%;--signal-opacity:1;--signal-scale:.72`;
-  return `<div class="hero-signal-card${mobile}${compact}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}<span class="hero-signal-card__label">${item.label}</span></div>`;
+  return `<div class="hero-signal-card${compact}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}<span class="hero-signal-card__label">${item.label}</span></div>`;
 }
 
-export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
-  return `<div class="hero-motion__field" aria-hidden="true">
+export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS, layout = 'wide') {
+  const placed = new Map(heroItemsForLayout(layout, items).map((item) => [item.id, item]));
+  const positioned = items.map((item) => placed.get(item.id) ?? item);
+  return `<div class="hero-motion__field" data-hero-layout="${layout}" aria-hidden="true">
     <div class="hero-stars">${heroStarsMarkup()}</div>
-    ${heroRouteMapMarkup(items)}
-    <div class="hero-signal-field">${items.map(heroSignalMarkup).join('')}</div>
+    ${heroRouteMapMarkup(positioned)}
+    <div class="hero-signal-field">${positioned.map(heroSignalMarkup).join('')}</div>
     <div class="hero-output" data-hero-output>
       <div class="hero-output__paper"><span class="hero-output__preview"></span><span class="hero-output__line hero-output__line--one"></span><span class="hero-output__line hero-output__line--two"></span><span class="hero-output__approved">Ready</span></div>
     </div>
@@ -366,16 +399,23 @@ function enableHeroMotion() {
   const figure = document.querySelector('[data-hero-motion]');
   const canvas = figure?.querySelector('[data-hero-motion-canvas]');
   if (!figure || !canvas || prefersReducedMotion()) return;
-  canvas.innerHTML = createHeroMotionMarkup();
+  canvas.innerHTML = createHeroMotionMarkup(HERO_MOTION_ITEMS, heroLayoutForWidth(window.innerWidth));
   figure.classList.add('hero-motion--enhanced');
   const signalElements = new Map([...canvas.querySelectorAll('[data-hero-signal]')].map((element) => [element.dataset.heroSignal, element]));
   const routeElements = new Map([...canvas.querySelectorAll('[data-hero-route]')].map((element) => [element.dataset.heroRoute, element]));
   const lightElements = new Map([...canvas.querySelectorAll('[data-hero-light]')].map((element) => [element.dataset.heroLight, element]));
   const chargeElements = new Map([...canvas.querySelectorAll('[data-hero-charge]')].map((element) => [element.dataset.heroCharge, element]));
+  const field = canvas.querySelector('.hero-motion__field');
   const workspace = canvas.querySelector('[data-hero-workspace]');
   const output = canvas.querySelector('[data-hero-output]');
   let routeTargetY = HERO_ROUTE_TARGET_Y;
+  let layoutItems = HERO_MOTION_ITEMS;
+  // Cards, routes, lights and charges all read the same layout coordinates, so every
+  // visible route starts at its own card at every width.
   const updateRouteGeometry = () => {
+    const layout = heroLayoutForWidth(window.innerWidth);
+    if (field) field.dataset.heroLayout = layout;
+    layoutItems = heroItemsForLayout(layout);
     const stageBounds = canvas.getBoundingClientRect();
     const workspaceBounds = workspace?.getBoundingClientRect();
     routeTargetY = calculateHeroRouteTargetY({
@@ -383,16 +423,19 @@ function enableHeroMotion() {
       workspaceOffsetY: workspaceBounds ? workspaceBounds.top - stageBounds.top : undefined,
       workspaceHeight: workspaceBounds?.height,
     });
-    for (const item of HERO_MOTION_ITEMS) {
-      routeElements.get(item.id)?.setAttribute('d', heroRoutePath(item, HERO_MOTION_ITEMS, routeTargetY));
-      chargeElements.get(item.id)?.setAttribute('d', heroReturnPath(item, HERO_MOTION_ITEMS, routeTargetY));
+    for (const item of layoutItems) {
+      routeElements.get(item.id)?.setAttribute('d', heroRoutePath(item, layoutItems, routeTargetY));
+      chargeElements.get(item.id)?.setAttribute('d', heroReturnPath(item, layoutItems, routeTargetY));
     }
   };
   updateRouteGeometry();
   window.addEventListener('resize', updateRouteGeometry, { passive: true });
   const startedAt = performance.now();
+  // Review aid, like ?motion=: ?frame=2700 holds the loop at 2.7 seconds for screenshots.
+  const frameParam = new URLSearchParams(window.location.search).get('frame');
+  const heldFrame = frameParam !== null && Number.isFinite(Number(frameParam)) ? Number(frameParam) : null;
   const render = (now) => {
-    const state = getHeroSequenceState(now - startedAt, HERO_MOTION_ITEMS, routeTargetY);
+    const state = getHeroSequenceState(heldFrame ?? now - startedAt, layoutItems, routeTargetY);
     for (const input of state.inputs) {
       const signal = signalElements.get(input.id);
       const route = routeElements.get(input.id);
