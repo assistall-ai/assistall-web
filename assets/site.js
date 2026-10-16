@@ -65,7 +65,8 @@ export function planHeroSpread({ width, height, copy, box, safeTop = 12, items =
   const stripBottom = copy.top - 20 - halfH;
   const boxCentre = (box.left + box.right) / 2;
   const boxWidth = box.right - box.left;
-  const zones = [{ left: copy.right + 40 + halfW, right, top, bottom: box.bottom - halfH }];
+  // Sources stay above the workspace top so every route can enter from above without crossing.
+  const zones = [{ left: copy.right + 40 + halfW, right, top, bottom: box.top - 30 - halfH }];
   if (stripBottom >= top) zones.unshift({ left: copy.left + halfW, right, top, bottom: stripBottom });
 
   const clear = (x, y) => {
@@ -89,7 +90,16 @@ export function planHeroSpread({ width, height, copy, box, safeTop = 12, items =
     }
   }
 
-  const apart = (a, b) => Math.abs(a.x - b.x) >= cardW + gapX || Math.abs(a.y - b.y) >= cardH + gapY;
+  const gate = { x: boxCentre, y: box.top };
+  const distanceToPath = (point, from) => {
+    const dx = gate.x - from.x;
+    const dy = gate.y - from.y;
+    const t = Math.max(0, Math.min(1, ((point.x - from.x) * dx + (point.y - from.y) * dy) / (dx * dx + dy * dy || 1)));
+    return Math.hypot(point.x - (from.x + dx * t), point.y - (from.y + dy * t));
+  };
+  // Cards keep apart and out of each other's way to the workspace, so routes need not cross.
+  const apart = (a, b) => (Math.abs(a.x - b.x) >= cardW + gapX || Math.abs(a.y - b.y) >= cardH + gapY)
+    && distanceToPath(a, b) >= cardW * .6 && distanceToPath(b, a) >= cardW * .6;
   const spread = (a, b) => Math.hypot((a.x - b.x) / (cardW + gapX), (a.y - b.y) / (cardH + gapY));
   const chosen = [];
   const remaining = [...candidates].sort((a, b) => a.y - b.y || a.x - b.x);
@@ -247,6 +257,10 @@ const FILE_STROKE = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke
 const OFFICE_PAGE = 'M8.5 9V3h7.5l4.5 4.5V21H8.5v-2M16 3v4.5h4.5';
 const OFFICE_TILE = 'M4 9h7a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 11 19H4a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 4 9z';
 const FULL_PAGE = 'M6 3h9l4.5 4.5V21H6zM15 3v4.5h4.5';
+// The Assistall mark drawn as vectors (geometry measured from android-chrome-512x512.png),
+// so the workspace can carry it as a raised, embossed stamp. index.html's still frame repeats it.
+export const LOGO_STAMP_MARK = '<svg class="logo-stamp__mark" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><rect x="112" y="142" width="189" height="49" rx="14" fill="#F4EFE4"/><rect x="112" y="232" width="239" height="49" rx="14" fill="#C8A25D"/><rect x="112" y="322" width="289" height="49" rx="14" fill="#F4EFE4"/><path d="M128 148h157M128 238h207M128 328h257" stroke="#FFFDF8" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/></svg>';
+
 export const FILE_MARKS = Object.freeze({
   word: `<g ${FILE_STROKE}><path d="${OFFICE_PAGE}M14.5 12h3.5M14.5 15h3.5M14.5 18h2"/><path d="${OFFICE_TILE}"/><path d="M4.6 11.6l1.3 5 1.6-3.6 1.6 3.6 1.3-5" stroke-width="1.4"/></g>`,
   excel: `<g ${FILE_STROKE}><path d="${OFFICE_PAGE}M14.5 11.5h3.5v7h-3.5zM14.5 15h3.5"/><path d="${OFFICE_TILE}"/><path d="M5.2 11.7l4.6 5.6M9.8 11.7l-4.6 5.6" stroke-width="1.4"/></g>`,
@@ -281,11 +295,84 @@ function easeOutCubic(progress) {
   return 1 - (1 - clampUnit(progress)) ** 3;
 }
 
+// Entry points along the workspace's top edge are handed out in the order the sources sit
+// around the workspace (by angle, left through top to right). With every route arriving
+// straight down into its own entry point, routes fan in side by side and never cross.
+const HERO_GATE = Object.freeze({ left: 836, width: 68, approach: 80, pivot: { x: 870, y: 340 } });
+
+function gateX(rank, count) {
+  return HERO_GATE.left + (count > 1 ? rank / (count - 1) : .5) * HERO_GATE.width;
+}
+
+// Visible part of a route (above the workspace's top edge) as line segments.
+function visibleRouteSegments(source, x) {
+  const control = heroRouteControl(source, { x, y: HERO_TARGET.y });
+  const points = [];
+  for (let step = 0; step <= 24; step += 1) {
+    const t = step / 24;
+    const point = {
+      x: (1 - t) ** 2 * source.x + 2 * t * (1 - t) * control.x + t * t * x,
+      y: (1 - t) ** 2 * source.y + 2 * t * (1 - t) * control.y + t * t * HERO_TARGET.y,
+    };
+    if (point.y < HERO_TARGET.y - .5) points.push(point);
+  }
+  return points.slice(1).map((point, index) => [points[index], point]);
+}
+
+function segmentsCross([a, b], [c, d]) {
+  const side = (p, q, r) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  return side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0;
+}
+
+const gateRankCache = new WeakMap();
+function heroGateRanks(items) {
+  const cached = gateRankCache.get(items);
+  if (cached) return cached;
+  const angle = ({ x, y }) => Math.atan2(y - HERO_GATE.pivot.y, x - HERO_GATE.pivot.x);
+  const order = [...items].sort((first, second) => angle(first) - angle(second) || first.x - second.x);
+  const count = order.length;
+  const crossesAt = (first, firstX, second, secondX) => {
+    const a = visibleRouteSegments(first, firstX);
+    const b = visibleRouteSegments(second, secondX);
+    return a.some((segment) => b.some((other) => segmentsCross(segment, other)));
+  };
+  // Pairwise: which of two neighbouring entry points each source needs to stay clear of the other.
+  const centre = HERO_GATE.left + HERO_GATE.width / 2;
+  const spacing = count > 1 ? HERO_GATE.width / (count - 1) : 0;
+  order.sort((first, second) => {
+    const firstLeft = crossesAt(first, centre - spacing / 2, second, centre + spacing / 2);
+    const secondLeft = crossesAt(second, centre - spacing / 2, first, centre + spacing / 2);
+    if (firstLeft !== secondLeft) return firstLeft ? 1 : -1;
+    return angle(first) - angle(second) || first.x - second.x;
+  });
+  // Then untangle anything left at the real entry points by moving routes past each other.
+  for (let pass = 0; pass < count * count; pass += 1) {
+    let moved = false;
+    for (let a = 0; a < count - 1 && !moved; a += 1) {
+      for (let b = a + 1; b < count && !moved; b += 1) {
+        if (crossesAt(order[a], gateX(a, count), order[b], gateX(b, count))) {
+          order.splice(a, 0, order.splice(b, 1)[0]);
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  const ranks = new Map(order.map((item, rank) => [item.id, rank]));
+  gateRankCache.set(items, ranks);
+  return ranks;
+}
+
 function heroGateTarget(item, items, y) {
-  const ordered = [...items].sort((first, second) => first.x - second.x || first.y - second.y);
-  const rank = Math.max(0, ordered.findIndex(({ id }) => id === item.id));
-  const laneProgress = ordered.length > 1 ? rank / (ordered.length - 1) : .5;
-  return { x: 836 + laneProgress * 68, y };
+  return { x: gateX(heroGateRanks(items).get(item.id) ?? 0, items.length), y };
+}
+
+// The visible curve of each route, for checks: source, control point and top-edge entry.
+export function heroRouteCurves(items = HERO_MOTION_ITEMS) {
+  return items.map((item) => {
+    const to = heroInputTarget(item, items);
+    return { id: item.id, from: { x: item.x, y: item.y }, control: heroRouteControl(item, to), to };
+  });
 }
 
 export function calculateHeroRouteTargetY({ stageHeight, workspaceOffsetY, workspaceHeight } = {}) {
@@ -308,10 +395,9 @@ function heroRouteTarget(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
 }
 
 function heroRouteControl(item, target = HERO_TARGET) {
-  return {
-    x: (item.x + target.x) / 2,
-    y: Math.min(target.y - 26, Math.min(item.y, target.y) - 34),
-  };
+  // Pull every curve toward a point straight above its entry point, so it arrives vertically.
+  // Sources below the approach height bend from their own height, so no route rises then falls.
+  return { x: target.x, y: Math.max(item.y, HERO_TARGET.y - HERO_GATE.approach) };
 }
 
 function heroRoutePoint(item, progress, target = HERO_TARGET) {
@@ -324,16 +410,19 @@ function heroRoutePoint(item, progress, target = HERO_TARGET) {
   };
 }
 
+// Each route is one curve to its entry point on the workspace's top edge, then a straight
+// drop to the buried endpoint behind the workspace. The visible curve never changes with
+// the endpoint depth, so the untangled entry order holds at every size.
 function heroRoutePath(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
-  const target = heroRouteTarget(item, items, routeTargetY);
-  const control = heroRouteControl(item, target);
-  return `M ${item.x} ${item.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${target.x.toFixed(1)} ${target.y}`;
+  const gate = heroInputTarget(item, items);
+  const control = heroRouteControl(item, gate);
+  return `M ${item.x} ${item.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${gate.x.toFixed(1)} ${gate.y} L ${gate.x.toFixed(1)} ${routeTargetY}`;
 }
 
 function heroReturnPath(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
-  const target = heroRouteTarget(item, items, routeTargetY);
-  const control = heroRouteControl(item, target);
-  return `M ${target.x.toFixed(1)} ${target.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${item.x} ${item.y}`;
+  const gate = heroInputTarget(item, items);
+  const control = heroRouteControl(item, gate);
+  return `M ${gate.x.toFixed(1)} ${routeTargetY} L ${gate.x.toFixed(1)} ${gate.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${item.x} ${item.y}`;
 }
 
 function heroRouteMapMarkup(items, routeTargetY = HERO_ROUTE_TARGET_Y) {
@@ -360,8 +449,8 @@ export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS, layout = 'spre
       <div class="hero-output__paper"><span class="hero-output__preview"></span><span class="hero-output__line hero-output__line--one"></span><span class="hero-output__line hero-output__line--two"></span><span class="hero-output__approved">Ready</span></div>
     </div>
     <div class="hero-workspace" data-hero-workspace>
-      <div class="hero-workspace__face hero-workspace__face--front"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div></div>
-      <div class="hero-workspace__face hero-workspace__face--back"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div></div>
+      <div class="hero-workspace__face hero-workspace__face--front logo-stamp">${LOGO_STAMP_MARK}</div>
+      <div class="hero-workspace__face hero-workspace__face--back logo-stamp">${LOGO_STAMP_MARK}</div>
     </div>
   </div>`;
 }
@@ -405,7 +494,11 @@ export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, route
     const inputProgress = clampUnit((time - 600) / 1800);
     const inputTravel = easeInOutCubic(inputProgress);
     const lightTravel = Math.min(1, inputTravel + .08);
-    const point = heroRoutePoint(item, lightTravel, heroRouteTarget(item, items, routeTargetY));
+    // Lights run the visible curve, then the hidden drop to the buried endpoint.
+    const gate = heroInputTarget(item, items);
+    const point = lightTravel < .9
+      ? heroRoutePoint(item, lightTravel / .9, gate)
+      : { x: gate.x, y: gate.y + (routeTargetY - gate.y) * (lightTravel - .9) / .1 };
     const intakeFade = inputTravel > .045 ? 1 - clampUnit((inputProgress - .48) / .18) : 0;
     return {
       id: item.id,

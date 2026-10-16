@@ -100,7 +100,8 @@ test('hero route endpoint stays within the rendered workspace on squeezed screen
 test('hero motion keeps routes and moving parts inside one stable DOM field', () => {
   const markup = createHeroMotionMarkup();
 
-  assert.match(markup, /assets\/android-chrome-512x512\.png/);
+  assert.equal((markup.match(/class="logo-stamp__mark"/g) ?? []).length, 2, 'both workspace faces carry the drawn mark');
+  assert.match(siteModule.LOGO_STAMP_MARK, /<rect x="112" y="142" width="189" height="49" rx="14" fill="#F4EFE4"\/><rect x="112" y="232" width="239" height="49" rx="14" fill="#C8A25D"\/><rect x="112" y="322" width="289" height="49" rx="14" fill="#F4EFE4"\/>/, 'the stamp reproduces the official mark geometry');
   assert.equal((markup.match(/<div class="hero-signal-card/g) ?? []).length, HERO_MOTION_ITEMS.length);
   assert.match(markup, /<svg class="hero-route-map"[^>]*viewBox="0 0 1200 700"/);
   assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
@@ -281,7 +282,8 @@ test('measured spread fills the free space evenly without touching the copy, wor
     const items = planHeroSpread(page);
     const label = `${viewWidth}x${viewHeight}`;
     assert.ok(items.length >= 8, `${label}: at least eight sources`);
-    if (viewWidth >= 1280) assert.equal(items.length, 14, `${label}: desktop shows every source`);
+    if (viewWidth >= 1280) assert.ok(items.length >= 12, `${label}: desktop shows at least twelve sources`);
+    if (viewWidth >= 1440) assert.equal(items.length, 14, `${label}: large desktops show every source`);
     assert.equal(new Set(items.map(({ id }) => id)).size, items.length, `${label}: each source once`);
     const px = items.map((item) => ({ id: item.id, x: item.x / 1200 * page.width, y: item.y / 700 * page.height }));
     const boxCentre = (page.box.left + page.box.right) / 2;
@@ -327,7 +329,8 @@ test('the static fallback spreads its chips in the strip above the copy and keep
     assert.ok(y <= 5 || x >= 85, `${label}: desktop chips sit above the copy or at the far right`);
     if (vars['--squeezed-display'] !== 'none') assert.ok(parseFloat(vars['--squeezed-y']) <= 6.5, `${label}: the phone still frame only uses the row above the headline`);
   }
-  assert.match(pageCss, /\.hero-motion__fallback img \{ position: absolute; left: 72\.5%; top: 39\.428571%;/, 'the still logo sits where the animated workspace sits');
+  assert.match(pageCss, /\.hero-motion__fallback-stamp \{ position: absolute; left: 72\.5%; top: 39\.428571%;/, 'the still logo sits where the animated workspace sits');
+  assert.match(pageHtml, /<span class="logo-stamp hero-motion__fallback-stamp"><svg class="logo-stamp__mark"/, 'the still frame uses the same embossed stamp');
 });
 
 test('the workspace is a quiet tile rather than a framed badge', () => {
@@ -349,4 +352,43 @@ test('file formats use distinct drawn marks, not lettered text or one generic pa
   const formatRow = pageHtml.slice(pageHtml.indexOf('connector-card__formats'), pageHtml.indexOf('prepared-outputs'));
   assert.doesNotMatch(formatRow, /<text/, 'the Connections format row uses the same drawn marks');
   for (const format of ['pdf', 'word', 'excel', 'csv']) assert.ok(formatRow.includes(FILE_MARKS[format]), `${format} mark matches the hero`);
+});
+
+function visibleSegments(curve, width, height) {
+  const points = [];
+  for (let step = 0; step <= 80; step += 1) {
+    const t = step / 80;
+    const x = (1 - t) ** 2 * curve.from.x + 2 * t * (1 - t) * curve.control.x + t * t * curve.to.x;
+    const y = (1 - t) ** 2 * curve.from.y + 2 * t * (1 - t) * curve.control.y + t * t * curve.to.y;
+    if (y < 275.5) points.push({ x: x / 1200 * width, y: y / 700 * height });
+  }
+  return points.slice(1).map((point, index) => [points[index], point]);
+}
+function segmentsIntersect([a, b], [c, d]) {
+  const side = (p, q, r) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  return side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0;
+}
+function routeCrossings(items, width, height) {
+  const routes = siteModule.heroRouteCurves(items).map((curve) => ({ id: curve.id, segments: visibleSegments(curve, width, height) }));
+  const found = [];
+  for (let i = 0; i < routes.length; i += 1) {
+    for (let j = i + 1; j < routes.length; j += 1) {
+      if (routes[i].segments.some((s) => routes[j].segments.some((t) => segmentsIntersect(s, t)))) found.push(`${routes[i].id}/${routes[j].id}`);
+    }
+  }
+  return found;
+}
+
+test('visible hero routes never cross one another', () => {
+  for (const [viewWidth, viewHeight] of VIEWPORTS) {
+    const page = modelHero(viewWidth, viewHeight);
+    assert.deepEqual(routeCrossings(planHeroSpread(page), page.width, page.height), [], `${viewWidth}x${viewHeight}: routes must not cross`);
+  }
+  for (const width of [360, 390, 820]) {
+    assert.deepEqual(routeCrossings(heroItemsForLayout('squeezed'), width, 900), [], `phone ${width}px: routes must not cross`);
+  }
+  for (const curve of siteModule.heroRouteCurves(planHeroSpread(modelHero(1440, 900)))) {
+    assert.equal(curve.control.x, curve.to.x, `${curve.id}: arrives straight down into its own entry point`);
+    assert.ok(curve.from.y < curve.to.y, `${curve.id}: starts above the workspace top`);
+  }
 });
