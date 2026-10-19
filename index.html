@@ -15,8 +15,8 @@
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="assets/site.webmanifest">
-  <link rel="stylesheet" href="assets/brand.css?v=20260824i">
-  <link rel="stylesheet" href="assets/page.css?v=20261016r">
+  <link rel="stylesheet" href="assets/brand.css?v=20261019a">
+  <link rel="stylesheet" href="assets/page.css?v=20261019a">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -40,25 +40,15 @@
   </header>
 
   <main id="main">
-    <section class="hero" data-hero-motion aria-labelledby="hero-title">
-      <figure class="hero-motion" aria-labelledby="hero-motion-caption">
-        <div class="hero-motion__stage" data-hero-motion-canvas aria-hidden="true"></div>
-        <div class="hero-motion__fallback" aria-hidden="true">
-          <span class="fallback-signal" style="--x:18%;--y:4%;--squeezed-display:none">Email</span>
-          <span class="fallback-signal" style="--x:39%;--y:4%;--squeezed-x:31.667%;--squeezed-y:6.429%">DOCX</span>
-          <span class="fallback-signal" style="--x:61%;--y:4%;--squeezed-x:53.333%;--squeezed-y:6.429%">XLSX</span>
-          <span class="fallback-signal" style="--x:83%;--y:4%;--squeezed-x:75%;--squeezed-y:6.429%">CSV</span>
-          <span class="fallback-signal" style="--x:91%;--y:30%;--squeezed-display:none">PDF</span>
-          <span class="logo-stamp hero-motion__fallback-stamp"><svg class="logo-stamp__mark" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><rect x="112" y="142" width="189" height="49" rx="14" fill="#F4EFE4"/><rect x="112" y="232" width="239" height="49" rx="14" fill="#C8A25D"/><rect x="112" y="322" width="289" height="49" rx="14" fill="#F4EFE4"/><path d="M128 148h157M128 238h207M128 328h257" stroke="#FFFDF8" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/></svg></span>
-          <span class="fallback-result">Ready for review</span>
-        </div>
-        <figcaption id="hero-motion-caption" class="visually-hidden">Everyday business work moves into the Assistall workspace. One clear item comes out ready for a person to review.</figcaption>
-      </figure>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-signal" data-hero-signal aria-hidden="true">
+        <svg class="hero-signal__map" data-hero-signal-map focusable="false"></svg>
+        <div class="hero-hub" data-hero-hub><svg class="hero-hub__mark" viewBox="0 0 512 512" focusable="false"><rect x="112" y="142" width="189" height="49" rx="14"/><rect class="hero-hub__bar--brass" x="112" y="232" width="239" height="49" rx="14"/><rect x="112" y="322" width="289" height="49" rx="14"/></svg></div>
+      </div>
       <div class="hero__film" aria-hidden="true"></div>
 
       <div class="wrap hero-grid">
         <div class="hero-copy" data-reveal>
-          <p class="eyebrow">AI support for everyday business work</p>
           <h1 id="hero-title">Clear the work that slows your business down.</h1>
           <p class="hero-lede">Assistall brings your email, files, reports, contracts, shipments and business systems into one clear workspace. It prepares the next step. Your team checks it.</p>
           <div class="button-row" aria-label="Hero actions">
@@ -74,7 +64,6 @@
       <div class="operational-current" aria-hidden="true"></div>
       <div class="wrap section-grid section-grid--workday">
         <div class="section-copy" data-reveal>
-          <p class="eyebrow">One clear flow</p>
           <h2 id="work-story-title">One clear flow for work coming from everywhere.</h2>
           <ol class="workday-steps">
             <li><span>01</span><div><strong>Connect the work</strong><p>Email, files, contracts and business systems.</p></div></li>
@@ -94,7 +83,6 @@
       <div class="operational-current" aria-hidden="true"></div>
       <div class="wrap">
         <header class="section-heading" data-reveal>
-          <p class="eyebrow">What Assistall can do</p>
           <h2 id="capabilities-title">See what Assistall can take off your team’s plate.</h2>
         </header>
         <div class="capability-experience">
@@ -125,7 +113,6 @@
       <div class="operational-current" aria-hidden="true"></div>
       <div class="wrap">
         <header class="section-heading section-heading--dark" data-reveal>
-          <p class="eyebrow">Connections</p>
           <h2 id="connections-title">Bring the tools your business already uses.</h2>
           <p>Every connector says how it works: live connection, imported source or setup-dependent.</p>
         </header>
@@ -177,7 +164,6 @@
       <div class="operational-current" aria-hidden="true"></div>
       <div class="wrap">
         <header class="section-heading" data-reveal>
-          <p class="eyebrow">Real product</p>
           <h2 id="product-title">See the work, not just the promise.</h2>
           <p>Follow real business work from the source to a clear next step your team can check.</p>
         </header>
@@ -194,7 +180,6 @@
               <figcaption>Real Assistall workspace · fictional capture</figcaption>
             </figure>
             <article class="workflow-stage">
-              <p class="workflow-stage__eyebrow">Living work queue</p>
               <h3>Contract review</h3>
               <p><strong>Northstar Supplies Framework Agreement</strong> is marked for review with the counterparty, owner and renewal date together.</p>
               <p>Assistall gives the person checking it one clear place to open the record and decide the next step.</p>
@@ -208,7 +193,6 @@
               <figcaption>Real Assistall workspace · fictional capture</figcaption>
             </figure>
             <article class="workflow-stage">
-              <p class="workflow-stage__eyebrow">Living work queue</p>
               <h3>Shipment tracking</h3>
               <p><strong>NSC-4427</strong> brings the route, ETA, container and customs status into one reviewable record.</p>
               <p>Your team sees what changed before they contact a client, carrier or vendor.</p>
@@ -222,7 +206,6 @@
               <figcaption>Real Assistall workspace · fictional capture</figcaption>
             </figure>
             <article class="workflow-stage">
-              <p class="workflow-stage__eyebrow">Living work queue</p>
               <h3>Report preparation</h3>
               <p><strong>Daily Sales Report</strong> is read into a clear summary, with its source and export step kept together.</p>
               <p>Your team reviews the prepared report before sharing it or using it to decide what happens next.</p>
@@ -237,7 +220,6 @@
       <div class="operational-current" aria-hidden="true"></div>
       <div class="wrap" data-reveal>
         <header class="section-heading">
-          <p class="eyebrow">Why it matters</p>
           <h2 id="human-title">Give people more time for people.</h2>
           <p>Spend less time searching, copying and chasing updates. Spend more time with clients, building trust, finding sales and growing the business.</p>
         </header>
@@ -254,7 +236,6 @@
       <div class="operational-current" aria-hidden="true"></div>
       <div class="wrap">
         <header class="section-heading" data-reveal>
-          <p class="eyebrow">Control and trust</p>
           <h2 id="trust-title">AI prepares. People approve.</h2>
           <p>Assistall works inside clear permission boundaries. Your team reviews important work before anything is sent or changed.</p>
         </header>
@@ -298,6 +279,6 @@
       <nav aria-label="Footer navigation"><a href="privacy.html">Privacy</a><a href=".well-known/security.txt">Security</a><a href="mailto:hello@assistall.ai">Contact</a></nav>
     </div>
   </footer>
-  <script type="module" src="assets/site.js?v=20261016r"></script>
+  <script type="module" src="assets/site.js?v=20261019a"></script>
 </body>
 </html>
