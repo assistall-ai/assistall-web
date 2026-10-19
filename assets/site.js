@@ -19,10 +19,10 @@ const HERO_SIGNAL_DIRECTIONS = Object.freeze({ right: [1, 0], bottom: [0, 1], le
 // Traces keep at least this many pixels between them everywhere.
 export const HERO_TRACE_GAP = 6;
 const HERO_TRACE_RADIUS = 7;
-// A packet travels at about 240px a second, never quicker than 0.9s or slower than 2.6s a trace.
-export const HERO_SIGNAL_SPEED = .24;
-export const HERO_SIGNAL_MIN_MS = 900;
-export const HERO_SIGNAL_MAX_MS = 2600;
+// A packet travels at about 320px a second, never quicker than 0.7s or slower than 2s a trace.
+export const HERO_SIGNAL_SPEED = .32;
+export const HERO_SIGNAL_MIN_MS = 700;
+export const HERO_SIGNAL_MAX_MS = 2000;
 
 function seededRandom(seed) {
   let state = seed >>> 0;
@@ -245,8 +245,8 @@ export function heroSignalDuration(length) {
 }
 
 // A fixed, seeded timetable of lights, so the hub looks spontaneous but any moment can be
-// held for review with ?frame=. Bursts of one to three lights leave from different sides,
-// about a second apart, and a line never carries two lights at once.
+// held for review with ?frame=. Bursts of two to five lights leave from different sides,
+// about half a second apart, and a line never carries two lights at once.
 export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS } = {}) {
   const random = seededRandom(seed);
   const pulses = [];
@@ -254,11 +254,11 @@ export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_
   let time = 300;
   while (time < loopMs - HERO_SIGNAL_MAX_MS - 400) {
     const roll = random();
-    const count = roll < .12 ? 3 : roll < .45 ? 2 : 1;
+    const count = roll < .2 ? 5 : roll < .5 ? 4 : roll < .8 ? 3 : 2;
     const sides = new Set();
     let last = time;
     for (let k = 0; k < count; k += 1) {
-      const start = Math.round(time + k * (80 + random() * 260));
+      const start = Math.round(time + k * (60 + random() * 160));
       last = start;
       let pick = -1;
       for (let tries = 0; tries < 16 && pick < 0; tries += 1) {
@@ -271,8 +271,8 @@ export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_
       sides.add(lines[pick].side);
       pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length) });
     }
-    // The next burst waits 0.7 to 1.7 seconds after this one's last light.
-    time = last + 700 + random() * 1000;
+    // The next burst waits 0.35 to 0.85 seconds after this one's last light.
+    time = last + 350 + random() * 500;
   }
   return pulses;
 }
@@ -442,7 +442,7 @@ function enableSectionGlide() {
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const HERO_PULSE_POOL = 8;
+const HERO_PULSE_POOL = 24;
 // A light is an electron: a tiny packet of square-ended dashes the width of its trace, longest
 // at the front, with a thin, barely visible trail a little way behind. Lengths in pixels, back to front.
 const HERO_PACKET = Object.freeze([1.5, 2, 6]);

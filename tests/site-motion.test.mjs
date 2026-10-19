@@ -148,14 +148,14 @@ test('traces are straight runs joined by 45 degree bends, never crossing or touc
 test('lights arrive unhurried, a few sides at a time, never two on one trace', () => {
   const lines = planHeroSignals(HERO_LAYOUTS[0]);
   const pulses = heroSignalSchedule(lines);
-  assert.ok(pulses.length > 30, 'a steady flow over the minute-long cycle');
+  assert.ok(pulses.length > 150, 'a busy flow over the minute-long cycle');
   for (const pulse of pulses) {
-    assert.ok(pulse.duration >= 900 && pulse.duration <= 2600, 'each light takes 0.9 to 2.6 seconds to travel in');
+    assert.ok(pulse.duration >= 700 && pulse.duration <= 2000, 'each light takes 0.7 to 2 seconds to travel in');
     assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
   }
   for (const pulse of pulses) {
-    assert.ok(pulses.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1000).length <= 3, `burst at ${pulse.start}`);
-    assert.ok(pulses.filter((other) => other.start <= pulse.start && pulse.start < other.start + other.duration).length <= 8, `crowd at ${pulse.start}`);
+    assert.ok(pulses.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1000).length <= 10, `burst at ${pulse.start}`);
+    assert.ok(pulses.filter((other) => other.start <= pulse.start && pulse.start < other.start + other.duration).length <= 24, `crowd at ${pulse.start}`);
   }
   for (let i = 0; i < pulses.length; i += 1) {
     for (let j = i + 1; j < pulses.length; j += 1) {
@@ -167,7 +167,7 @@ test('lights arrive unhurried, a few sides at a time, never two on one trace', (
   const sides = new Set(pulses.map((pulse) => lines[pulse.line].side));
   assert.equal(sides.size, HERO_SIGNAL_SIDES.length, 'over a cycle, light arrives from every side and corner');
   const together = pulses.filter((pulse, index) => pulses.some((other, k) => k !== index && Math.abs(other.start - pulse.start) < 400 && lines[other.line].side !== lines[pulse.line].side));
-  assert.ok(together.length > 10, 'several sides often light at once');
+  assert.ok(together.length > 100, 'several sides light at once');
   assert.match(siteScript, /HERO_PACKET = Object\.freeze\(\[1\.5, 2, 6\]\)/, 'each light is a tiny packet of dashes, not a dot');
   assert.match(siteScript, /HERO_TRAIL_LENGTH = 14;/, 'its trail is short');
 });
