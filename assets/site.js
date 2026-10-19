@@ -100,75 +100,123 @@ export function heroTracePath(points, radius = HERO_TRACE_RADIUS) {
   return `${d} L${f(points[points.length - 1])}`;
 }
 
-// The route each trace takes out from the hub, as turns: a short stub straight out, then for
-// side traces a 45° run and a final straight run parallel to the stub; for corner traces a
-// diagonal run that turns to run straight out horizontally or vertically.
-function heroTraceTemplates(random) {
+// The traces, mirrored on every side so the pattern stays symmetric: five per side (a straight
+// one, and two each way that swing 45° outwards, the outer pair further) and three per corner
+// (one straight along the diagonal, one turning horizontal and one turning vertical).
+const HERO_SIDE_OFFSETS = Object.freeze([-2, -1, 0, 1, 2]);
+const HERO_SIDE_STUB = 20;
+const HERO_SIDE_SWING = Object.freeze([0, 26, 52]);
+const HERO_CORNER_STUB = 20;
+const HERO_CORNER_TURN = 64;
+// Traces routed round the copy run in lanes this far apart.
+const HERO_TRACE_LANE = 10;
+// Each trace carries on this far under the hub, so its light vanishes inside it.
+export const HERO_TRACE_DEPTH = 18;
+
+function heroTraceTemplates() {
   const templates = [];
   for (const side of ['top', 'right', 'bottom', 'left']) {
-    for (const offset of [0, -1, 1]) {
-      const stub = 16 + random() * 12;
-      const swing = offset ? 34 + random() * 22 : 0;
-      templates.push({ side, offset, stub, swing });
-    }
+    for (const offset of HERO_SIDE_OFFSETS) templates.push({ side, offset, stub: HERO_SIDE_STUB, swing: HERO_SIDE_SWING[Math.abs(offset)] });
   }
   for (const side of ['top-right', 'bottom-right', 'bottom-left', 'top-left']) {
-    for (const offset of [-1, 1]) templates.push({ side, offset, stub: 30 + random() * 34 + (offset > 0 ? 18 : 0), swing: 0 });
+    for (const offset of [0, -1, 1]) templates.push({ side, offset, stub: offset ? HERO_CORNER_TURN : HERO_CORNER_STUB, swing: 0 });
   }
   return templates;
 }
 
-function heroTraceRoute(hub, template, allowed) {
-  const anchor = heroHubAnchor(hub, template.side, template.offset * .78);
-  const n = anchor.normal;
+// The fixed part of a trace next to the hub: anchor, stub and any 45° swing, plus the
+// direction of its final straight run.
+function heroTraceStart(hub, template) {
   const corner = template.side.includes('-');
+  const anchor = heroHubAnchor(hub, template.side, corner ? template.offset : template.offset / 2);
+  const n = anchor.normal;
   const points = [[anchor.x, anchor.y]];
   let at = add(points[0], n, template.stub);
   points.push(at);
-  let finalDirection = n;
+  let direction = n;
   if (!corner && template.offset) {
-    // Swing 45° away from the hub's middle, then run straight out again.
-    const tangent = n[0] === 0 ? [template.offset, 0] : [0, template.offset];
+    const tangent = n[0] === 0 ? [Math.sign(template.offset), 0] : [0, Math.sign(template.offset)];
     at = add(at, unit([n[0] + tangent[0], n[1] + tangent[1]]), template.swing);
     points.push(at);
   }
-  if (corner) {
+  if (corner && template.offset) {
     // Turning clockwise of the diagonal runs one way, anticlockwise the other.
-    const clockwise = template.offset > 0;
-    const horizontal = (n[0] * n[1] < 0) === clockwise;
-    finalDirection = horizontal ? [Math.sign(n[0]), 0] : [0, Math.sign(n[1])];
+    const horizontal = (n[0] * n[1] < 0) === (template.offset > 0);
+    direction = horizontal ? [Math.sign(n[0]), 0] : [0, Math.sign(n[1])];
   }
-  if (points.some(([x, y]) => !allowed(x, y))) return null;
-  // Run straight on until the edge of the screen (or the copy, or the header).
-  let reach = 0;
-  for (let step = 2; step < 3000; step += 2) {
-    const [x, y] = add(at, finalDirection, step);
-    if (!allowed(x, y)) break;
-    reach = step;
-  }
-  if (reach < 24) return null;
-  points.push(add(at, finalDirection, reach));
-  return points.reverse();
+  return { template, anchor, points, at, direction };
 }
 
 // Plans the traces for one layout. `avoid` holds rectangles (the copy) no trace may enter;
-// `top` keeps traces below the header. Traces that would cross or crowd another are dropped.
-export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margin = 0, seed = 20261019 }) {
-  const random = seededRandom(seed);
-  const allowed = (x, y) => x >= margin && x <= width - margin && y >= top + margin && y <= height - margin
-    && !avoid.some((rect) => insideRect(x, y, rect));
+// `top` keeps traces below the header. Every trace runs to the edge of the screen: where the
+// copy is in the way of traces heading left, they turn up or down in the gap beside the copy
+// and run out above or below it in their own lanes. Traces that would cross or come within
+// HERO_TRACE_GAP of another are dropped.
+export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margin = 0 }) {
+  const onScreen = (x, y) => x >= margin && x <= width - margin && y >= top + margin && y <= height - margin;
+  const inCopy = (x, y) => avoid.some((rect) => insideRect(x, y, rect));
+  const starts = heroTraceTemplates().map((template) => heroTraceStart(hub, template))
+    .filter((start) => start.points.every(([x, y]) => onScreen(x, y) && !inCopy(x, y)));
+  const finished = [];
+  const leftBound = [];
+  for (const start of starts) {
+    let reach = 0;
+    let blocked = false;
+    for (let step = 2; step < 4000; step += 2) {
+      const [x, y] = add(start.at, start.direction, step);
+      if (!onScreen(x, y)) break;
+      if (inCopy(x, y)) { blocked = true; break; }
+      reach = step;
+    }
+    start.blocked = blocked;
+    start.reach = reach;
+    if (start.direction[0] < 0) leftBound.push(start);
+    else if (reach >= 12) finished.push([...start.points, add(start.at, start.direction, reach)]);
+  }
+
+  // Heading left: straight out where the way is clear (phones), otherwise round the copy.
+  const copy = avoid.find((rect) => leftBound.some((s) => s.blocked && hub.y > rect.top && hub.y < rect.bottom));
+  if (!copy) {
+    for (const start of leftBound) if (start.reach >= 12) finished.push([...start.points, add(start.at, start.direction, start.reach)]);
+  } else {
+    const column = Math.min(...leftBound.filter((s) => s.direction[1] === 0).map((s) => s.at[0])) - 14;
+    // Where each trace meets the first column, which sets the order of columns and lanes.
+    const yAtColumn = (s) => s.at[1] + s.direction[1] * (s.at[0] - column) / Math.abs(s.direction[0]);
+    const upper = leftBound.filter((s) => yAtColumn(s) < hub.y - 1).sort((a, b) => yAtColumn(a) - yAtColumn(b));
+    const lower = leftBound.filter((s) => yAtColumn(s) >= hub.y - 1).sort((a, b) => yAtColumn(b) - yAtColumn(a));
+    const route = (s, index, lane) => {
+      const x = column - index * HERO_TRACE_LANE;
+      if (x < copy.right + HERO_TRACE_GAP) return;
+      const meet = add(s.at, s.direction, (s.at[0] - x) / Math.abs(s.direction[0]));
+      finished.push([...s.points, meet, [x, lane], [margin, lane]]);
+    };
+    // Lanes sit 10px apart, closing up to 7px if the band above or below the copy is tight.
+    const spacing = (band, count) => Math.max(HERO_TRACE_GAP + 1, Math.min(HERO_TRACE_LANE, band / Math.max(1, count)));
+    const upperStep = spacing(copy.top - HERO_TRACE_GAP - (top + 8), upper.length);
+    const lowerStep = spacing(height - 8 - (copy.bottom + HERO_TRACE_GAP), lower.length);
+    upper.forEach((s, i) => { const lane = top + 8 + i * upperStep; if (lane <= copy.top - HERO_TRACE_GAP) route(s, i, lane); });
+    lower.forEach((s, i) => { const lane = height - 8 - i * lowerStep; if (lane >= copy.bottom + HERO_TRACE_GAP) route(s, i, lane); });
+  }
+
   const lines = [];
-  for (const template of heroTraceTemplates(random)) {
-    const points = heroTraceRoute(hub, template, allowed);
-    if (!points) continue;
+  const byStart = new Map(starts.map((start) => [start.points[0].join(), start]));
+  for (const outward of finished) {
+    const start = byStart.get(outward[0].join());
+    const points = outward.slice().reverse();
     if (lines.some((line) => heroTraceDistance(line.points, points) < HERO_TRACE_GAP)) continue;
+    const inside = add(outward[0], start.anchor.normal, -HERO_TRACE_DEPTH);
+    const drawn = [...points, inside];
     lines.push({
-      id: `${template.side}-${template.offset}`,
-      side: template.side,
+      id: `${start.template.side}${start.template.offset}`,
+      side: start.template.side,
       points,
-      bends: points.slice(1, -1),
-      length: heroTraceLength(points),
-      d: heroTracePath(points),
+      // Vias mark the real bends (where the direction changes), not straight joins.
+      bends: points.slice(1, -1).filter((at, i) => {
+        const [a, b] = [points[i], points[i + 2]];
+        return Math.abs((at[0] - a[0]) * (b[1] - at[1]) - (at[1] - a[1]) * (b[0] - at[0])) > 1e-6;
+      }),
+      length: heroTraceLength(drawn),
+      d: heroTracePath(drawn),
     });
   }
   return lines;
@@ -377,11 +425,12 @@ function enableSectionGlide() {
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HERO_PULSE_POOL = 8;
-// A packet is a short run of dashes the width of its trace, brightest and longest at the front,
-// with a faint trail behind it. Lengths in pixels, back to front.
-const HERO_PACKET = Object.freeze([2, 3, 5, 3, 12]);
+// A light is an electron: a tiny packet of square-ended dashes the width of its trace, longest
+// at the front, with a thin, barely visible trail a little way behind. Lengths in pixels, back to front.
+const HERO_PACKET = Object.freeze([1.5, 2, 6]);
 const HERO_PACKET_LENGTH = HERO_PACKET.reduce((sum, part) => sum + part, 0);
-const HERO_TRAIL_LENGTH = 72;
+const HERO_TRAIL_LENGTH = 14;
+const HERO_TRAIL_GAP = 3;
 
 function svgElement(tag, attributes, parent) {
   const element = document.createElementNS(SVG_NS, tag);
@@ -435,10 +484,14 @@ function enableHeroMotion() {
       height: bounds.height,
       hub: hubPlace,
       avoid: measureCopy(bounds),
-      top: Math.max(0, (header?.getBoundingClientRect().bottom ?? 0) - bounds.top + 12),
+      // The hero starts at the top of the page under the fixed header, so use its height,
+      // not where it sits on screen (that moves if the page loads part-scrolled).
+      top: (header?.offsetHeight ?? 0) + 12,
     });
     pulses = heroSignalSchedule(lines);
     map.setAttribute('viewBox', `0 0 ${bounds.width.toFixed(0)} ${bounds.height.toFixed(0)}`);
+    // Pin the drawing to the top-left so a brief size mismatch can never shift it.
+    map.setAttribute('preserveAspectRatio', 'xMinYMin meet');
     map.replaceChildren();
     const lineGroup = svgElement('g', { class: 'hero-signal__lines' }, map);
     lineElements = lines.map((line) => svgElement('path', { d: line.d, class: 'hero-signal__line' }, lineGroup));
@@ -467,11 +520,12 @@ function enableHeroMotion() {
       trail.setAttribute('d', line.d);
       packet.setAttribute('d', line.d);
       // Each dash pattern is longer than the trace, so it can never wrap back onto it.
+      const trailEnd = position - HERO_PACKET_LENGTH - HERO_TRAIL_GAP;
       trail.style.strokeDasharray = `${HERO_TRAIL_LENGTH} ${total + HERO_TRAIL_LENGTH * 2}`;
-      trail.style.strokeDashoffset = `${HERO_TRAIL_LENGTH - position}`;
+      trail.style.strokeDashoffset = `${HERO_TRAIL_LENGTH - trailEnd}`;
       packet.style.strokeDasharray = `${HERO_PACKET.join(' ')} ${total + HERO_PACKET_LENGTH * 2}`;
       packet.style.strokeDashoffset = `${HERO_PACKET_LENGTH - position}`;
-      trail.style.opacity = (pulse.opacity * .32).toFixed(3);
+      trail.style.opacity = (pulse.opacity * .22).toFixed(3);
       packet.style.opacity = pulse.opacity.toFixed(3);
     });
     hub.style.setProperty('--charge', state.charge.toFixed(3));
@@ -482,11 +536,19 @@ function enableHeroMotion() {
   scene.classList.add('hero-signal--ready');
   // The copy can reflow once the web font arrives, so plan again then.
   document.fonts?.ready?.then(relayout);
+  // Plan again once the hero's size settles after any change (window resize, the hero
+  // growing as the page finishes loading), so the traces always match the space they fill.
   let resizeTimer = 0;
-  window.addEventListener('resize', () => {
+  let planned = scene.getBoundingClientRect();
+  const replanIfResized = () => {
+    const now = scene.getBoundingClientRect();
+    if (Math.abs(now.width - planned.width) < 1 && Math.abs(now.height - planned.height) < 1) return;
+    planned = now;
     window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(relayout, 160);
-  }, { passive: true });
+    resizeTimer = window.setTimeout(relayout, 120);
+  };
+  if ('ResizeObserver' in window) new ResizeObserver(replanIfResized).observe(scene);
+  else window.addEventListener('resize', replanIfResized, { passive: true });
   // ?frame= holds one moment for review; reduced motion keeps the still network and hub.
   if (heldFrame !== null) { render(heldFrame); return; }
   if (reduced) return;

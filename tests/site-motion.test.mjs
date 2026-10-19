@@ -5,6 +5,7 @@ import test from 'node:test';
 import {
   HERO_SIGNAL_LOOP_MS,
   HERO_SIGNAL_SIDES,
+  HERO_TRACE_DEPTH,
   HERO_TRACE_GAP,
   calculateScrollDuration,
   easeInOutCubic,
@@ -66,10 +67,12 @@ test('hero is a single signal hub with no stars, source cards or the old embosse
   assert.match(pageHtml, /data-hero-signal-map/);
   assert.equal((pageHtml.match(/data-hero-hub/g) ?? []).length, 1);
   assert.doesNotMatch(pageHtml + pageCss + siteScript, /hero-star|logo-stamp|hero-signal-card|hero-workspace|hero-route-map|fallback-signal|hero-signal__head/);
-  assert.match(pageCss, /\.hero \{[^}]*radial-gradient\([^)]*#061a1c/, 'the hero is a dark night sky without stars');
+  assert.match(pageCss, /\.hero \{[^}]*linear-gradient\(180deg, #03060b/, 'the hero is a dark night sky without stars');
   assert.match(pageCss, /\.hero-hub \{[^}]*--charge: 0;/, 'the hub glows a little brighter as lights arrive');
   assert.match(pageCss, /\.hero-signal__line \{[^}]*stroke-width: 1\.6;[^}]*stroke-linecap: butt;/);
-  assert.match(pageCss, /\.hero-signal__trail, \.hero-signal__packet \{[^}]*stroke-width: 1\.6;[^}]*stroke-linecap: butt;/, 'lights are as thin as their trace, with square ends');
+  assert.match(pageCss, /\.hero-signal__trail, \.hero-signal__packet \{[^}]*stroke-linecap: butt;/, 'lights have square ends, not round dots');
+  assert.match(pageCss, /\.hero-signal__packet \{[^}]*stroke-width: 1\.6;/, 'each light is as thin as its trace');
+  assert.match(pageCss, /\.hero-signal__trail \{[^}]*stroke-width: 1;/, 'the trail is thinner still');
   assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
 });
 
@@ -80,7 +83,7 @@ test('traces run in from the screen edges on every side and corner, clear of the
     // Beside the copy there is room on the left only on wide screens and phones.
     const required = HERO_SIGNAL_SIDES.filter((side) => layout.name !== '1024 laptop' || !side.includes('left'));
     assert.deepEqual(required.filter((side) => !sides.has(side)), [], `${layout.name}: every side and corner has a trace`);
-    assert.ok(lines.length >= (layout.width >= 1280 ? 18 : 12), `${layout.name}: ${lines.length} traces`);
+    assert.ok(lines.length >= (layout.name === '1024 laptop' ? 28 : 32), `${layout.name}: ${lines.length} traces`);
     for (const line of lines) {
       const [[sx, sy]] = line.points;
       const atEdge = sx <= 3 || sx >= layout.width - 3 || sy <= layout.top + 3 || sy >= layout.height - 3
@@ -95,6 +98,21 @@ test('traces run in from the screen edges on every side and corner, clear of the
       }
     }
   }
+});
+
+test('the pattern is symmetric: five traces a side and three a corner, every one reaching a screen edge', () => {
+  for (const layout of HERO_LAYOUTS.filter(({ name }) => name !== '1024 laptop')) {
+    const lines = planHeroSignals(layout);
+    for (const side of HERO_SIGNAL_SIDES) {
+      assert.equal(lines.filter((line) => line.side === side).length, side.includes('-') ? 3 : 5, `${layout.name} ${side}`);
+    }
+  }
+  const [desktop] = HERO_LAYOUTS;
+  for (const line of planHeroSignals(desktop).filter(({ side }) => side.includes('left'))) {
+    const [[sx, sy]] = line.points;
+    assert.ok(sx <= 1 || sy <= desktop.top + 1 || sy >= desktop.height - 1, `${line.id}: routed round the copy to the edge of the screen`);
+  }
+  assert.ok(HERO_TRACE_DEPTH > 0, 'traces carry on under the hub so their lights vanish inside it');
 });
 
 test('traces are straight runs joined by 45 degree bends, never crossing or touching', () => {
@@ -142,7 +160,8 @@ test('lights arrive unhurried, a few sides at a time, never two on one trace', (
   assert.equal(sides.size, HERO_SIGNAL_SIDES.length, 'over a cycle, light arrives from every side and corner');
   const together = pulses.filter((pulse, index) => pulses.some((other, k) => k !== index && Math.abs(other.start - pulse.start) < 400 && lines[other.line].side !== lines[pulse.line].side));
   assert.ok(together.length > 10, 'several sides often light at once');
-  assert.match(siteScript, /HERO_PACKET = Object\.freeze\(\[2, 3, 5, 3, 12\]\)/, 'each light is a short packet of dashes, not a dot');
+  assert.match(siteScript, /HERO_PACKET = Object\.freeze\(\[1\.5, 2, 6\]\)/, 'each light is a tiny packet of dashes, not a dot');
+  assert.match(siteScript, /HERO_TRAIL_LENGTH = 14;/, 'its trail is short');
 });
 
 test('the hub glows from recent arrivals and settles back', () => {

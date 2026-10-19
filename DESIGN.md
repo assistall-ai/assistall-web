@@ -8,9 +8,10 @@ colors:
   muted-brass: "#C8A25D"
   charcoal: "#172A2C"
   white: "#FFFFFF"
-  hero-sky-core: "#0f3134"
-  hero-sky: "#0a2427"
-  hero-sky-edge: "#061a1c"
+  hero-sky-top: "#03060b"
+  hero-sky-mid: "#060c16"
+  hero-sky-low: "#0a1524"
+  hero-electric: "#8fe6ff"
   hero-hub-light: "#154649"
   hero-hub-deep: "#0a2f32"
   hero-gold-line: "#e8c77e"
@@ -111,7 +112,7 @@ components:
 
 A calm, premium operations brand for non-technical business owners. The page reads like a well-run office: deep teal and warm limestone surfaces, one brass accent, generous space, and plain, specific language. Confidence comes from restraint and real product evidence (recorded workflows with fictional data), never from hype, metrics or decoration.
 
-The one deliberate exception is the hero. Since 19 October 2026 it is a placeholder chosen by the owner: a dark night-sky field (no stars) with the Assistall mark as a quiet, softly glowing hub, thin brass circuit traces running in to it from the screen edges on every side and corner, and small packets of light travelling in along them like signals. That glow and depth belongs **only** to the hero; every section below it returns to flat, quiet surfaces.
+The one deliberate exception is the hero. Since 19 October 2026 it is a placeholder chosen by the owner: a dark night-sky field (no stars) with the Assistall mark as a quiet, softly glowing hub, thin brass circuit traces running in to it from the screen edges on every side and corner, and tiny electric packets travelling in along them like electrons through a circuit. That glow and depth belongs **only** to the hero; every section below it returns to flat, quiet surfaces.
 
 Rhythm alternates surfaces down the page: dark hero, limestone story, ivory capabilities, teal connections, ivory product, limestone value, ivory trust, teal call to action and footer. Each band carries one idea.
 
@@ -134,7 +135,8 @@ A restrained teal-and-stone palette with one warm metal accent.
 - **Muted Brass** (muted-brass): the single accent. Primary button fill, focus outlines, thin section rules ("operational current" line), active tab underline, the active capability outline, scrollbar thumbs, borders on the demo form and outputs strip. Brass is a line-and-fill colour, not a text colour on light backgrounds (see the Brass Is Not Ink Rule).
 
 ### Tertiary (hero only)
-- **Hero Sky** (hero-sky-core, hero-sky, hero-sky-edge): the hero's night-sky radial field, lightest behind the hub. Close to the old #06191b scene, lifted slightly behind the hub.
+- **Hero Sky** (hero-sky-top, hero-sky-mid, hero-sky-low): a real night sky, near-black at the top easing to deep navy low down, with a faint blue haze behind the hub. Deliberately not the brand teal (owner request, 19 October 2026).
+- **Hero Electric** (hero-electric): the light packets' glow, a cool electric blue-cyan around a near-white core. The one extra hue on the site, hero only, owner request.
 - **Hub Face** (hero-hub-light, hero-hub-deep): the two ends of the hub tile's deep-teal gradient.
 - **Hero Gold Line** (hero-gold-line): the signal traces, their bend vias and the glow around the light packets. Do not reuse elsewhere.
 - The workflow video letterbox keeps #06191b.
@@ -227,8 +229,8 @@ Softly rounded, never pill-heavy. Controls 10px, cards and tiles 12px, framed pr
 The owner replaced the source-card animation with a placeholder while a final hero is chosen. Built in DOM/SVG/CSS by `assets/site.js` (`planHeroSignals`, `heroSignalSchedule`, `heroSignalState`, `enableHeroMotion`).
 
 - **The hub** is the Assistall mark on a plain deep-teal tile (100–148px): soft gradient, 1px brass hairline, faint inner frame, a slow breathing halo and a glow that brightens slightly as each light arrives. No bevel, no spin. On desktop and tablets it is centred in the space right of the copy, a little above the middle; on phones it sits centred below the copy (the hero gains bottom padding to hold it).
-- **Traces** are circuit-style: 1.6px brass at 24%, square ends, straight runs joined by 45° bends with a small rounded corner and a 3.5px square via at each bend. Each side has three (a straight one and two that swing 45° outwards first), each corner two (one turning horizontal, one vertical). Every trace runs from the edge of the screen (or the edge of the copy, or just below the header) to the hub and arrives square to its outline. They are planned in real pixels from the measured hero, copy and header, so nothing stretches; no trace enters the copy (plus 28px), and any trace that would cross or come within 6px of another is dropped (tests check every modelled size).
-- **Lights** are packets the width of their trace: a short run of square-ended dashes (2, 3, 5, 3 and 12px, longest at the front) in ivory with a small glow, and a faint 72px brass trail behind. They travel at about 120px a second (1.8 to 5.2 seconds a trace, easing in and out), in bursts of one to three from different sides, 0.7 to 1.7 seconds apart, never two on one trace. A fixed, seeded 60-second timetable makes it look spontaneous while any moment can be held for review.
+- **Traces** are circuit-style and symmetric: 1.6px brass at 22%, square ends, straight runs joined by 45° or 90° bends with a small rounded corner and a 3.5px square via at each real bend. Every side has five (one straight, two each way swinging 45° outwards, the outer pair further) and every corner three (one straight along the diagonal, one turning horizontal, one vertical). Every trace runs from the edge of the screen: where the copy is in the way of traces heading left, they turn up or down in the gap beside it and run out above or below it in their own lanes (10px apart, closing to 7px if tight) to the left edge. On phones the copy sits above the hub, so top traces stop at its lower edge. Traces carry on 18px under the hub so their lights vanish inside it. Planned in real pixels from the measured hero, copy and header, re-planned whenever the hero changes size; nothing enters the copy (plus 28px) and any trace that would cross or come within 6px of another is dropped (tests check every modelled size and the full count of 32 on desktop and phones).
+- **Lights** are electrons: a tiny packet of square-ended dashes the width of the trace (1.5, 2 and 6px, longest at the front), near-white with an electric blue glow, and a thin 14px trail at 22% a few pixels behind. They travel at about 120px a second (1.8 to 5.2 seconds a trace, easing in and out), in bursts of one to three from different sides, 0.7 to 1.7 seconds apart, never two on one trace, and disappear under the hub tile. A fixed, seeded 60-second timetable makes it look spontaneous while any moment can be held for review.
 - **Reduced motion** keeps the still traces and hub with no lights or breathing. Without JavaScript the hub shows alone.
 - **Review aids:** `?motion=on|off` forces or stops the motion, and `?frame=<ms>` holds one moment (lights included) for screenshots.
 
