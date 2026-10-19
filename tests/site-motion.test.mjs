@@ -5,12 +5,14 @@ import test from 'node:test';
 import {
   HERO_SIGNAL_LOOP_MS,
   HERO_SIGNAL_SIDES,
+  HERO_TRACE_GAP,
   calculateScrollDuration,
   easeInOutCubic,
   getTargetScrollTop,
   heroHubAnchor,
   heroSignalSchedule,
   heroSignalState,
+  heroTraceDistance,
   planHeroSignals,
   WORKFLOW_ROTATION_MS,
 } from '../assets/site.js';
@@ -40,93 +42,107 @@ test('section glide easing begins and ends exactly at its anchors', () => {
   assert.ok(easeInOutCubic(0.5) > 0.49 && easeInOutCubic(0.5) < 0.51);
 });
 
-// The hero hub sits right of the copy on wide screens and below it on phones; these are the
-// pixel layouts site.js measures, rounded from the real page at each width.
+// The hub sits centred right of the copy on wide screens and below it on phones; these are
+// the pixel layouts site.js measures, worked out from page.css at each width.
 const HERO_LAYOUTS = [
-  { name: '1440 desktop', width: 1440, height: 900, hub: { x: 1066, y: 488, size: 115 }, avoid: [{ left: 44, right: 780, top: 230, bottom: 760 }], top: 88 },
-  { name: '1920 desktop', width: 1920, height: 900, hub: { x: 1421, y: 488, size: 120 }, avoid: [{ left: 284, right: 1020, top: 220, bottom: 770 }], top: 88 },
-  { name: '1024 laptop', width: 1024, height: 768, hub: { x: 809, y: 422, size: 84 }, avoid: [{ left: 13, right: 622, top: 200, bottom: 680 }], top: 88 },
-  { name: '390 phone', width: 390, height: 960, hub: { x: 195, y: 824, size: 84 }, avoid: [{ left: -8, right: 398, top: 150, bottom: 690 }], top: 80 },
+  { name: '1440 desktop', width: 1440, height: 900, hub: { x: 1096, y: 434, size: 144 }, avoid: [{ left: 44, right: 780, top: 200, bottom: 760 }], top: 88 },
+  { name: '1920 desktop', width: 1920, height: 900, hub: { x: 1456, y: 434, size: 148 }, avoid: [{ left: 284, right: 1020, top: 200, bottom: 770 }], top: 88 },
+  { name: '1024 laptop', width: 1024, height: 768, hub: { x: 829, y: 376, size: 102 }, avoid: [{ left: 13, right: 663, top: 180, bottom: 690 }], top: 88 },
+  { name: '390 phone', width: 390, height: 1060, hub: { x: 195, y: 916, size: 104 }, avoid: [{ left: -8, right: 398, top: 110, bottom: 768 }], top: 80 },
 ];
 
-function cubicPoint([p0, c1, c2, p3], t) {
-  const m = 1 - t;
-  return [0, 1].map((k) => m * m * m * p0[k] + 3 * m * m * t * c1[k] + 3 * m * t * t * c2[k] + t * t * t * p3[k]);
+function pointsAlong(points, step = 3) {
+  const out = [];
+  for (let i = 1; i < points.length; i += 1) {
+    const [a, b] = [points[i - 1], points[i]];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    for (let s = 0; s <= length; s += step) out.push([a[0] + (b[0] - a[0]) * s / length, a[1] + (b[1] - a[1]) * s / length]);
+  }
+  return out;
 }
 
 test('hero is a single signal hub with no stars, source cards or the old embossed stamp', () => {
   assert.match(pageHtml, /data-hero-signal\b/);
   assert.match(pageHtml, /data-hero-signal-map/);
   assert.equal((pageHtml.match(/data-hero-hub/g) ?? []).length, 1);
-  assert.doesNotMatch(pageHtml + pageCss + siteScript, /hero-star|logo-stamp|hero-signal-card|hero-workspace|hero-route-map|fallback-signal/);
-  assert.match(pageCss, /\.hero \{[^}]*radial-gradient\([^)]*#133c3f/, 'the hero is a lighter night sky than the old #06191b field');
-  assert.doesNotMatch(pageCss, /\.hero \{[^}]*background: #06191b/);
+  assert.doesNotMatch(pageHtml + pageCss + siteScript, /hero-star|logo-stamp|hero-signal-card|hero-workspace|hero-route-map|fallback-signal|hero-signal__head/);
+  assert.match(pageCss, /\.hero \{[^}]*radial-gradient\([^)]*#061a1c/, 'the hero is a dark night sky without stars');
   assert.match(pageCss, /\.hero-hub \{[^}]*--charge: 0;/, 'the hub glows a little brighter as lights arrive');
+  assert.match(pageCss, /\.hero-signal__line \{[^}]*stroke-width: 1\.6;[^}]*stroke-linecap: butt;/);
+  assert.match(pageCss, /\.hero-signal__trail, \.hero-signal__packet \{[^}]*stroke-width: 1\.6;[^}]*stroke-linecap: butt;/, 'lights are as thin as their trace, with square ends');
   assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
 });
 
-test('signal lines reach the hub from every side and corner without crossing the copy or header', () => {
+test('traces run in from the screen edges on every side and corner, clear of the copy and header', () => {
   for (const layout of HERO_LAYOUTS) {
     const lines = planHeroSignals(layout);
     const sides = new Set(lines.map(({ side }) => side));
-    // On a laptop the copy comes close to the hub, so its left side may have no room for a line.
+    // Beside the copy there is room on the left only on wide screens and phones.
     const required = HERO_SIGNAL_SIDES.filter((side) => layout.name !== '1024 laptop' || !side.includes('left'));
-    assert.deepEqual(required.filter((side) => !sides.has(side)), [], `${layout.name}: every side and corner has a line`);
-    assert.ok(lines.length >= (layout.width >= 1280 ? 18 : 12), `${layout.name}: ${lines.length} lines`);
+    assert.deepEqual(required.filter((side) => !sides.has(side)), [], `${layout.name}: every side and corner has a trace`);
+    assert.ok(lines.length >= (layout.width >= 1280 ? 18 : 12), `${layout.name}: ${lines.length} traces`);
     for (const line of lines) {
-      const [start, , , end] = line.curve;
+      const [[sx, sy]] = line.points;
+      const atEdge = sx <= 3 || sx >= layout.width - 3 || sy <= layout.top + 3 || sy >= layout.height - 3
+        || layout.avoid.some((r) => Math.min(Math.abs(sx - r.left), Math.abs(sx - r.right), Math.abs(sy - r.top), Math.abs(sy - r.bottom)) <= 3);
+      assert.ok(atEdge, `${layout.name} ${line.id}: starts at the edge of the screen (or the copy), not mid-air`);
+      const [ex, ey] = line.points.at(-1);
       const half = layout.hub.size / 2;
-      assert.ok(Math.abs(end[0] - layout.hub.x) <= half + .5 && Math.abs(end[1] - layout.hub.y) <= half + .5, `${layout.name} ${line.id}: ends on the hub`);
-      assert.ok(Math.max(Math.abs(end[0] - layout.hub.x), Math.abs(end[1] - layout.hub.y)) >= half * .7, `${layout.name} ${line.id}: ends at the hub's outline, not its middle`);
-      assert.ok(Math.hypot(start[0] - end[0], start[1] - end[1]) >= 44, `${layout.name} ${line.id}: long enough to read`);
-      for (let i = 0; i <= 14; i += 1) {
-        const [x, y] = cubicPoint(line.curve, i / 16);
-        assert.ok(x >= 0 && x <= layout.width && y >= layout.top && y <= layout.height, `${layout.name} ${line.id}: stays in the hero below the header`);
-        for (const rect of layout.avoid) assert.ok(!(x > rect.left && x < rect.right && y > rect.top && y < rect.bottom), `${layout.name} ${line.id}: keeps clear of the copy`);
+      assert.ok(Math.abs(ex - layout.hub.x) <= half + .5 && Math.abs(ey - layout.hub.y) <= half + .5 && Math.max(Math.abs(ex - layout.hub.x), Math.abs(ey - layout.hub.y)) >= half * .7, `${layout.name} ${line.id}: ends on the hub outline`);
+      for (const [x, y] of pointsAlong(line.points)) {
+        assert.ok(x >= -.5 && x <= layout.width + .5 && y >= layout.top - .5 && y <= layout.height + .5, `${layout.name} ${line.id}: stays below the header`);
+        for (const r of layout.avoid) assert.ok(!(x > r.left + .5 && x < r.right - .5 && y > r.top + .5 && y < r.bottom - .5), `${layout.name} ${line.id}: keeps clear of the copy`);
       }
     }
   }
 });
 
-test('signal lines arrive square to the hub outline', () => {
-  const [layout] = HERO_LAYOUTS;
-  for (const side of HERO_SIGNAL_SIDES) {
-    const anchor = heroHubAnchor(layout.hub, side, 0);
-    assert.ok(Math.abs(Math.hypot(...anchor.normal) - 1) < 1e-9, side);
-  }
-  for (const line of planHeroSignals(layout)) {
-    const [, , c2, end] = line.curve;
-    const anchor = heroHubAnchor(layout.hub, line.side, 0);
-    const towards = [c2[0] - end[0], c2[1] - end[1]];
-    const cross = towards[0] * anchor.normal[1] - towards[1] * anchor.normal[0];
-    assert.ok(Math.abs(cross) < 1e-6 && towards[0] * anchor.normal[0] + towards[1] * anchor.normal[1] > 0, `${line.id}: the last stretch runs straight out from the hub`);
+test('traces are straight runs joined by 45 degree bends, never crossing or touching', () => {
+  for (const layout of HERO_LAYOUTS) {
+    const lines = planHeroSignals(layout);
+    for (const line of lines) {
+      for (let i = 1; i < line.points.length; i += 1) {
+        const [a, b] = [line.points[i - 1], line.points[i]];
+        const angle = Math.atan2(b[1] - a[1], b[0] - a[0]) / (Math.PI / 4);
+        assert.ok(Math.abs(angle - Math.round(angle)) < 1e-6, `${layout.name} ${line.id}: segment ${i} runs at a multiple of 45 degrees`);
+      }
+      const [beforeEnd, end] = line.points.slice(-2);
+      const anchorNormal = heroHubAnchor(layout.hub, line.side, 0).normal;
+      const run = [end[0] - beforeEnd[0], end[1] - beforeEnd[1]];
+      assert.ok(Math.abs(run[0] * anchorNormal[1] - run[1] * anchorNormal[0]) < 1e-6 && run[0] * anchorNormal[0] + run[1] * anchorNormal[1] < 0, `${layout.name} ${line.id}: arrives square to the hub`);
+    }
+    for (let i = 0; i < lines.length; i += 1) {
+      for (let j = i + 1; j < lines.length; j += 1) {
+        assert.ok(heroTraceDistance(lines[i].points, lines[j].points) >= HERO_TRACE_GAP, `${layout.name}: ${lines[i].id} and ${lines[j].id} keep ${HERO_TRACE_GAP}px apart`);
+      }
+    }
   }
 });
 
-test('lights arrive unhurried, a few sides at a time, never two on one line', () => {
+test('lights arrive unhurried, a few sides at a time, never two on one trace', () => {
   const lines = planHeroSignals(HERO_LAYOUTS[0]);
   const pulses = heroSignalSchedule(lines);
   assert.ok(pulses.length > 30, 'a steady flow over the minute-long cycle');
   for (const pulse of pulses) {
-    assert.ok(pulse.duration >= 1700 && pulse.duration <= 3800, 'each light takes 1.7 to 3.8 seconds to travel in');
+    assert.ok(pulse.duration >= 1800 && pulse.duration <= 5200, 'each light takes 1.8 to 5.2 seconds to travel in');
     assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
   }
-  // Never more than three lights leave within any one second, and never more than six travel at once.
   for (const pulse of pulses) {
     assert.ok(pulses.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1000).length <= 3, `burst at ${pulse.start}`);
-    assert.ok(pulses.filter((other) => other.start <= pulse.start && pulse.start < other.start + other.duration).length <= 6, `crowd at ${pulse.start}`);
+    assert.ok(pulses.filter((other) => other.start <= pulse.start && pulse.start < other.start + other.duration).length <= 8, `crowd at ${pulse.start}`);
   }
   for (let i = 0; i < pulses.length; i += 1) {
     for (let j = i + 1; j < pulses.length; j += 1) {
       if (pulses[i].line !== pulses[j].line) continue;
       const [a, b] = [pulses[i], pulses[j]].sort((x, y) => x.start - y.start);
-      assert.ok(b.start >= a.start + a.duration, `line ${a.line} carries one light at a time`);
+      assert.ok(b.start >= a.start + a.duration, `trace ${a.line} carries one light at a time`);
     }
   }
   const sides = new Set(pulses.map((pulse) => lines[pulse.line].side));
   assert.equal(sides.size, HERO_SIGNAL_SIDES.length, 'over a cycle, light arrives from every side and corner');
   const together = pulses.filter((pulse, index) => pulses.some((other, k) => k !== index && Math.abs(other.start - pulse.start) < 400 && lines[other.line].side !== lines[pulse.line].side));
   assert.ok(together.length > 10, 'several sides often light at once');
+  assert.match(siteScript, /HERO_PACKET = Object\.freeze\(\[2, 3, 5, 3, 12\]\)/, 'each light is a short packet of dashes, not a dot');
 });
 
 test('the hub glows from recent arrivals and settles back', () => {
@@ -134,8 +150,7 @@ test('the hub glows from recent arrivals and settles back', () => {
   const pulses = heroSignalSchedule(lines);
   const first = pulses[0];
   const arrival = first.start + first.duration;
-  const before = heroSignalState(first.start + 10, pulses);
-  assert.ok(before.active.some(({ line }) => line === first.line), 'the first light is on its way');
+  assert.ok(heroSignalState(first.start + 10, pulses).active.some(({ line }) => line === first.line), 'the first light is on its way');
   const at = heroSignalState(arrival + 20, pulses);
   assert.ok(at.charge > .3 && at.charge <= 1);
   for (let time = 0; time < HERO_SIGNAL_LOOP_MS; time += 250) {

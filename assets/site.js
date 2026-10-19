@@ -7,19 +7,22 @@ export const WORKFLOW_ROTATION_MS = 11000;
 export const WORKFLOW_PLAYBACK_RATE = 0.65;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
-// Hero: the Assistall mark as a quiet signal hub. Faint lines reach it from every side and
-// corner, and points of light travel in along them at an unhurried, irregular pace, a few
-// sides at a time. Everything is planned in real pixels from the measured hero, copy and hub,
-// so nothing is stretched, and lines never start behind the copy or under the header.
+// Hero: the Assistall mark as a quiet signal hub. Thin traces run in from the edges of the
+// screen on every side and corner, circuit-style: straight runs joined by 45° bends, each
+// arriving square to the hub. Small packets of light travel in along them at an unhurried,
+// irregular pace, a few sides at a time. Everything is planned in real pixels from the
+// measured hero, copy and hub, traces never cross or touch, and none run behind the copy
+// or under the header.
 export const HERO_SIGNAL_LOOP_MS = 60000;
 export const HERO_SIGNAL_SIDES = Object.freeze(['top', 'top-right', 'right', 'bottom-right', 'bottom', 'bottom-left', 'left', 'top-left']);
-// Lines per side: three on each edge, two on each corner.
-const HERO_SIGNAL_SPREAD = Object.freeze({ top: [-.62, 0, .62], right: [-.62, 0, .62], bottom: [-.62, 0, .62], left: [-.62, 0, .62], 'top-right': [-1, 1], 'bottom-right': [-1, 1], 'bottom-left': [-1, 1], 'top-left': [-1, 1] });
 const HERO_SIGNAL_DIRECTIONS = Object.freeze({ right: [1, 0], bottom: [0, 1], left: [-1, 0], top: [0, -1], 'top-right': [Math.SQRT1_2, -Math.SQRT1_2], 'bottom-right': [Math.SQRT1_2, Math.SQRT1_2], 'bottom-left': [-Math.SQRT1_2, Math.SQRT1_2], 'top-left': [-Math.SQRT1_2, -Math.SQRT1_2] });
-// Light travels at about 95px a second, never quicker than 1.7s or slower than 3.8s a line.
-export const HERO_SIGNAL_SPEED = .095;
-export const HERO_SIGNAL_MIN_MS = 1700;
-export const HERO_SIGNAL_MAX_MS = 3800;
+// Traces keep at least this many pixels between them everywhere.
+export const HERO_TRACE_GAP = 6;
+const HERO_TRACE_RADIUS = 7;
+// A packet travels at about 120px a second, never quicker than 1.8s or slower than 5.2s a trace.
+export const HERO_SIGNAL_SPEED = .12;
+export const HERO_SIGNAL_MIN_MS = 1800;
+export const HERO_SIGNAL_MAX_MS = 5200;
 
 function seededRandom(seed) {
   let state = seed >>> 0;
@@ -33,91 +36,142 @@ function clampUnit(value) {
   return Math.min(1, Math.max(0, value));
 }
 
-// Where a line meets the hub: a point on the matching edge or rounded corner, and the
-// outward direction there, so every line arrives square to the hub's outline.
+const unit = ([x, y]) => { const length = Math.hypot(x, y) || 1; return [x / length, y / length]; };
+const add = ([x, y], [dx, dy], k = 1) => [x + dx * k, y + dy * k];
+
+// Where a trace meets the hub: a point on the matching edge (offset −1…1 along it) or on the
+// rounded corner (offset turns a little either way round it), and the outward direction there.
 export function heroHubAnchor(hub, side, offset = 0) {
   const half = hub.size / 2;
   const radius = hub.size * .24;
-  const along = offset * (half - radius) * .9;
   const [dx, dy] = HERO_SIGNAL_DIRECTIONS[side];
-  if (side === 'top' || side === 'bottom') return { x: hub.x + along, y: hub.y + dy * half, normal: [0, dy] };
-  if (side === 'left' || side === 'right') return { x: hub.x + dx * half, y: hub.y + along, normal: [dx, 0] };
-  const sx = Math.sign(dx);
-  const sy = Math.sign(dy);
-  const cx = hub.x + sx * (half - radius);
-  const cy = hub.y + sy * (half - radius);
-  return { x: cx + radius * dx, y: cy + radius * dy, normal: [dx, dy] };
+  if (side === 'top' || side === 'bottom') return { x: hub.x + offset * (half - radius) * .8, y: hub.y + dy * half, normal: [0, dy] };
+  if (side === 'left' || side === 'right') return { x: hub.x + dx * half, y: hub.y + offset * (half - radius) * .8, normal: [dx, 0] };
+  const angle = Math.atan2(dy, dx) + offset * .3;
+  const centre = [hub.x + Math.sign(dx) * (half - radius), hub.y + Math.sign(dy) * (half - radius)];
+  return { x: centre[0] + Math.cos(angle) * radius, y: centre[1] + Math.sin(angle) * radius, normal: [dx, dy] };
 }
 
 function insideRect(x, y, rect) {
   return x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
 }
 
-function bezierPoint([p0, c1, c2, p3], t) {
-  const m = 1 - t;
-  return [0, 1].map((k) => m * m * m * p0[k] + 3 * m * m * t * c1[k] + 3 * m * t * t * c2[k] + t * t * t * p3[k]);
+function segmentsCross(a, b, c, d) {
+  const turn = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  return turn(a, b, c) * turn(a, b, d) < 0 && turn(c, d, a) * turn(c, d, b) < 0;
 }
 
-export function heroCurveLength(curve, steps = 32) {
-  let length = 0;
-  let previous = curve[0];
-  for (let i = 1; i <= steps; i += 1) {
-    const point = bezierPoint(curve, i / steps);
-    length += Math.hypot(point[0] - previous[0], point[1] - previous[1]);
-    previous = point;
+function pointSegmentDistance(p, a, b) {
+  const ab = [b[0] - a[0], b[1] - a[1]];
+  const t = clampUnit(((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / ((ab[0] ** 2 + ab[1] ** 2) || 1));
+  return Math.hypot(p[0] - (a[0] + ab[0] * t), p[1] - (a[1] + ab[1] * t));
+}
+
+// The closest two traces come, as polylines (0 when they cross).
+export function heroTraceDistance(first, second) {
+  let best = Infinity;
+  for (let i = 1; i < first.length; i += 1) {
+    for (let j = 1; j < second.length; j += 1) {
+      const [a, b, c, d] = [first[i - 1], first[i], second[j - 1], second[j]];
+      if (segmentsCross(a, b, c, d)) return 0;
+      best = Math.min(best, pointSegmentDistance(a, c, d), pointSegmentDistance(b, c, d), pointSegmentDistance(c, a, b), pointSegmentDistance(d, a, b));
+    }
   }
+  return best;
+}
+
+export function heroTraceLength(points) {
+  let length = 0;
+  for (let i = 1; i < points.length; i += 1) length += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
   return length;
 }
 
-// Plans the lines for one layout. `avoid` holds rectangles (the copy) that no part of a line
-// may enter; `top` keeps lines below the header. Returns lines with their curve and length.
-export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margin = 10, seed = 20261019 }) {
+// The SVG path from the outer end to the hub, with small rounded bends.
+export function heroTracePath(points, radius = HERO_TRACE_RADIUS) {
+  const f = ([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`;
+  let d = `M${f(points[0])}`;
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const [prev, at, next] = [points[i - 1], points[i], points[i + 1]];
+    const into = unit([at[0] - prev[0], at[1] - prev[1]]);
+    const out = unit([next[0] - at[0], next[1] - at[1]]);
+    const r = Math.min(radius, Math.hypot(at[0] - prev[0], at[1] - prev[1]) / 2, Math.hypot(next[0] - at[0], next[1] - at[1]) / 2);
+    d += ` L${f(add(at, into, -r))} Q${f(at)} ${f(add(at, out, r))}`;
+  }
+  return `${d} L${f(points[points.length - 1])}`;
+}
+
+// The route each trace takes out from the hub, as turns: a short stub straight out, then for
+// side traces a 45° run and a final straight run parallel to the stub; for corner traces a
+// diagonal run that turns to run straight out horizontally or vertically.
+function heroTraceTemplates(random) {
+  const templates = [];
+  for (const side of ['top', 'right', 'bottom', 'left']) {
+    for (const offset of [0, -1, 1]) {
+      const stub = 16 + random() * 12;
+      const swing = offset ? 34 + random() * 22 : 0;
+      templates.push({ side, offset, stub, swing });
+    }
+  }
+  for (const side of ['top-right', 'bottom-right', 'bottom-left', 'top-left']) {
+    for (const offset of [-1, 1]) templates.push({ side, offset, stub: 30 + random() * 34 + (offset > 0 ? 18 : 0), swing: 0 });
+  }
+  return templates;
+}
+
+function heroTraceRoute(hub, template, allowed) {
+  const anchor = heroHubAnchor(hub, template.side, template.offset * .78);
+  const n = anchor.normal;
+  const corner = template.side.includes('-');
+  const points = [[anchor.x, anchor.y]];
+  let at = add(points[0], n, template.stub);
+  points.push(at);
+  let finalDirection = n;
+  if (!corner && template.offset) {
+    // Swing 45° away from the hub's middle, then run straight out again.
+    const tangent = n[0] === 0 ? [template.offset, 0] : [0, template.offset];
+    at = add(at, unit([n[0] + tangent[0], n[1] + tangent[1]]), template.swing);
+    points.push(at);
+  }
+  if (corner) {
+    // Turning clockwise of the diagonal runs one way, anticlockwise the other.
+    const clockwise = template.offset > 0;
+    const horizontal = (n[0] * n[1] < 0) === clockwise;
+    finalDirection = horizontal ? [Math.sign(n[0]), 0] : [0, Math.sign(n[1])];
+  }
+  if (points.some(([x, y]) => !allowed(x, y))) return null;
+  // Run straight on until the edge of the screen (or the copy, or the header).
+  let reach = 0;
+  for (let step = 2; step < 3000; step += 2) {
+    const [x, y] = add(at, finalDirection, step);
+    if (!allowed(x, y)) break;
+    reach = step;
+  }
+  if (reach < 24) return null;
+  points.push(add(at, finalDirection, reach));
+  return points.reverse();
+}
+
+// Plans the traces for one layout. `avoid` holds rectangles (the copy) no trace may enter;
+// `top` keeps traces below the header. Traces that would cross or crowd another are dropped.
+export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margin = 0, seed = 20261019 }) {
   const random = seededRandom(seed);
   const allowed = (x, y) => x >= margin && x <= width - margin && y >= top + margin && y <= height - margin
     && !avoid.some((rect) => insideRect(x, y, rect));
   const lines = [];
-  for (const side of HERO_SIGNAL_SIDES) {
-    HERO_SIGNAL_SPREAD[side].forEach((offset, index) => {
-      const corner = side.includes('-');
-      const anchor = heroHubAnchor(hub, side, corner ? 0 : offset + (random() - .5) * .16);
-      const baseAngle = Math.atan2(anchor.normal[1], anchor.normal[0]);
-      const angle = baseAngle + (corner ? offset * .2 : offset * .38) + (random() - .5) * .12;
-      const dir = [Math.cos(angle), Math.sin(angle)];
-      let reach = 0;
-      for (let step = 6; step < 2400; step += 4) {
-        if (!allowed(anchor.x + dir[0] * step, anchor.y + dir[1] * step)) break;
-        reach = step;
-      }
-      if (reach < 44) return;
-      const length = Math.max(44, reach * (.62 + random() * .36));
-      const start = [anchor.x + dir[0] * length, anchor.y + dir[1] * length];
-      const end = [anchor.x, anchor.y];
-      const bend = (index % 2 ? 1 : -1) * (.12 + random() * .1) * length;
-      const perp = [-dir[1], dir[0]];
-      const curve = [
-        start,
-        [start[0] - dir[0] * length * .32 + perp[0] * bend, start[1] - dir[1] * length * .32 + perp[1] * bend],
-        [end[0] + anchor.normal[0] * length * .34, end[1] + anchor.normal[1] * length * .34],
-        end,
-      ];
-      // Keep the whole curve inside the allowed area; drop a line that would bow into the copy.
-      const samples = Array.from({ length: 17 }, (_, i) => bezierPoint(curve, i / 16));
-      if (samples.slice(0, 15).some(([x, y]) => !allowed(x, y))) return;
-      lines.push({
-        id: `${side}-${index}`,
-        side,
-        curve,
-        length: heroCurveLength(curve),
-        d: heroCurvePath(curve),
-      });
+  for (const template of heroTraceTemplates(random)) {
+    const points = heroTraceRoute(hub, template, allowed);
+    if (!points) continue;
+    if (lines.some((line) => heroTraceDistance(line.points, points) < HERO_TRACE_GAP)) continue;
+    lines.push({
+      id: `${template.side}-${template.offset}`,
+      side: template.side,
+      points,
+      bends: points.slice(1, -1),
+      length: heroTraceLength(points),
+      d: heroTracePath(points),
     });
   }
   return lines;
-}
-
-export function heroCurvePath([p0, c1, c2, p3]) {
-  const f = ([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`;
-  return `M${f(p0)} C${f(c1)} ${f(c2)} ${f(p3)}`;
 }
 
 export function heroSignalDuration(length) {
@@ -323,7 +377,11 @@ function enableSectionGlide() {
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const HERO_PULSE_POOL = 8;
-const HERO_PULSE_TAIL = 30;
+// A packet is a short run of dashes the width of its trace, brightest and longest at the front,
+// with a faint trail behind it. Lengths in pixels, back to front.
+const HERO_PACKET = Object.freeze([2, 3, 5, 3, 12]);
+const HERO_PACKET_LENGTH = HERO_PACKET.reduce((sum, part) => sum + part, 0);
+const HERO_TRAIL_LENGTH = 72;
 
 function svgElement(tag, attributes, parent) {
   const element = document.createElementNS(SVG_NS, tag);
@@ -384,33 +442,37 @@ function enableHeroMotion() {
     map.replaceChildren();
     const lineGroup = svgElement('g', { class: 'hero-signal__lines' }, map);
     lineElements = lines.map((line) => svgElement('path', { d: line.d, class: 'hero-signal__line' }, lineGroup));
+    // A small square via marks each bend, like a circuit trace.
+    for (const line of lines) {
+      for (const [x, y] of line.bends) svgElement('rect', { x: (x - 1.75).toFixed(1), y: (y - 1.75).toFixed(1), width: '3.5', height: '3.5', class: 'hero-signal__via' }, lineGroup);
+    }
     lines.forEach((line, index) => { line.measured = lineElements[index].getTotalLength?.() || line.length; });
     const pulseGroup = svgElement('g', { class: 'hero-signal__pulses' }, map);
     pulseElements.length = 0;
     for (let i = 0; i < HERO_PULSE_POOL; i += 1) {
-      const tail = svgElement('path', { class: 'hero-signal__tail' }, pulseGroup);
-      const head = svgElement('circle', { r: '2.4', class: 'hero-signal__head' }, pulseGroup);
-      pulseElements.push({ tail, head });
+      const trail = svgElement('path', { class: 'hero-signal__trail' }, pulseGroup);
+      const packet = svgElement('path', { class: 'hero-signal__packet' }, pulseGroup);
+      pulseElements.push({ trail, packet });
     }
   };
 
   const render = (elapsed) => {
     const state = heroSignalState(elapsed, pulses);
-    pulseElements.forEach(({ tail, head }, slot) => {
+    pulseElements.forEach(({ trail, packet }, slot) => {
       const pulse = state.active[slot];
-      if (!pulse) { tail.style.opacity = '0'; head.style.opacity = '0'; return; }
+      if (!pulse) { trail.style.opacity = '0'; packet.style.opacity = '0'; return; }
       const line = lines[pulse.line];
-      const path = lineElements[pulse.line];
       const total = line.measured;
       const position = pulse.progress * total;
-      tail.setAttribute('d', line.d);
-      tail.style.strokeDasharray = `${HERO_PULSE_TAIL} ${total + HERO_PULSE_TAIL}`;
-      tail.style.strokeDashoffset = `${HERO_PULSE_TAIL - position}`;
-      const point = path.getPointAtLength(position);
-      head.setAttribute('cx', point.x.toFixed(1));
-      head.setAttribute('cy', point.y.toFixed(1));
-      tail.style.opacity = (pulse.opacity * .7).toFixed(3);
-      head.style.opacity = pulse.opacity.toFixed(3);
+      trail.setAttribute('d', line.d);
+      packet.setAttribute('d', line.d);
+      // Each dash pattern is longer than the trace, so it can never wrap back onto it.
+      trail.style.strokeDasharray = `${HERO_TRAIL_LENGTH} ${total + HERO_TRAIL_LENGTH * 2}`;
+      trail.style.strokeDashoffset = `${HERO_TRAIL_LENGTH - position}`;
+      packet.style.strokeDasharray = `${HERO_PACKET.join(' ')} ${total + HERO_PACKET_LENGTH * 2}`;
+      packet.style.strokeDashoffset = `${HERO_PACKET_LENGTH - position}`;
+      trail.style.opacity = (pulse.opacity * .32).toFixed(3);
+      packet.style.opacity = pulse.opacity.toFixed(3);
     });
     hub.style.setProperty('--charge', state.charge.toFixed(3));
   };

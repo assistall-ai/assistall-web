@@ -64,7 +64,7 @@ Assert-True (-not ($script -match 'hero-engine__face|foreignObject|hero-engine__
 Assert-True (-not ($script -match 'syncHeroLayers|getScreenCTM|HERO_OUTPUT_BOUNDS')) 'The removed hybrid hero coordinate bridge remains in the renderer.'
 Assert-True ($script -match 'heroSignalState') 'The hero signal state is missing.'
 Assert-True ($script -match 'hero-signal__line') 'The hero signal lines are missing.'
-Assert-True ($css -match 'hero-signal__head.*drop-shadow') 'The hero light glow is missing.'
+Assert-True ($css -match 'hero-signal__packet.*drop-shadow') 'The hero light glow is missing.'
 Assert-True ($css -match 'hero__film') 'The translucent teal readability film is missing.'
 Assert-True ($script -match 'enableWorkflowEvidence') 'The workflow evidence controller is not present.'
 Assert-True ($script -match 'WORKFLOW_ROTATION_MS') 'Workflow rotation is not configured.'
