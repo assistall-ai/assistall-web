@@ -179,23 +179,41 @@ export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margi
   if (!copy) {
     for (const start of leftBound) if (start.reach >= 12) finished.push([...start.points, add(start.at, start.direction, start.reach)]);
   } else {
-    const column = Math.min(...leftBound.filter((s) => s.direction[1] === 0).map((s) => s.at[0])) - 14;
-    // Where each trace meets the first column, which sets the order of columns and lanes.
-    const yAtColumn = (s) => s.at[1] + s.direction[1] * (s.at[0] - column) / Math.abs(s.direction[0]);
+    // Traces hug the copy: the innermost run just clear of its right edge and just above or
+    // below it, each further trace one lane out. The order (by height where they reach the
+    // columns) keeps every turn nested, so no two traces cross.
+    const firstColumn = Math.min(...leftBound.filter((s) => s.direction[1] === 0).map((s) => s.at[0])) - 14;
+    const yAtColumn = (s) => s.at[1] + s.direction[1] * (s.at[0] - firstColumn) / Math.abs(s.direction[0]);
     const upper = leftBound.filter((s) => yAtColumn(s) < hub.y - 1).sort((a, b) => yAtColumn(a) - yAtColumn(b));
     const lower = leftBound.filter((s) => yAtColumn(s) >= hub.y - 1).sort((a, b) => yAtColumn(b) - yAtColumn(a));
-    const route = (s, index, lane) => {
-      const x = column - index * HERO_TRACE_LANE;
-      if (x < copy.right + HERO_TRACE_GAP) return;
-      const meet = add(s.at, s.direction, (s.at[0] - x) / Math.abs(s.direction[0]));
-      finished.push([...s.points, meet, [x, lane], [margin, lane]]);
+    const route = (group, edgeY, outward) => {
+      group.forEach((s, i) => {
+        const ring = group.length - 1 - i;
+        const x = copy.right + HERO_TRACE_GAP + ring * HERO_TRACE_LANE;
+        const lane = (outward < 0 ? copy.top - HERO_TRACE_GAP : copy.bottom + HERO_TRACE_GAP) + outward * ring * HERO_TRACE_LANE;
+        // No room for the lane between the copy and the screen edge: run straight out to that edge instead.
+        const laneFits = outward < 0 ? lane >= top + 4 : lane <= height - 4;
+        const toColumn = (s.at[0] - x) / Math.abs(s.direction[0]);
+        if (toColumn < 0) return;
+        const toLane = s.direction[1] ? (lane - s.at[1]) / s.direction[1] : Infinity;
+        const toEdge = s.direction[1] ? (edgeY - s.at[1]) / s.direction[1] : Infinity;
+        if (toEdge >= 0 && toEdge < toColumn && !(laneFits && toLane < toEdge)) {
+          // A diagonal trace reaches the top or bottom of the screen before its column: end it there.
+          finished.push([...s.points, add(s.at, s.direction, toEdge)]);
+          return;
+        }
+        if (laneFits && toLane >= 0 && toLane < toColumn) {
+          // A diagonal trace meets its lane before its column: turn straight along the lane.
+          const meet = add(s.at, s.direction, toLane);
+          finished.push([...s.points, meet, [margin, lane]]);
+          return;
+        }
+        const meet = add(s.at, s.direction, toColumn);
+        finished.push(laneFits ? [...s.points, meet, [x, lane], [margin, lane]] : [...s.points, meet, [x, edgeY]]);
+      });
     };
-    // Lanes sit 10px apart, closing up to 7px if the band above or below the copy is tight.
-    const spacing = (band, count) => Math.max(HERO_TRACE_GAP + 1, Math.min(HERO_TRACE_LANE, band / Math.max(1, count)));
-    const upperStep = spacing(copy.top - HERO_TRACE_GAP - (top + 8), upper.length);
-    const lowerStep = spacing(height - 8 - (copy.bottom + HERO_TRACE_GAP), lower.length);
-    upper.forEach((s, i) => { const lane = top + 8 + i * upperStep; if (lane <= copy.top - HERO_TRACE_GAP) route(s, i, lane); });
-    lower.forEach((s, i) => { const lane = height - 8 - i * lowerStep; if (lane >= copy.bottom + HERO_TRACE_GAP) route(s, i, lane); });
+    route(upper, top, -1);
+    route(lower, height, 1);
   }
 
   const lines = [];
@@ -465,7 +483,8 @@ function enableHeroMotion() {
       return range.getBoundingClientRect();
     }).filter((rect) => rect.width > 0);
     if (!rects.length) return [];
-    const pad = 28;
+    // Traces keep this far from the copy's text.
+    const pad = 18;
     return [{
       left: Math.min(...rects.map((r) => r.left)) - bounds.left - pad,
       right: Math.max(...rects.map((r) => r.right)) - bounds.left + pad,

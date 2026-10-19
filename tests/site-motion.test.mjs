@@ -49,6 +49,10 @@ const HERO_LAYOUTS = [
   { name: '1440 desktop', width: 1440, height: 900, hub: { x: 1096, y: 434, size: 144 }, avoid: [{ left: 44, right: 780, top: 200, bottom: 760 }], top: 88 },
   { name: '1920 desktop', width: 1920, height: 900, hub: { x: 1456, y: 434, size: 148 }, avoid: [{ left: 284, right: 1020, top: 200, bottom: 770 }], top: 88 },
   { name: '1024 laptop', width: 1024, height: 768, hub: { x: 829, y: 376, size: 102 }, avoid: [{ left: 13, right: 663, top: 180, bottom: 690 }], top: 88 },
+  // Shorter browser windows leave a thin band above the copy.
+  { name: '1440 short window', width: 1430, height: 760, hub: { x: 1088, y: 372, size: 144 }, avoid: [{ left: 49, right: 713, top: 110, bottom: 700 }], top: 88 },
+  { name: '1280 short window', width: 1270, height: 680, hub: { x: 990, y: 337, size: 128 }, avoid: [{ left: 31, right: 691, top: 100, bottom: 640 }], top: 88 },
+  { name: '900 tablet', width: 890, height: 700, hub: { x: 745, y: 346, size: 100 }, avoid: [{ left: 18, right: 560, top: 120, bottom: 650 }], top: 88 },
   { name: '390 phone', width: 390, height: 1060, hub: { x: 195, y: 916, size: 104 }, avoid: [{ left: -8, right: 398, top: 110, bottom: 768 }], top: 80 },
 ];
 
@@ -80,10 +84,8 @@ test('traces run in from the screen edges on every side and corner, clear of the
   for (const layout of HERO_LAYOUTS) {
     const lines = planHeroSignals(layout);
     const sides = new Set(lines.map(({ side }) => side));
-    // Beside the copy there is room on the left only on wide screens and phones.
-    const required = HERO_SIGNAL_SIDES.filter((side) => layout.name !== '1024 laptop' || !side.includes('left'));
-    assert.deepEqual(required.filter((side) => !sides.has(side)), [], `${layout.name}: every side and corner has a trace`);
-    assert.ok(lines.length >= (layout.name === '1024 laptop' ? 28 : 32), `${layout.name}: ${lines.length} traces`);
+    assert.deepEqual(HERO_SIGNAL_SIDES.filter((side) => !sides.has(side)), [], `${layout.name}: every side and corner has a trace`);
+    assert.equal(lines.length, 32, `${layout.name}: all 32 traces fit`);
     for (const line of lines) {
       const [[sx, sy]] = line.points;
       const atEdge = sx <= 3 || sx >= layout.width - 3 || sy <= layout.top + 3 || sy >= layout.height - 3
@@ -101,16 +103,22 @@ test('traces run in from the screen edges on every side and corner, clear of the
 });
 
 test('the pattern is symmetric: five traces a side and three a corner, every one reaching a screen edge', () => {
-  for (const layout of HERO_LAYOUTS.filter(({ name }) => name !== '1024 laptop')) {
+  for (const layout of HERO_LAYOUTS) {
     const lines = planHeroSignals(layout);
     for (const side of HERO_SIGNAL_SIDES) {
       assert.equal(lines.filter((line) => line.side === side).length, side.includes('-') ? 3 : 5, `${layout.name} ${side}`);
     }
   }
-  const [desktop] = HERO_LAYOUTS;
-  for (const line of planHeroSignals(desktop).filter(({ side }) => side.includes('left'))) {
-    const [[sx, sy]] = line.points;
-    assert.ok(sx <= 1 || sy <= desktop.top + 1 || sy >= desktop.height - 1, `${line.id}: routed round the copy to the edge of the screen`);
+  for (const layout of HERO_LAYOUTS.filter(({ name }) => name !== '390 phone')) {
+    const [copy] = layout.avoid;
+    for (const line of planHeroSignals(layout).filter(({ side }) => side.includes('left'))) {
+      const [[sx, sy]] = line.points;
+      assert.ok(sx <= 3 || sy <= layout.top + 3 || sy >= layout.height - 3, `${layout.name} ${line.id}: routed round the copy to the edge of the screen`);
+      // Routed traces hug the copy: their turns sit within a few lanes of its edges.
+      for (const [x, y] of line.points.slice(1, -1).filter(([x]) => x < copy.right + 60)) {
+        assert.ok(x <= copy.right + 60 && (y <= copy.top || y >= copy.bottom || x >= copy.right), `${layout.name} ${line.id}: hugs the copy`);
+      }
+    }
   }
   assert.ok(HERO_TRACE_DEPTH > 0, 'traces carry on under the hub so their lights vanish inside it');
 });
