@@ -93,3 +93,11 @@ test('product evidence is a semantic three-workflow queue without theme media', 
   assert.equal((html.match(/data-workflow-replay/g) ?? []).length, 3);
   assert.doesNotMatch(html, /workspace-theme-comparison|workspace-cobalt|data-workspace-video|data-video-toggle/);
 });
+
+test('workspace screenshots crop to a readable slice on phones with a link to the full image', async () => {
+  const css = await readFile(new URL('../assets/page.css', import.meta.url), 'utf8');
+  assert.equal((html.match(/<div class="shot-frame"><img src="assets\/media\/workspace-limestone\.png"/g) ?? []).length, 2);
+  assert.equal((html.match(/<a class="shot-open" href="assets\/media\/workspace-limestone\.png"[^>]*>Open the full workspace view/g) ?? []).length, 2);
+  assert.match(css, /\.shot-open \{ display: none; \}/, 'desktop keeps the whole screenshot and no link');
+  assert.match(css, /@media \(max-width: 560px\)[\s\S]*\.shot-frame img \{ position: absolute;[^}]*width: 174\.3%;/, 'phones show the overview at about twice the size');
+});

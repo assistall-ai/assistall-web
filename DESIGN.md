@@ -211,7 +211,7 @@ Softly rounded, never pill-heavy. Controls 10px, cards and tiles 12px, framed pr
 - **Step cards (workday list):** ivory at 90%, 1px rule border, 12px radius, number in brass; on hover they shift 6px right and the border turns brass.
 - **Connector cards:** limestone on the teal section, 52px charcoal mark tile with a monochrome provider or format mark, name plus an honest status ("Setup-dependent" or "Imported source"). Hover: rise 4px, brass border, mark turns brass.
 - **Trust cards:** 18px radius, rule border, short brass bar above the title.
-- **Product window:** 18px radius frame with a teal title bar (uppercase label), real product screenshot inside.
+- **Product window:** 18px radius frame with a teal title bar (uppercase label), real product screenshot inside. On phones (560px and below) the screenshot is cropped to one readable slice (the overview and what needs attention, at about twice the size) with an "Open the full workspace view" link to the full image; desktop shows it whole.
 
 ### Tabs
 - **Capability tabs:** full-width outlined buttons stacked in a column; the active one gets a limestone fill and a full 2px brass outline (no side marker). Only the summary text and labels change; the image stays the same.
