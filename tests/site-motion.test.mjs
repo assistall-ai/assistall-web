@@ -150,7 +150,7 @@ test('lights arrive unhurried, a few sides at a time, never two on one trace', (
   const pulses = heroSignalSchedule(lines);
   assert.ok(pulses.length > 30, 'a steady flow over the minute-long cycle');
   for (const pulse of pulses) {
-    assert.ok(pulse.duration >= 1800 && pulse.duration <= 5200, 'each light takes 1.8 to 5.2 seconds to travel in');
+    assert.ok(pulse.duration >= 900 && pulse.duration <= 2600, 'each light takes 0.9 to 2.6 seconds to travel in');
     assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
   }
   for (const pulse of pulses) {

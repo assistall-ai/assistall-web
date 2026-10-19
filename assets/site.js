@@ -19,10 +19,10 @@ const HERO_SIGNAL_DIRECTIONS = Object.freeze({ right: [1, 0], bottom: [0, 1], le
 // Traces keep at least this many pixels between them everywhere.
 export const HERO_TRACE_GAP = 6;
 const HERO_TRACE_RADIUS = 7;
-// A packet travels at about 120px a second, never quicker than 1.8s or slower than 5.2s a trace.
-export const HERO_SIGNAL_SPEED = .12;
-export const HERO_SIGNAL_MIN_MS = 1800;
-export const HERO_SIGNAL_MAX_MS = 5200;
+// A packet travels at about 240px a second, never quicker than 0.9s or slower than 2.6s a trace.
+export const HERO_SIGNAL_SPEED = .24;
+export const HERO_SIGNAL_MIN_MS = 900;
+export const HERO_SIGNAL_MAX_MS = 2600;
 
 function seededRandom(seed) {
   let state = seed >>> 0;
