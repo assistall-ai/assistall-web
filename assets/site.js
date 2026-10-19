@@ -19,10 +19,10 @@ const HERO_SIGNAL_DIRECTIONS = Object.freeze({ right: [1, 0], bottom: [0, 1], le
 // Traces keep at least this many pixels between them everywhere.
 export const HERO_TRACE_GAP = 6;
 const HERO_TRACE_RADIUS = 7;
-// A packet travels at about 320px a second, never quicker than 0.7s or slower than 2s a trace.
-export const HERO_SIGNAL_SPEED = .32;
-export const HERO_SIGNAL_MIN_MS = 700;
-export const HERO_SIGNAL_MAX_MS = 2000;
+// A packet travels at about 400px a second, never quicker than 0.6s or slower than 1.7s a trace.
+export const HERO_SIGNAL_SPEED = .4;
+export const HERO_SIGNAL_MIN_MS = 600;
+export const HERO_SIGNAL_MAX_MS = 1700;
 
 function seededRandom(seed) {
   let state = seed >>> 0;
@@ -245,7 +245,7 @@ export function heroSignalDuration(length) {
 }
 
 // A fixed, seeded timetable of lights, so the hub looks spontaneous but any moment can be
-// held for review with ?frame=. Bursts of two to five lights leave from different sides,
+// held for review with ?frame=. Bursts of three to six lights leave from different sides,
 // about half a second apart, and a line never carries two lights at once.
 export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS } = {}) {
   const random = seededRandom(seed);
@@ -254,7 +254,7 @@ export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_
   let time = 300;
   while (time < loopMs - HERO_SIGNAL_MAX_MS - 400) {
     const roll = random();
-    const count = roll < .2 ? 5 : roll < .5 ? 4 : roll < .8 ? 3 : 2;
+    const count = roll < .2 ? 6 : roll < .5 ? 5 : roll < .8 ? 4 : 3;
     const sides = new Set();
     let last = time;
     for (let k = 0; k < count; k += 1) {
@@ -271,8 +271,8 @@ export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_
       sides.add(lines[pick].side);
       pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length) });
     }
-    // The next burst waits 0.35 to 0.85 seconds after this one's last light.
-    time = last + 350 + random() * 500;
+    // The next burst waits 0.18 to 0.5 seconds after this one's last light.
+    time = last + 180 + random() * 320;
   }
   return pulses;
 }

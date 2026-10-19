@@ -150,11 +150,11 @@ test('lights arrive unhurried, a few sides at a time, never two on one trace', (
   const pulses = heroSignalSchedule(lines);
   assert.ok(pulses.length > 150, 'a busy flow over the minute-long cycle');
   for (const pulse of pulses) {
-    assert.ok(pulse.duration >= 700 && pulse.duration <= 2000, 'each light takes 0.7 to 2 seconds to travel in');
+    assert.ok(pulse.duration >= 600 && pulse.duration <= 1700, 'each light takes 0.6 to 1.7 seconds to travel in');
     assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
   }
   for (const pulse of pulses) {
-    assert.ok(pulses.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1000).length <= 10, `burst at ${pulse.start}`);
+    assert.ok(pulses.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1000).length <= 14, `burst at ${pulse.start}`);
     assert.ok(pulses.filter((other) => other.start <= pulse.start && pulse.start < other.start + other.duration).length <= 24, `crowd at ${pulse.start}`);
   }
   for (let i = 0; i < pulses.length; i += 1) {
