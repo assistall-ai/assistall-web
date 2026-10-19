@@ -2,34 +2,300 @@ const MIN_SCROLL_DURATION = 700;
 const MAX_SCROLL_DURATION = 1400;
 const SCROLL_SPEED = 0.8;
 const SECTION_GAP = 16;
-export const HERO_SEQUENCE_MS = 11800;
-// This coordinate is the centre of the workspace's top edge in the 1200 × 700 stage.
-const HERO_TARGET = Object.freeze({ x: 870, y: 276 });
-// Arrival lights terminate deep within the workspace so their end point stays fully occluded.
-const HERO_ROUTE_TARGET_Y = 340;
-const HERO_VIEWBOX_HEIGHT = 700;
-const HERO_WORKSPACE_ENDPOINT_DEPTH = .58;
 
 export const WORKFLOW_ROTATION_MS = 11000;
 export const WORKFLOW_PLAYBACK_RATE = 0.65;
 export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
 
-export const HERO_MOTION_ITEMS = Object.freeze([
-  { id: 'zoho', icon: 'zoho', label: 'ZOHO', x: 540, y: 20 },
-  { id: 'odoo', icon: 'odoo', label: 'odoo', x: 540, y: 145 },
-  { id: 'whatsapp', icon: 'whatsapp', label: 'WhatsApp', x: 660, y: 150 },
-  { id: 'email', icon: 'gmail', label: 'Email', x: 660, y: 30, compact: true },
-  { id: 'docx', icon: 'word', label: 'DOCX', x: 785, y: 10, compact: true },
-  { id: 'xlsx', icon: 'excel', label: 'XLSX', x: 915, y: 10, compact: true },
-  { id: 'csv', icon: 'csv', label: 'CSV', x: 1045, y: 10, compact: true },
-  { id: 'voice', icon: 'voice', label: 'Voice', x: 1170, y: 20, mobileHidden: true, compact: true },
-  { id: 'folder', icon: 'folder', label: 'Folder', x: 1195, y: 150, mobileHidden: true, compact: true },
-  { id: 'txt', icon: 'txt', label: 'TXT', x: 1190, y: 270, compact: true },
-  { id: 'pdf', icon: 'pdf', label: 'PDF', x: 1070, y: 270, compact: true },
-  { id: 'pptx', icon: 'powerpoint', label: 'PPTX', x: 660, y: 270 },
-  { id: 'jpg', icon: 'image', label: 'JPG', x: 1080, y: 155, mobileHidden: true },
-  { id: 'json', icon: 'json', label: 'JSON', x: 540, y: 270, mobileHidden: true },
-]);
+// Hero: the Assistall mark as a quiet signal hub. Thin traces run in from the edges of the
+// screen on every side and corner, circuit-style: straight runs joined by 45° bends, each
+// arriving square to the hub. Small packets of light travel in along them at an unhurried,
+// irregular pace, a few sides at a time. Everything is planned in real pixels from the
+// measured hero, copy and hub, traces never cross or touch, and none run behind the copy
+// or under the header.
+export const HERO_SIGNAL_LOOP_MS = 60000;
+export const HERO_SIGNAL_SIDES = Object.freeze(['top', 'top-right', 'right', 'bottom-right', 'bottom', 'bottom-left', 'left', 'top-left']);
+const HERO_SIGNAL_DIRECTIONS = Object.freeze({ right: [1, 0], bottom: [0, 1], left: [-1, 0], top: [0, -1], 'top-right': [Math.SQRT1_2, -Math.SQRT1_2], 'bottom-right': [Math.SQRT1_2, Math.SQRT1_2], 'bottom-left': [-Math.SQRT1_2, Math.SQRT1_2], 'top-left': [-Math.SQRT1_2, -Math.SQRT1_2] });
+// Traces keep at least this many pixels between them everywhere.
+export const HERO_TRACE_GAP = 6;
+const HERO_TRACE_RADIUS = 7;
+// A packet travels at about 400px a second, never quicker than 0.6s or slower than 1.7s a trace.
+export const HERO_SIGNAL_SPEED = .4;
+export const HERO_SIGNAL_MIN_MS = 600;
+export const HERO_SIGNAL_MAX_MS = 1700;
+
+function seededRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
+function clampUnit(value) {
+  return Math.min(1, Math.max(0, value));
+}
+
+const unit = ([x, y]) => { const length = Math.hypot(x, y) || 1; return [x / length, y / length]; };
+const add = ([x, y], [dx, dy], k = 1) => [x + dx * k, y + dy * k];
+
+// Where a trace meets the hub: a point on the matching edge (offset −1…1 along it) or on the
+// rounded corner (offset turns a little either way round it), and the outward direction there.
+export function heroHubAnchor(hub, side, offset = 0) {
+  const half = hub.size / 2;
+  const radius = hub.size * .24;
+  const [dx, dy] = HERO_SIGNAL_DIRECTIONS[side];
+  if (side === 'top' || side === 'bottom') return { x: hub.x + offset * (half - radius) * .8, y: hub.y + dy * half, normal: [0, dy] };
+  if (side === 'left' || side === 'right') return { x: hub.x + dx * half, y: hub.y + offset * (half - radius) * .8, normal: [dx, 0] };
+  const angle = Math.atan2(dy, dx) + offset * .3;
+  const centre = [hub.x + Math.sign(dx) * (half - radius), hub.y + Math.sign(dy) * (half - radius)];
+  return { x: centre[0] + Math.cos(angle) * radius, y: centre[1] + Math.sin(angle) * radius, normal: [dx, dy] };
+}
+
+function insideRect(x, y, rect) {
+  return x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
+}
+
+function segmentsCross(a, b, c, d) {
+  const turn = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  return turn(a, b, c) * turn(a, b, d) < 0 && turn(c, d, a) * turn(c, d, b) < 0;
+}
+
+function pointSegmentDistance(p, a, b) {
+  const ab = [b[0] - a[0], b[1] - a[1]];
+  const t = clampUnit(((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / ((ab[0] ** 2 + ab[1] ** 2) || 1));
+  return Math.hypot(p[0] - (a[0] + ab[0] * t), p[1] - (a[1] + ab[1] * t));
+}
+
+// The closest two traces come, as polylines (0 when they cross).
+export function heroTraceDistance(first, second) {
+  let best = Infinity;
+  for (let i = 1; i < first.length; i += 1) {
+    for (let j = 1; j < second.length; j += 1) {
+      const [a, b, c, d] = [first[i - 1], first[i], second[j - 1], second[j]];
+      if (segmentsCross(a, b, c, d)) return 0;
+      best = Math.min(best, pointSegmentDistance(a, c, d), pointSegmentDistance(b, c, d), pointSegmentDistance(c, a, b), pointSegmentDistance(d, a, b));
+    }
+  }
+  return best;
+}
+
+export function heroTraceLength(points) {
+  let length = 0;
+  for (let i = 1; i < points.length; i += 1) length += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
+  return length;
+}
+
+// The SVG path from the outer end to the hub, with small rounded bends.
+export function heroTracePath(points, radius = HERO_TRACE_RADIUS) {
+  const f = ([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`;
+  let d = `M${f(points[0])}`;
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const [prev, at, next] = [points[i - 1], points[i], points[i + 1]];
+    const into = unit([at[0] - prev[0], at[1] - prev[1]]);
+    const out = unit([next[0] - at[0], next[1] - at[1]]);
+    const r = Math.min(radius, Math.hypot(at[0] - prev[0], at[1] - prev[1]) / 2, Math.hypot(next[0] - at[0], next[1] - at[1]) / 2);
+    d += ` L${f(add(at, into, -r))} Q${f(at)} ${f(add(at, out, r))}`;
+  }
+  return `${d} L${f(points[points.length - 1])}`;
+}
+
+// The traces, mirrored on every side so the pattern stays symmetric: five per side (a straight
+// one, and two each way that swing 45° outwards, the outer pair further) and three per corner
+// (one straight along the diagonal, one turning horizontal and one turning vertical).
+const HERO_SIDE_OFFSETS = Object.freeze([-2, -1, 0, 1, 2]);
+const HERO_SIDE_STUB = 20;
+const HERO_SIDE_SWING = Object.freeze([0, 26, 52]);
+const HERO_CORNER_STUB = 20;
+const HERO_CORNER_TURN = 64;
+// Traces routed round the copy run in lanes this far apart.
+const HERO_TRACE_LANE = 10;
+// Each trace carries on this far under the hub, so its light vanishes inside it.
+export const HERO_TRACE_DEPTH = 18;
+
+function heroTraceTemplates() {
+  const templates = [];
+  for (const side of ['top', 'right', 'bottom', 'left']) {
+    for (const offset of HERO_SIDE_OFFSETS) templates.push({ side, offset, stub: HERO_SIDE_STUB, swing: HERO_SIDE_SWING[Math.abs(offset)] });
+  }
+  for (const side of ['top-right', 'bottom-right', 'bottom-left', 'top-left']) {
+    for (const offset of [0, -1, 1]) templates.push({ side, offset, stub: offset ? HERO_CORNER_TURN : HERO_CORNER_STUB, swing: 0 });
+  }
+  return templates;
+}
+
+// The fixed part of a trace next to the hub: anchor, stub and any 45° swing, plus the
+// direction of its final straight run.
+function heroTraceStart(hub, template) {
+  const corner = template.side.includes('-');
+  const anchor = heroHubAnchor(hub, template.side, corner ? template.offset : template.offset / 2);
+  const n = anchor.normal;
+  const points = [[anchor.x, anchor.y]];
+  let at = add(points[0], n, template.stub);
+  points.push(at);
+  let direction = n;
+  if (!corner && template.offset) {
+    const tangent = n[0] === 0 ? [Math.sign(template.offset), 0] : [0, Math.sign(template.offset)];
+    at = add(at, unit([n[0] + tangent[0], n[1] + tangent[1]]), template.swing);
+    points.push(at);
+  }
+  if (corner && template.offset) {
+    // Turning clockwise of the diagonal runs one way, anticlockwise the other.
+    const horizontal = (n[0] * n[1] < 0) === (template.offset > 0);
+    direction = horizontal ? [Math.sign(n[0]), 0] : [0, Math.sign(n[1])];
+  }
+  return { template, anchor, points, at, direction };
+}
+
+// Plans the traces for one layout. `avoid` holds rectangles (the copy) no trace may enter;
+// `top` keeps traces below the header. Every trace runs to the edge of the screen: where the
+// copy is in the way of traces heading left, they turn up or down in the gap beside the copy
+// and run out above or below it in their own lanes. Traces that would cross or come within
+// HERO_TRACE_GAP of another are dropped.
+export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margin = 0 }) {
+  const onScreen = (x, y) => x >= margin && x <= width - margin && y >= top + margin && y <= height - margin;
+  const inCopy = (x, y) => avoid.some((rect) => insideRect(x, y, rect));
+  const starts = heroTraceTemplates().map((template) => heroTraceStart(hub, template))
+    .filter((start) => start.points.every(([x, y]) => onScreen(x, y) && !inCopy(x, y)));
+  const finished = [];
+  const leftBound = [];
+  for (const start of starts) {
+    let reach = 0;
+    let blocked = false;
+    for (let step = 2; step < 4000; step += 2) {
+      const [x, y] = add(start.at, start.direction, step);
+      if (!onScreen(x, y)) break;
+      if (inCopy(x, y)) { blocked = true; break; }
+      reach = step;
+    }
+    start.blocked = blocked;
+    start.reach = reach;
+    if (start.direction[0] < 0) leftBound.push(start);
+    else if (reach >= 12) finished.push([...start.points, add(start.at, start.direction, reach)]);
+  }
+
+  // Heading left: straight out where the way is clear (phones), otherwise round the copy.
+  const copy = avoid.find((rect) => leftBound.some((s) => s.blocked && hub.y > rect.top && hub.y < rect.bottom));
+  if (!copy) {
+    for (const start of leftBound) if (start.reach >= 12) finished.push([...start.points, add(start.at, start.direction, start.reach)]);
+  } else {
+    // Traces hug the copy: the innermost run just clear of its right edge and just above or
+    // below it, each further trace one lane out. The order (by height where they reach the
+    // columns) keeps every turn nested, so no two traces cross.
+    const firstColumn = Math.min(...leftBound.filter((s) => s.direction[1] === 0).map((s) => s.at[0])) - 14;
+    const yAtColumn = (s) => s.at[1] + s.direction[1] * (s.at[0] - firstColumn) / Math.abs(s.direction[0]);
+    const upper = leftBound.filter((s) => yAtColumn(s) < hub.y - 1).sort((a, b) => yAtColumn(a) - yAtColumn(b));
+    const lower = leftBound.filter((s) => yAtColumn(s) >= hub.y - 1).sort((a, b) => yAtColumn(b) - yAtColumn(a));
+    const route = (group, edgeY, outward) => {
+      group.forEach((s, i) => {
+        const ring = group.length - 1 - i;
+        const x = copy.right + HERO_TRACE_GAP + ring * HERO_TRACE_LANE;
+        const lane = (outward < 0 ? copy.top - HERO_TRACE_GAP : copy.bottom + HERO_TRACE_GAP) + outward * ring * HERO_TRACE_LANE;
+        // No room for the lane between the copy and the screen edge: run straight out to that edge instead.
+        const laneFits = outward < 0 ? lane >= top + 4 : lane <= height - 4;
+        const toColumn = (s.at[0] - x) / Math.abs(s.direction[0]);
+        if (toColumn < 0) return;
+        const toLane = s.direction[1] ? (lane - s.at[1]) / s.direction[1] : Infinity;
+        const toEdge = s.direction[1] ? (edgeY - s.at[1]) / s.direction[1] : Infinity;
+        if (toEdge >= 0 && toEdge < toColumn && !(laneFits && toLane < toEdge)) {
+          // A diagonal trace reaches the top or bottom of the screen before its column: end it there.
+          finished.push([...s.points, add(s.at, s.direction, toEdge)]);
+          return;
+        }
+        if (laneFits && toLane >= 0 && toLane < toColumn) {
+          // A diagonal trace meets its lane before its column: turn straight along the lane.
+          const meet = add(s.at, s.direction, toLane);
+          finished.push([...s.points, meet, [margin, lane]]);
+          return;
+        }
+        const meet = add(s.at, s.direction, toColumn);
+        finished.push(laneFits ? [...s.points, meet, [x, lane], [margin, lane]] : [...s.points, meet, [x, edgeY]]);
+      });
+    };
+    route(upper, top, -1);
+    route(lower, height, 1);
+  }
+
+  const lines = [];
+  const byStart = new Map(starts.map((start) => [start.points[0].join(), start]));
+  for (const outward of finished) {
+    const start = byStart.get(outward[0].join());
+    const points = outward.slice().reverse();
+    if (lines.some((line) => heroTraceDistance(line.points, points) < HERO_TRACE_GAP)) continue;
+    const inside = add(outward[0], start.anchor.normal, -HERO_TRACE_DEPTH);
+    const drawn = [...points, inside];
+    lines.push({
+      id: `${start.template.side}${start.template.offset}`,
+      side: start.template.side,
+      points,
+      // Vias mark the real bends (where the direction changes), not straight joins.
+      bends: points.slice(1, -1).filter((at, i) => {
+        const [a, b] = [points[i], points[i + 2]];
+        return Math.abs((at[0] - a[0]) * (b[1] - at[1]) - (at[1] - a[1]) * (b[0] - at[0])) > 1e-6;
+      }),
+      length: heroTraceLength(drawn),
+      d: heroTracePath(drawn),
+    });
+  }
+  return lines;
+}
+
+export function heroSignalDuration(length) {
+  return Math.round(Math.min(HERO_SIGNAL_MAX_MS, Math.max(HERO_SIGNAL_MIN_MS, length / HERO_SIGNAL_SPEED)));
+}
+
+// A fixed, seeded timetable of lights, so the hub looks spontaneous but any moment can be
+// held for review with ?frame=. Bursts of three to six lights leave from different sides,
+// about half a second apart, and a line never carries two lights at once.
+export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS } = {}) {
+  const random = seededRandom(seed);
+  const pulses = [];
+  if (!lines.length) return pulses;
+  let time = 300;
+  while (time < loopMs - HERO_SIGNAL_MAX_MS - 400) {
+    const roll = random();
+    const count = roll < .2 ? 6 : roll < .5 ? 5 : roll < .8 ? 4 : 3;
+    const sides = new Set();
+    let last = time;
+    for (let k = 0; k < count; k += 1) {
+      const start = Math.round(time + k * (60 + random() * 160));
+      last = start;
+      let pick = -1;
+      for (let tries = 0; tries < 16 && pick < 0; tries += 1) {
+        const index = Math.floor(random() * lines.length);
+        if (sides.has(lines[index].side)) continue;
+        if (pulses.some((pulse) => pulse.line === index && start < pulse.start + pulse.duration + 400)) continue;
+        pick = index;
+      }
+      if (pick < 0) continue;
+      sides.add(lines[pick].side);
+      pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length) });
+    }
+    // The next burst waits 0.18 to 0.5 seconds after this one's last light.
+    time = last + 180 + random() * 320;
+  }
+  return pulses;
+}
+
+function easeInOutSine(progress) {
+  return -(Math.cos(Math.PI * clampUnit(progress)) - 1) / 2;
+}
+
+// Lights on their way at this moment, and how brightly the hub glows from recent arrivals.
+export function heroSignalState(elapsedMs, pulses, loopMs = HERO_SIGNAL_LOOP_MS) {
+  const time = Math.max(0, Number(elapsedMs) || 0) % loopMs;
+  const active = [];
+  let charge = 0;
+  for (const pulse of pulses) {
+    const raw = (time - pulse.start) / pulse.duration;
+    if (raw >= 0 && raw < 1) {
+      active.push({ line: pulse.line, progress: easeInOutSine(raw), opacity: clampUnit(raw / .12) * (1 - clampUnit((raw - .94) / .06)) });
+    }
+    const since = time - (pulse.start + pulse.duration);
+    if (since >= 0 && since < 2400) charge += .42 * Math.exp(-since / 700);
+  }
+  return { active, charge: clampUnit(charge) };
+}
 
 const CAPABILITIES = Object.freeze([
   { id: 'inbox', label: 'Inbox and controlled replies', summary: 'Messages in. Checked replies ready.', input: 'Email or business message', preparation: 'A clear reply draft', result: 'Nothing sends without you' },
@@ -140,193 +406,6 @@ export function resetTurnstileWidget(field, turnstile, widgetId) {
   try { turnstile?.reset?.(widgetId); } catch { /* Keep the form retryable if the widget API fails. */ }
 }
 
-function heroStarsMarkup() {
-  let seed = 29;
-  return Array.from({ length: 48 }, (_, index) => {
-    seed = (seed * 9301 + 49297) % 233280;
-    const x = Math.round((seed / 233280) * 1200);
-    seed = (seed * 9301 + 49297) % 233280;
-    const y = Math.round((seed / 233280) * 700);
-    const radius = index % 9 === 0 ? 1.6 : index % 4 === 0 ? 1.05 : 0.7;
-    return `<span class="hero-star" style="--star-x:${(x / 12).toFixed(3)}%;--star-y:${(y / 7).toFixed(3)}%;--star-size:${radius * 2}px;--star-delay:${((index % 12) * 0.31).toFixed(2)}s"></span>`;
-  }).join('');
-}
-
-function connectorMarkMarkup(icon) {
-  const path = {
-    microsoft: '<path d="M2 2h9v9H2zm11 0h9v9h-9zM2 13h9v9H2zm11 0h9v9h-9z"/>',
-    gmail: '<path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L12 9.548l8.073-6.055C21.69 2.28 24 3.434 24 5.457z"/>',
-    whatsapp: '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>',
-    odoo: '<path d="M21.1 15.796a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8m-6.066 0a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8m-3.169-2.938a2.9 2.9 0 1 1-1.2-2.374V8.804a.6.6 0 0 1 1.2 0v4.054m-8.966 2.938a2.9 2.9 0 1 1 0-5.8 2.9 2.9 0 0 1 0 5.8" fill="none" stroke="currentColor" stroke-width="1.2"/>',
-    zoho: '<path d="M2 5h7l-5 14H-3zM9 5h7l-5 14H4zm7 0h6l-5 14h-6z" transform="translate(2 0)"/><text x="3" y="19" fill="currentColor" font-size="5.3" font-weight="800" font-family="Arial, sans-serif">ZOHO</text>',
-    folder: '<path d="M2.5 6.5h7l2 2h10v10.5H2.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
-    calendar: '<path d="M3 5h18v16H3zM3 10h18M7 2v6m10-6v6M7 14h3m4 0h3m-10 4h3m4 0h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
-    voice: '<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-6 8a6 6 0 0 0 12 0M12 17v4m-4 0h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
-    image: '<path d="M3 4h18v16H3zM6 16l4-4 3 3 2-2 3 3M8 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
-  }[icon];
-  const documentMark = ['word', 'excel', 'csv', 'pdf', 'powerpoint', 'txt', 'json'].includes(icon)
-    ? '<path d="M5 2h10l4 4v16H5zM15 2v5h4M8 12h8m-8 4h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
-    : path;
-  return `<span class="connector-mark" data-connector-mark="${icon}"><svg class="connector-mark__svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${documentMark}</svg></span>`;
-}
-
-function clampUnit(value) {
-  return Math.min(1, Math.max(0, value));
-}
-
-function easeOutCubic(progress) {
-  return 1 - (1 - clampUnit(progress)) ** 3;
-}
-
-function heroGateTarget(item, items, y) {
-  const ordered = [...items].sort((first, second) => first.x - second.x || first.y - second.y);
-  const rank = Math.max(0, ordered.findIndex(({ id }) => id === item.id));
-  const laneProgress = ordered.length > 1 ? rank / (ordered.length - 1) : .5;
-  return { x: 836 + laneProgress * 68, y };
-}
-
-export function calculateHeroRouteTargetY({ stageHeight, workspaceOffsetY, workspaceHeight } = {}) {
-  const stage = Number(stageHeight);
-  const workspaceTop = Number(workspaceOffsetY);
-  const workspace = Number(workspaceHeight);
-  if (!(stage > 0 && workspace > 0 && Number.isFinite(workspaceTop))) return HERO_ROUTE_TARGET_Y;
-  const top = workspaceTop / stage * HERO_VIEWBOX_HEIGHT;
-  const bottom = (workspaceTop + workspace - 4) / stage * HERO_VIEWBOX_HEIGHT;
-  const target = (workspaceTop + workspace * HERO_WORKSPACE_ENDPOINT_DEPTH) / stage * HERO_VIEWBOX_HEIGHT;
-  return Math.min(bottom, Math.max(top + 12, target));
-}
-
-function heroInputTarget(item, items) {
-  return heroGateTarget(item, items, HERO_TARGET.y);
-}
-
-function heroRouteTarget(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
-  return heroGateTarget(item, items, routeTargetY);
-}
-
-function heroRouteControl(item, target = HERO_TARGET) {
-  return {
-    x: (item.x + target.x) / 2,
-    y: Math.min(target.y - 26, Math.min(item.y, target.y) - 34),
-  };
-}
-
-function heroRoutePoint(item, progress, target = HERO_TARGET) {
-  const t = clampUnit(progress);
-  const inverse = 1 - t;
-  const control = heroRouteControl(item, target);
-  return {
-    x: inverse ** 2 * item.x + 2 * inverse * t * control.x + t ** 2 * target.x,
-    y: inverse ** 2 * item.y + 2 * inverse * t * control.y + t ** 2 * target.y,
-  };
-}
-
-function heroRoutePath(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
-  const target = heroRouteTarget(item, items, routeTargetY);
-  const control = heroRouteControl(item, target);
-  return `M ${item.x} ${item.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${target.x.toFixed(1)} ${target.y}`;
-}
-
-function heroReturnPath(item, items, routeTargetY = HERO_ROUTE_TARGET_Y) {
-  const target = heroRouteTarget(item, items, routeTargetY);
-  const control = heroRouteControl(item, target);
-  return `M ${target.x.toFixed(1)} ${target.y} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${item.x} ${item.y}`;
-}
-
-function heroRouteMapMarkup(items, routeTargetY = HERO_ROUTE_TARGET_Y) {
-  return `<svg class="hero-route-map" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">${items.map((item) => {
-    const compactHidden = item.compact ? '' : ' hero-route--compact-hidden';
-    return `<path class="hero-route${compactHidden}" data-hero-route="${item.id}" pathLength="1" d="${heroRoutePath(item, items, routeTargetY)}"></path><path class="hero-route-charge${compactHidden}" data-hero-charge="${item.id}" pathLength="1" d="${heroReturnPath(item, items, routeTargetY)}"></path><circle class="hero-route-light${compactHidden}" data-hero-light="${item.id}" r="3" cx="${item.x}" cy="${item.y}"></circle>`;
-  }).join('')}</svg>`;
-}
-
-function heroSignalMarkup(item) {
-  const mobile = item.mobileHidden ? ' hero-signal-card--mobile-hidden' : '';
-  const compact = item.compact ? ' hero-signal-card--compact' : '';
-  const style = `--signal-x:${(item.x / 12).toFixed(3)}%;--signal-y:${(item.y / 7).toFixed(3)}%;--signal-opacity:1;--signal-scale:.72`;
-  return `<div class="hero-signal-card${mobile}${compact}" data-hero-signal="${item.id}" style="${style}">${connectorMarkMarkup(item.icon)}<span class="hero-signal-card__label">${item.label}</span></div>`;
-}
-
-export function createHeroMotionMarkup(items = HERO_MOTION_ITEMS) {
-  return `<div class="hero-motion__field" aria-hidden="true">
-    <div class="hero-stars">${heroStarsMarkup()}</div>
-    ${heroRouteMapMarkup(items)}
-    <div class="hero-signal-field">${items.map(heroSignalMarkup).join('')}</div>
-    <div class="hero-output" data-hero-output>
-      <div class="hero-output__paper"><span class="hero-output__preview"></span><span class="hero-output__line hero-output__line--one"></span><span class="hero-output__line hero-output__line--two"></span><span class="hero-output__approved">Ready</span></div>
-    </div>
-    <div class="hero-workspace" data-hero-workspace>
-      <div class="hero-workspace__face hero-workspace__face--front"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div><span class="hero-workspace__edge"></span></div>
-      <div class="hero-workspace__face hero-workspace__face--back"><div class="hero-workspace__inner"><img src="assets/android-chrome-512x512.png" alt=""></div><span class="hero-workspace__edge"></span></div>
-    </div>
-  </div>`;
-}
-
-export function getHeroSequenceState(elapsedMs, items = HERO_MOTION_ITEMS, routeTargetY = HERO_ROUTE_TARGET_Y) {
-  const elapsed = Math.max(0, Number(elapsedMs) || 0);
-  const time = elapsed % HERO_SEQUENCE_MS;
-  const phase = time < 3600 ? 'intake' : time < 4700 ? 'spin' : time < 8000 ? 'output' : 'settle';
-  const returning = time >= 2600 && time < 3600;
-  const restaged = time >= 8300;
-
-  const inputs = items.map((item) => {
-    const progress = restaged ? 0 : clampUnit((time - 600) / 1800);
-    const travel = easeInOutCubic(progress);
-    const point = heroRoutePoint(item, travel, heroInputTarget(item, items));
-    const fadeOut = 1 - clampUnit((progress - .86) / .14);
-    const opacity = restaged ? 1 : fadeOut;
-    return {
-      id: item.id,
-      x: point.x,
-      y: point.y,
-      opacity,
-      // Cards compact as they converge on the single top gate, keeping their
-      // separate source positions legible without turning the intake into a stack.
-      scale: (.72 - .48 * travel) * opacity,
-      routeProgress: restaged ? 0 : clampUnit(travel * 1.08),
-      routeOpacity: restaged ? 0 : (returning ? .22 : opacity * .62),
-    };
-  });
-
-  const lights = items.map((item) => {
-    const inputProgress = clampUnit((time - 600) / 1800);
-    const inputTravel = easeInOutCubic(inputProgress);
-    const lightTravel = Math.min(1, inputTravel + .08);
-    const point = heroRoutePoint(item, lightTravel, heroRouteTarget(item, items, routeTargetY));
-    const intakeFade = inputTravel > .045 ? 1 - clampUnit((inputProgress - .48) / .18) : 0;
-    return {
-      id: item.id,
-      x: point.x,
-      y: point.y,
-      direction: intakeFade > 0 ? 'intake' : 'hidden',
-      opacity: intakeFade,
-      scale: .72 + inputTravel * .28,
-    };
-  });
-
-  const chargeDuration = 520;
-  const charges = items.map((item) => {
-    const launchedAt = 2600;
-    const progress = clampUnit((time - launchedAt) / chargeDuration);
-    const active = time >= launchedAt && time < launchedAt + chargeDuration;
-    return { id: item.id, progress, opacity: active ? Math.sin(Math.PI * progress) : 0 };
-  });
-
-  const spinProgress = clampUnit((time - 3600) / 1100);
-  const documentProgress = clampUnit((time - 5200) / 1800);
-  const documentFade = time < 7800 ? 1 : 1 - clampUnit((time - 7800) / 500);
-  return {
-    phase,
-    inputs,
-    lights,
-    charges,
-    workspace: { rotationY: time < 3600 ? 0 : 360 * easeInOutCubic(spinProgress) },
-    document: {
-      opacity: documentProgress * documentFade,
-      translateY: -55 + 104 * easeOutCubic(documentProgress),
-    },
-  };
-}
 
 function updateHash(hash) {
   if (hash && window.location.hash !== hash) window.history.pushState(null, '', hash);
@@ -362,73 +441,146 @@ function enableSectionGlide() {
   });
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const HERO_PULSE_POOL = 24;
+// A light is an electron: a tiny packet of square-ended dashes the width of its trace, longest
+// at the front, with a thin, barely visible trail a little way behind. Lengths in pixels, back to front.
+const HERO_PACKET = Object.freeze([1.5, 2, 6]);
+const HERO_PACKET_LENGTH = HERO_PACKET.reduce((sum, part) => sum + part, 0);
+const HERO_TRAIL_LENGTH = 14;
+const HERO_TRAIL_GAP = 3;
+
+function svgElement(tag, attributes, parent) {
+  const element = document.createElementNS(SVG_NS, tag);
+  for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
+  parent.append(element);
+  return element;
+}
+
 function enableHeroMotion() {
-  const figure = document.querySelector('[data-hero-motion]');
-  const canvas = figure?.querySelector('[data-hero-motion-canvas]');
-  if (!figure || !canvas || prefersReducedMotion()) return;
-  canvas.innerHTML = createHeroMotionMarkup();
-  figure.classList.add('hero-motion--enhanced');
-  const signalElements = new Map([...canvas.querySelectorAll('[data-hero-signal]')].map((element) => [element.dataset.heroSignal, element]));
-  const routeElements = new Map([...canvas.querySelectorAll('[data-hero-route]')].map((element) => [element.dataset.heroRoute, element]));
-  const lightElements = new Map([...canvas.querySelectorAll('[data-hero-light]')].map((element) => [element.dataset.heroLight, element]));
-  const chargeElements = new Map([...canvas.querySelectorAll('[data-hero-charge]')].map((element) => [element.dataset.heroCharge, element]));
-  const workspace = canvas.querySelector('[data-hero-workspace]');
-  const output = canvas.querySelector('[data-hero-output]');
-  let routeTargetY = HERO_ROUTE_TARGET_Y;
-  const updateRouteGeometry = () => {
-    const stageBounds = canvas.getBoundingClientRect();
-    const workspaceBounds = workspace?.getBoundingClientRect();
-    routeTargetY = calculateHeroRouteTargetY({
-      stageHeight: stageBounds.height,
-      workspaceOffsetY: workspaceBounds ? workspaceBounds.top - stageBounds.top : undefined,
-      workspaceHeight: workspaceBounds?.height,
+  const scene = document.querySelector('[data-hero-signal]');
+  const map = scene?.querySelector('[data-hero-signal-map]');
+  const hub = scene?.querySelector('[data-hero-hub]');
+  if (!scene || !map || !hub) return;
+  const reduced = prefersReducedMotion();
+  const params = new URLSearchParams(window.location.search);
+  const frameParam = params.get('frame');
+  const heldFrame = frameParam !== null && Number.isFinite(Number(frameParam)) ? Number(frameParam) : null;
+  const heroCopy = document.querySelector('.hero-copy');
+  const header = document.querySelector('.site-header');
+  let lines = [];
+  let pulses = [];
+  let lineElements = [];
+  const pulseElements = [];
+
+  // The copy's text extent, ignoring its reveal slide-in, padded so lines keep clear of it.
+  const measureCopy = (bounds) => {
+    const transform = heroCopy ? getComputedStyle(heroCopy).transform : 'none';
+    const slide = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42;
+    const rects = [...(heroCopy?.children ?? [])].map((child) => {
+      const range = document.createRange();
+      range.selectNodeContents(child);
+      return range.getBoundingClientRect();
+    }).filter((rect) => rect.width > 0);
+    if (!rects.length) return [];
+    // Traces keep this far from the copy's text.
+    const pad = 18;
+    return [{
+      left: Math.min(...rects.map((r) => r.left)) - bounds.left - pad,
+      right: Math.max(...rects.map((r) => r.right)) - bounds.left + pad,
+      top: Math.min(...rects.map((r) => r.top)) - slide - bounds.top - pad,
+      bottom: Math.max(...rects.map((r) => r.bottom)) - slide - bounds.top + pad,
+    }];
+  };
+
+  const layout = () => {
+    const bounds = scene.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    const hubBounds = hub.getBoundingClientRect();
+    const hubPlace = { x: hubBounds.left + hubBounds.width / 2 - bounds.left, y: hubBounds.top + hubBounds.height / 2 - bounds.top, size: hubBounds.width };
+    lines = planHeroSignals({
+      width: bounds.width,
+      height: bounds.height,
+      hub: hubPlace,
+      avoid: measureCopy(bounds),
+      // The hero starts at the top of the page under the fixed header, so use its height,
+      // not where it sits on screen (that moves if the page loads part-scrolled).
+      top: (header?.offsetHeight ?? 0) + 12,
     });
-    for (const item of HERO_MOTION_ITEMS) {
-      routeElements.get(item.id)?.setAttribute('d', heroRoutePath(item, HERO_MOTION_ITEMS, routeTargetY));
-      chargeElements.get(item.id)?.setAttribute('d', heroReturnPath(item, HERO_MOTION_ITEMS, routeTargetY));
+    pulses = heroSignalSchedule(lines);
+    map.setAttribute('viewBox', `0 0 ${bounds.width.toFixed(0)} ${bounds.height.toFixed(0)}`);
+    // Pin the drawing to the top-left so a brief size mismatch can never shift it.
+    map.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+    map.replaceChildren();
+    const lineGroup = svgElement('g', { class: 'hero-signal__lines' }, map);
+    lineElements = lines.map((line) => svgElement('path', { d: line.d, class: 'hero-signal__line' }, lineGroup));
+    // A small square via marks each bend, like a circuit trace.
+    for (const line of lines) {
+      for (const [x, y] of line.bends) svgElement('rect', { x: (x - 1.75).toFixed(1), y: (y - 1.75).toFixed(1), width: '3.5', height: '3.5', class: 'hero-signal__via' }, lineGroup);
+    }
+    lines.forEach((line, index) => { line.measured = lineElements[index].getTotalLength?.() || line.length; });
+    const pulseGroup = svgElement('g', { class: 'hero-signal__pulses' }, map);
+    pulseElements.length = 0;
+    for (let i = 0; i < HERO_PULSE_POOL; i += 1) {
+      const trail = svgElement('path', { class: 'hero-signal__trail' }, pulseGroup);
+      const packet = svgElement('path', { class: 'hero-signal__packet' }, pulseGroup);
+      pulseElements.push({ trail, packet });
     }
   };
-  updateRouteGeometry();
-  window.addEventListener('resize', updateRouteGeometry, { passive: true });
+
+  const render = (elapsed) => {
+    const state = heroSignalState(elapsed, pulses);
+    pulseElements.forEach(({ trail, packet }, slot) => {
+      const pulse = state.active[slot];
+      if (!pulse) { trail.style.opacity = '0'; packet.style.opacity = '0'; return; }
+      const line = lines[pulse.line];
+      const total = line.measured;
+      const position = pulse.progress * total;
+      trail.setAttribute('d', line.d);
+      packet.setAttribute('d', line.d);
+      // Each dash pattern is longer than the trace, so it can never wrap back onto it.
+      const trailEnd = position - HERO_PACKET_LENGTH - HERO_TRAIL_GAP;
+      trail.style.strokeDasharray = `${HERO_TRAIL_LENGTH} ${total + HERO_TRAIL_LENGTH * 2}`;
+      trail.style.strokeDashoffset = `${HERO_TRAIL_LENGTH - trailEnd}`;
+      packet.style.strokeDasharray = `${HERO_PACKET.join(' ')} ${total + HERO_PACKET_LENGTH * 2}`;
+      packet.style.strokeDashoffset = `${HERO_PACKET_LENGTH - position}`;
+      trail.style.opacity = (pulse.opacity * .22).toFixed(3);
+      packet.style.opacity = pulse.opacity.toFixed(3);
+    });
+    hub.style.setProperty('--charge', state.charge.toFixed(3));
+  };
+
+  const relayout = () => { layout(); if (reduced || heldFrame !== null) render(heldFrame ?? 0); };
+  layout();
+  scene.classList.add('hero-signal--ready');
+  // The copy can reflow once the web font arrives, so plan again then.
+  document.fonts?.ready?.then(relayout);
+  // Plan again once the hero's size settles after any change (window resize, the hero
+  // growing as the page finishes loading), so the traces always match the space they fill.
+  let resizeTimer = 0;
+  let planned = scene.getBoundingClientRect();
+  const replanIfResized = () => {
+    const now = scene.getBoundingClientRect();
+    if (Math.abs(now.width - planned.width) < 1 && Math.abs(now.height - planned.height) < 1) return;
+    planned = now;
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(relayout, 120);
+  };
+  if ('ResizeObserver' in window) new ResizeObserver(replanIfResized).observe(scene);
+  else window.addEventListener('resize', replanIfResized, { passive: true });
+  // ?frame= holds one moment for review; reduced motion keeps the still network and hub.
+  if (heldFrame !== null) { render(heldFrame); return; }
+  if (reduced) return;
+  let visible = true;
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(scene);
+  }
   const startedAt = performance.now();
-  const render = (now) => {
-    const state = getHeroSequenceState(now - startedAt, HERO_MOTION_ITEMS, routeTargetY);
-    for (const input of state.inputs) {
-      const signal = signalElements.get(input.id);
-      const route = routeElements.get(input.id);
-      if (signal) {
-        signal.style.setProperty('--signal-x', `${(input.x / 12).toFixed(3)}%`);
-        signal.style.setProperty('--signal-y', `${(input.y / 7).toFixed(3)}%`);
-        signal.style.setProperty('--signal-opacity', input.opacity.toFixed(3));
-        signal.style.setProperty('--signal-scale', input.scale.toFixed(3));
-      }
-      if (route) {
-        route.style.setProperty('--route-progress', input.routeProgress.toFixed(3));
-        route.style.setProperty('--route-opacity', input.routeOpacity.toFixed(3));
-      }
-    }
-    for (const lightState of state.lights) {
-      const light = lightElements.get(lightState.id);
-      if (light) {
-        light.setAttribute('cx', lightState.x.toFixed(2));
-        light.setAttribute('cy', lightState.y.toFixed(2));
-        light.style.setProperty('--light-opacity', lightState.opacity.toFixed(3));
-        light.style.setProperty('--light-scale', lightState.scale.toFixed(3));
-      }
-    }
-    for (const chargeState of state.charges) {
-      const charge = chargeElements.get(chargeState.id);
-      if (charge) {
-        charge.style.setProperty('--charge-offset', (-chargeState.progress).toFixed(3));
-        charge.style.setProperty('--charge-opacity', chargeState.opacity.toFixed(3));
-      }
-    }
-    workspace?.style.setProperty('--workspace-turn', `${state.workspace.rotationY.toFixed(2)}deg`);
-    output?.style.setProperty('--document-opacity', state.document.opacity.toFixed(3));
-    output?.style.setProperty('--document-y', `${state.document.translateY.toFixed(2)}%`);
-    window.requestAnimationFrame(render);
+  const tick = (now) => {
+    if (visible && !document.hidden) render(now - startedAt);
+    window.requestAnimationFrame(tick);
   };
-  window.requestAnimationFrame(render);
+  window.requestAnimationFrame(tick);
 }
 
 function renderCapability(root, requestedId) {
@@ -643,20 +795,16 @@ function enableTurnstile() {
   const meta = document.querySelector('meta[name="assistall-turnstile-sitekey"]');
   const sitekey = normaliseTurnstileSiteKey(meta?.content);
   if (!slot || !field) return;
-  if (!sitekey) {
-    slot.classList.add('is-unconfigured');
-    slot.textContent = location.hostname === '127.0.0.1' || location.hostname === 'localhost'
-      ? 'Secure bot check will appear here on the live website.'
-      : 'Bot protection is temporarily unavailable.';
-    return;
-  }
+  // Without a site key there is no check to show, so the slot stays out of the form entirely.
+  if (!sitekey) return;
 
   const render = () => {
     if (!window.turnstile || slot.dataset.rendered === 'true') return;
     const widgetId = window.turnstile.render(slot, {
       sitekey,
       action: 'demo',
-      theme: 'light',
+      theme: 'dark',
+      // Invisible unless Cloudflare needs a visitor to tick the box; the slot takes no room until then.
       appearance: 'interaction-only',
       callback: (token) => { field.value = token; },
       'expired-callback': () => { field.value = ''; },
@@ -712,7 +860,8 @@ function initialiseSite() {
   applyMotionPreviewOverride();
   enableMobileNavigation();
   enableSectionGlide();
-  enableHeroMotion();
+  // The hero plans its layout from measurements; start it after the first paint so the copy shows at once.
+  window.requestAnimationFrame(() => window.setTimeout(enableHeroMotion, 0));
   enableCapabilitySwitcher();
   enableConnectorKeyboardScroll();
   enableWorkflowEvidence();

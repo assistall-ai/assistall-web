@@ -3,12 +3,18 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
-  HERO_MOTION_ITEMS,
-  calculateHeroRouteTargetY,
+  HERO_SIGNAL_LOOP_MS,
+  HERO_SIGNAL_SIDES,
+  HERO_TRACE_DEPTH,
+  HERO_TRACE_GAP,
   calculateScrollDuration,
-  createHeroMotionMarkup,
   easeInOutCubic,
   getTargetScrollTop,
+  heroHubAnchor,
+  heroSignalSchedule,
+  heroSignalState,
+  heroTraceDistance,
+  planHeroSignals,
   WORKFLOW_ROTATION_MS,
 } from '../assets/site.js';
 import * as siteModule from '../assets/site.js';
@@ -37,154 +43,148 @@ test('section glide easing begins and ends exactly at its anchors', () => {
   assert.ok(easeInOutCubic(0.5) > 0.49 && easeInOutCubic(0.5) < 0.51);
 });
 
-test('hero motion uses the approved set of real work inputs and matching marks', () => {
-  assert.equal(HERO_MOTION_ITEMS.length, 14);
-  assert.deepEqual(
-    HERO_MOTION_ITEMS.map(({ label }) => label),
-    ['ZOHO', 'odoo', 'WhatsApp', 'Email', 'DOCX', 'XLSX', 'CSV', 'Voice', 'Folder', 'TXT', 'PDF', 'PPTX', 'JPG', 'JSON'],
-  );
-  assert.deepEqual(
-    HERO_MOTION_ITEMS.map(({ icon }) => icon),
-    ['zoho', 'odoo', 'whatsapp', 'gmail', 'word', 'excel', 'csv', 'voice', 'folder', 'txt', 'pdf', 'powerpoint', 'image', 'json'],
-  );
-  assert.deepEqual(HERO_MOTION_ITEMS.filter(({ compact }) => compact).map(({ id }) => id), ['email', 'docx', 'xlsx', 'csv', 'voice', 'folder', 'txt', 'pdf'], 'the squeezed layout must retain eight readable sources');
-  assert.equal(HERO_MOTION_ITEMS.filter(({ wordmark }) => wordmark).length, 0);
-  const markup = createHeroMotionMarkup();
-  assert.match(markup, /--signal-opacity:1;--signal-scale:\.72/, 'source cards should be painted before the first animation frame');
-  assert.equal((markup.match(/hero-signal-card--compact/g) ?? []).length, 8, 'the responsive source set must be explicit in the animation markup');
-  assert.equal((markup.match(/hero-route--compact-hidden/g) ?? []).length, 18, 'only the six omitted sources may lose their intake, return, and light routes');
+// The hub sits centred right of the copy on wide screens and below it on phones; these are
+// the pixel layouts site.js measures, worked out from page.css at each width.
+const HERO_LAYOUTS = [
+  { name: '1440 desktop', width: 1440, height: 900, hub: { x: 1096, y: 434, size: 144 }, avoid: [{ left: 44, right: 780, top: 200, bottom: 760 }], top: 88 },
+  { name: '1920 desktop', width: 1920, height: 900, hub: { x: 1456, y: 434, size: 148 }, avoid: [{ left: 284, right: 1020, top: 200, bottom: 770 }], top: 88 },
+  { name: '1024 laptop', width: 1024, height: 768, hub: { x: 829, y: 376, size: 102 }, avoid: [{ left: 13, right: 663, top: 180, bottom: 690 }], top: 88 },
+  // Shorter browser windows leave a thin band above the copy.
+  { name: '1440 short window', width: 1430, height: 760, hub: { x: 1088, y: 372, size: 144 }, avoid: [{ left: 49, right: 713, top: 110, bottom: 700 }], top: 88 },
+  { name: '1280 short window', width: 1270, height: 680, hub: { x: 990, y: 337, size: 128 }, avoid: [{ left: 31, right: 691, top: 100, bottom: 640 }], top: 88 },
+  { name: '900 tablet', width: 890, height: 700, hub: { x: 745, y: 346, size: 100 }, avoid: [{ left: 18, right: 560, top: 120, bottom: 650 }], top: 88 },
+  { name: '390 phone', width: 390, height: 1060, hub: { x: 195, y: 916, size: 104 }, avoid: [{ left: -8, right: 398, top: 110, bottom: 768 }], top: 80 },
+];
+
+function pointsAlong(points, step = 3) {
+  const out = [];
+  for (let i = 1; i < points.length; i += 1) {
+    const [a, b] = [points[i - 1], points[i]];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    for (let s = 0; s <= length; s += step) out.push([a[0] + (b[0] - a[0]) * s / length, a[1] + (b[1] - a[1]) * s / length]);
+  }
+  return out;
+}
+
+test('hero is a single signal hub with no stars, source cards or the old embossed stamp', () => {
+  assert.match(pageHtml, /data-hero-signal\b/);
+  assert.match(pageHtml, /data-hero-signal-map/);
+  assert.equal((pageHtml.match(/data-hero-hub/g) ?? []).length, 1);
+  assert.doesNotMatch(pageHtml + pageCss + siteScript, /hero-star|logo-stamp|hero-signal-card|hero-workspace|hero-route-map|fallback-signal|hero-signal__head/);
+  assert.match(pageCss, /\.hero \{[^}]*linear-gradient\(180deg, #03060b/, 'the hero is a dark night sky without stars');
+  assert.match(pageCss, /\.hero-hub \{[^}]*--charge: 0;/, 'the hub glows a little brighter as lights arrive');
+  assert.match(pageCss, /\.hero-signal__line \{[^}]*stroke-width: 1\.6;[^}]*stroke-linecap: butt;/);
+  assert.match(pageCss, /\.hero-signal__trail, \.hero-signal__packet \{[^}]*stroke-linecap: butt;/, 'lights have square ends, not round dots');
+  assert.match(pageCss, /\.hero-signal__packet \{[^}]*stroke-width: 1\.6;/, 'each light is as thin as its trace');
+  assert.match(pageCss, /\.hero-signal__trail \{[^}]*stroke-width: 1;/, 'the trail is thinner still');
+  assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
 });
 
-test('hero source icons form an ordered five-zone upper and side perimeter', () => {
-  const xSpread = Math.max(...HERO_MOTION_ITEMS.map(({ x }) => x)) - Math.min(...HERO_MOTION_ITEMS.map(({ x }) => x));
-  const ySpread = Math.max(...HERO_MOTION_ITEMS.map(({ y }) => y)) - Math.min(...HERO_MOTION_ITEMS.map(({ y }) => y));
-  assert.ok(xSpread >= 600, 'sources must span the full usable perimeter');
-  assert.ok(ySpread >= 220, 'sources must use both the top and side space');
-  assert.ok(HERO_MOTION_ITEMS.every(({ x }) => x >= 540), 'sources stay clear of the hero headline');
-  assert.ok(HERO_MOTION_ITEMS.every(({ y }) => y <= 270), 'the lower hero space remains reserved for the output document');
-  const zoneCounts = [
-    HERO_MOTION_ITEMS.filter(({ x }) => x <= 540).length,
-    HERO_MOTION_ITEMS.filter(({ x, y }) => x > 540 && x < 700 && y <= 270).length,
-    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 770 && x <= 1050 && y <= 20).length,
-    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 1080 && y <= 160).length,
-    HERO_MOTION_ITEMS.filter(({ x, y }) => x >= 1060 && y >= 260).length,
-  ];
-  assert.deepEqual(zoneCounts, [3, 3, 3, 3, 2], 'source cards must occupy balanced, readable perimeter zones');
-  const workspace = { x: 870, y: 276 };
-  for (const item of HERO_MOTION_ITEMS.filter(({ id }) => ['jpg', 'json', 'pptx', 'pdf'].includes(id))) {
-    assert.ok(Math.hypot(item.x - workspace.x, item.y - workspace.y) >= 180, `${item.id} must stay clear of the workspace`);
-  }
-  for (const item of HERO_MOTION_ITEMS) {
-    for (const other of HERO_MOTION_ITEMS) {
-      if (item.id === other.id) continue;
-      assert.ok(Math.hypot(item.x - other.x, item.y - other.y) >= 115, `${item.id} and ${other.id} must not bunch together`);
+test('traces run in from the screen edges on every side and corner, clear of the copy and header', () => {
+  for (const layout of HERO_LAYOUTS) {
+    const lines = planHeroSignals(layout);
+    const sides = new Set(lines.map(({ side }) => side));
+    assert.deepEqual(HERO_SIGNAL_SIDES.filter((side) => !sides.has(side)), [], `${layout.name}: every side and corner has a trace`);
+    assert.equal(lines.length, 32, `${layout.name}: all 32 traces fit`);
+    for (const line of lines) {
+      const [[sx, sy]] = line.points;
+      const atEdge = sx <= 3 || sx >= layout.width - 3 || sy <= layout.top + 3 || sy >= layout.height - 3
+        || layout.avoid.some((r) => Math.min(Math.abs(sx - r.left), Math.abs(sx - r.right), Math.abs(sy - r.top), Math.abs(sy - r.bottom)) <= 3);
+      assert.ok(atEdge, `${layout.name} ${line.id}: starts at the edge of the screen (or the copy), not mid-air`);
+      const [ex, ey] = line.points.at(-1);
+      const half = layout.hub.size / 2;
+      assert.ok(Math.abs(ex - layout.hub.x) <= half + .5 && Math.abs(ey - layout.hub.y) <= half + .5 && Math.max(Math.abs(ex - layout.hub.x), Math.abs(ey - layout.hub.y)) >= half * .7, `${layout.name} ${line.id}: ends on the hub outline`);
+      for (const [x, y] of pointsAlong(line.points)) {
+        assert.ok(x >= -.5 && x <= layout.width + .5 && y >= layout.top - .5 && y <= layout.height + .5, `${layout.name} ${line.id}: stays below the header`);
+        for (const r of layout.avoid) assert.ok(!(x > r.left + .5 && x < r.right - .5 && y > r.top + .5 && y < r.bottom - .5), `${layout.name} ${line.id}: keeps clear of the copy`);
+      }
     }
   }
 });
 
-test('hero route endpoint stays within the rendered workspace on squeezed screens', () => {
-  const squeezed = calculateHeroRouteTargetY({ stageHeight: 780, workspaceOffsetY: 307, workspaceHeight: 72 });
-  const wide = calculateHeroRouteTargetY({ stageHeight: 780, workspaceOffsetY: 307, workspaceHeight: 116 });
-  const squeezedTop = 307 / 780 * 700;
-  const squeezedBottom = (307 + 72) / 780 * 700;
-  assert.ok(squeezed > squeezedTop && squeezed < squeezedBottom, 'squeezed-screen endpoint must remain inside the workspace bounds');
-  assert.ok(wide > squeezed, 'a wider workspace can safely carry the endpoint deeper without exposing it below');
+test('the pattern is symmetric: five traces a side and three a corner, every one reaching a screen edge', () => {
+  for (const layout of HERO_LAYOUTS) {
+    const lines = planHeroSignals(layout);
+    for (const side of HERO_SIGNAL_SIDES) {
+      assert.equal(lines.filter((line) => line.side === side).length, side.includes('-') ? 3 : 5, `${layout.name} ${side}`);
+    }
+  }
+  for (const layout of HERO_LAYOUTS.filter(({ name }) => name !== '390 phone')) {
+    const [copy] = layout.avoid;
+    for (const line of planHeroSignals(layout).filter(({ side }) => side.includes('left'))) {
+      const [[sx, sy]] = line.points;
+      assert.ok(sx <= 3 || sy <= layout.top + 3 || sy >= layout.height - 3, `${layout.name} ${line.id}: routed round the copy to the edge of the screen`);
+      // Routed traces hug the copy: their turns sit within a few lanes of its edges.
+      for (const [x, y] of line.points.slice(1, -1).filter(([x]) => x < copy.right + 60)) {
+        assert.ok(x <= copy.right + 60 && (y <= copy.top || y >= copy.bottom || x >= copy.right), `${layout.name} ${line.id}: hugs the copy`);
+      }
+    }
+  }
+  assert.ok(HERO_TRACE_DEPTH > 0, 'traces carry on under the hub so their lights vanish inside it');
 });
 
-test('hero motion keeps routes and moving parts inside one stable DOM field', () => {
-  const markup = createHeroMotionMarkup();
-
-  assert.match(markup, /assets\/android-chrome-512x512\.png/);
-  assert.equal((markup.match(/<div class="hero-signal-card/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.match(markup, /<svg class="hero-route-map"[^>]*viewBox="0 0 1200 700"/);
-  assert.equal((markup.match(/data-hero-route=/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/data-hero-light=/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/data-hero-charge=/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/data-hero-route=[^>]+d="[^"]+ 340"/g) ?? []).length, HERO_MOTION_ITEMS.length, 'each intake route must terminate well inside the workspace instead of ending above it');
-  assert.equal((markup.match(/data-connector-mark=/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/connector-mark__svg/g) ?? []).length, HERO_MOTION_ITEMS.length);
-  assert.equal((markup.match(/hero-signal-card__label/g) ?? []).length, HERO_MOTION_ITEMS.length, 'every source must pair its monochrome logo with a readable name');
-  assert.doesNotMatch(markup, /text-anchor="middle"/, 'hero document marks must not render oversized SVG text when their names already appear beside the icon');
-  assert.match(markup, /class="hero-motion__field"/);
-  assert.match(markup, /class="hero-output" data-hero-output/);
-  assert.match(markup, /class="hero-workspace" data-hero-workspace/);
-  assert.doesNotMatch(markup, /<use|<animateMotion|hero-output-shell|hero-workspace-shell/);
-  assert.doesNotMatch(siteScript, /hero-route-line|hero-signal-intake|hero-workspace-turn/);
-  assert.match(pageCss, /\.hero-route-map path/);
-  assert.match(pageCss, /\.hero-route-charge/);
-  assert.match(pageCss, /rotateY\(/);
-  assert.match(pageCss, /backface-visibility: hidden/);
-  assert.match(pageCss, /\.hero-motion \{ z-index: 2; \}/, 'hero signals must remain visible above the dark film while staying behind copy');
-  assert.match(pageCss, /\.hero-motion__stage \{[^}]*translateY\(/, 'the animation field must sit lower than the header crop');
-  assert.match(pageCss, /\.hero-signal-card:not\(\.hero-signal-card--compact\), \.hero-route--compact-hidden \{ display: none; \}/, 'squeezed screens must suppress cards and paths outside the readable source row');
-  assert.match(pageCss, /\.hero-signal-card--compact \{ top: calc\(var\(--signal-y\) \+ 1\.5rem\); \}/, 'the squeezed source row must clear the fixed header');
-  assert.match(pageCss, /\.hero__film \{ z-index: 1;/);
-  assert.match(brandCss, /html:not\(\[data-motion-preview="on"\]\) \*/);
-  assert.match(pageCss, /\.hero-output__paper[^}]*0 0 64px/);
-  assert.doesNotMatch(pageCss, /\.fallback-signal--(?:four|five) \{ bottom:/, 'the static fallback must reserve the lower hero area for the output document');
-  assert.match(pageHtml, /data-connector-mark="odoo"/);
-  assert.ok((pageHtml.match(/connector-mark__svg/g) ?? []).length >= 12, 'connections must use inline monochrome SVG marks rather than approximated text or CSS shapes');
-  assert.match(pageHtml, /<script type="module" src="assets\/site\.js\?v=[^"]+"><\/script>/, 'the motion module must remain a complete script element');
-  assert.doesNotMatch(pageHtml, /connector-icons\.svg/);
+test('traces are straight runs joined by 45 degree bends, never crossing or touching', () => {
+  for (const layout of HERO_LAYOUTS) {
+    const lines = planHeroSignals(layout);
+    for (const line of lines) {
+      for (let i = 1; i < line.points.length; i += 1) {
+        const [a, b] = [line.points[i - 1], line.points[i]];
+        const angle = Math.atan2(b[1] - a[1], b[0] - a[0]) / (Math.PI / 4);
+        assert.ok(Math.abs(angle - Math.round(angle)) < 1e-6, `${layout.name} ${line.id}: segment ${i} runs at a multiple of 45 degrees`);
+      }
+      const [beforeEnd, end] = line.points.slice(-2);
+      const anchorNormal = heroHubAnchor(layout.hub, line.side, 0).normal;
+      const run = [end[0] - beforeEnd[0], end[1] - beforeEnd[1]];
+      assert.ok(Math.abs(run[0] * anchorNormal[1] - run[1] * anchorNormal[0]) < 1e-6 && run[0] * anchorNormal[0] + run[1] * anchorNormal[1] < 0, `${layout.name} ${line.id}: arrives square to the hub`);
+    }
+    for (let i = 0; i < lines.length; i += 1) {
+      for (let j = i + 1; j < lines.length; j += 1) {
+        assert.ok(heroTraceDistance(lines[i].points, lines[j].points) >= HERO_TRACE_GAP, `${layout.name}: ${lines[i].id} and ${lines[j].id} keep ${HERO_TRACE_GAP}px apart`);
+      }
+    }
+  }
 });
 
-test('hero sequence sends every input through the workspace top gate before its Y-axis spin', () => {
-  assert.equal(typeof siteModule.getHeroSequenceState, 'function');
+test('lights arrive unhurried, a few sides at a time, never two on one trace', () => {
+  const lines = planHeroSignals(HERO_LAYOUTS[0]);
+  const pulses = heroSignalSchedule(lines);
+  assert.ok(pulses.length > 150, 'a busy flow over the minute-long cycle');
+  for (const pulse of pulses) {
+    assert.ok(pulse.duration >= 600 && pulse.duration <= 1700, 'each light takes 0.6 to 1.7 seconds to travel in');
+    assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
+  }
+  for (const pulse of pulses) {
+    assert.ok(pulses.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1000).length <= 14, `burst at ${pulse.start}`);
+    assert.ok(pulses.filter((other) => other.start <= pulse.start && pulse.start < other.start + other.duration).length <= 24, `crowd at ${pulse.start}`);
+  }
+  for (let i = 0; i < pulses.length; i += 1) {
+    for (let j = i + 1; j < pulses.length; j += 1) {
+      if (pulses[i].line !== pulses[j].line) continue;
+      const [a, b] = [pulses[i], pulses[j]].sort((x, y) => x.start - y.start);
+      assert.ok(b.start >= a.start + a.duration, `trace ${a.line} carries one light at a time`);
+    }
+  }
+  const sides = new Set(pulses.map((pulse) => lines[pulse.line].side));
+  assert.equal(sides.size, HERO_SIGNAL_SIDES.length, 'over a cycle, light arrives from every side and corner');
+  const together = pulses.filter((pulse, index) => pulses.some((other, k) => k !== index && Math.abs(other.start - pulse.start) < 400 && lines[other.line].side !== lines[pulse.line].side));
+  assert.ok(together.length > 100, 'several sides light at once');
+  assert.match(siteScript, /HERO_PACKET = Object\.freeze\(\[1\.5, 2, 6\]\)/, 'each light is a tiny packet of dashes, not a dot');
+  assert.match(siteScript, /HERO_TRAIL_LENGTH = 14;/, 'its trail is short');
+});
 
-  const intake = siteModule.getHeroSequenceState(900);
-  assert.equal(intake.phase, 'intake');
-  assert.equal(intake.workspace.rotationY, 0);
-  assert.equal(intake.inputs.length, HERO_MOTION_ITEMS.length);
-  assert.ok(intake.inputs.every(({ y }) => y < 276), 'icons must begin above the workspace top edge');
-
-  const preloaded = siteModule.getHeroSequenceState(0);
-  assert.ok(preloaded.inputs.every(({ opacity }) => opacity === 1), 'source icons must be visible from the first frame');
-  assert.deepEqual(preloaded.inputs.map(({ x, y }) => ({ x, y })), HERO_MOTION_ITEMS.map(({ x, y }) => ({ x, y })), 'preloaded sources must hold their perimeter positions before intake');
-
-  const restaged = siteModule.getHeroSequenceState(9000);
-  assert.ok(restaged.inputs.every(({ opacity }) => opacity === 1), 'sources must reappear during the resting portion of the loop');
-  assert.deepEqual(restaged.inputs.map(({ x, y }) => ({ x, y })), HERO_MOTION_ITEMS.map(({ x, y }) => ({ x, y })), 'restaged sources must return to their perimeter positions');
-
-  const glidingInputs = siteModule.getHeroSequenceState(1500).inputs.filter(({ routeProgress, opacity }) => routeProgress > 0 && opacity > 0);
-  assert.equal(glidingInputs.length, HERO_MOTION_ITEMS.length, 'all inputs must enter together');
-  assert.ok(glidingInputs.every(({ y }) => y < 276), 'icons must remain above the workspace until they enter it');
-
-  const earlyIntake = siteModule.getHeroSequenceState(1150).inputs;
-  const horizontalSpread = Math.max(...earlyIntake.map(({ x }) => x)) - Math.min(...earlyIntake.map(({ x }) => x));
-  assert.ok(horizontalSpread > 480);
-  assert.ok(earlyIntake.filter(({ y }) => y < 125).length >= 3, 'the composition needs a visible top row of inputs');
-
-  const finalIntake = siteModule.getHeroSequenceState(2300);
-  assert.ok(finalIntake.inputs.some(({ opacity }) => opacity > 0), 'the inputs must finish before lights can return');
-  assert.ok(finalIntake.lights.every(({ direction }) => direction !== 'return'), 'return lights must wait until the full intake is clear');
-
-  const nearGate = siteModule.getHeroSequenceState(2000);
-  assert.ok(nearGate.lights.every(({ opacity }) => opacity === 0), 'arrival dots must already be hidden behind the workspace before its top edge');
-
-  const buriedEndpoints = siteModule.getHeroSequenceState(2300).lights;
-  assert.ok(buriedEndpoints.every(({ y }) => y === 340), 'arrival lights must finish deep enough inside the workspace to be fully occluded');
-
-  const cleared = siteModule.getHeroSequenceState(2800);
-  assert.ok(cleared.inputs.every(({ x, y, opacity }) => x >= 836 && x <= 904 && y === 276 && opacity === 0), 'every input must clear through the workspace top gate');
-  assert.ok(cleared.lights.every(({ opacity }) => opacity === 0), 'arrival lights must disappear behind the workspace before the return');
-  const activeReturnCharges = cleared.charges.filter(({ opacity }) => opacity > 0);
-  assert.equal(activeReturnCharges.length, HERO_MOTION_ITEMS.length, 'every circuit charge must leave the workspace together');
-  assert.ok(activeReturnCharges.every(({ progress }) => Math.abs(progress - activeReturnCharges[0].progress) < 0.0001), 'simultaneous return charges must share the same position along their paths');
-  const laterReturn = siteModule.getHeroSequenceState(2900);
-  const chargeTravel = activeReturnCharges.map(({ id, progress }) => laterReturn.charges.find((charge) => charge.id === id).progress - progress);
-  assert.ok(chargeTravel.every((distance) => Math.abs(distance - chargeTravel[0]) < 0.0001), 'active return charges must share one travel speed');
-  assert.ok(chargeTravel[0] < .2, 'the return current must travel more deliberately than a burst');
-
-  const spin = siteModule.getHeroSequenceState(4150);
-  assert.equal(spin.phase, 'spin');
-  assert.ok(spin.workspace.rotationY > 0 && spin.workspace.rotationY < 360);
-  assert.equal(spin.document.opacity, 0);
-
-  const output = siteModule.getHeroSequenceState(6200);
-  assert.equal(output.phase, 'output');
-  assert.equal(output.workspace.rotationY, 360);
-  assert.ok(output.document.opacity > 0);
-  assert.ok(output.document.translateY > -55);
+test('the hub glows from recent arrivals and settles back', () => {
+  const lines = planHeroSignals(HERO_LAYOUTS[0]);
+  const pulses = heroSignalSchedule(lines);
+  const first = pulses[0];
+  const arrival = first.start + first.duration;
+  assert.ok(heroSignalState(first.start + 10, pulses).active.some(({ line }) => line === first.line), 'the first light is on its way');
+  const at = heroSignalState(arrival + 20, pulses);
+  assert.ok(at.charge > .3 && at.charge <= 1);
+  for (let time = 0; time < HERO_SIGNAL_LOOP_MS; time += 250) {
+    const state = heroSignalState(time, pulses);
+    assert.ok(state.charge >= 0 && state.charge <= 1);
+    for (const light of state.active) assert.ok(light.progress >= 0 && light.progress <= 1 && light.opacity >= 0 && light.opacity <= 1);
+  }
 });
 
 test('workflow evidence gives source viewers time to be understood before advancing', () => {

@@ -8,7 +8,12 @@ colors:
   muted-brass: "#C8A25D"
   charcoal: "#172A2C"
   white: "#FFFFFF"
-  hero-night: "#06191b"
+  hero-sky-top: "#03060b"
+  hero-sky-mid: "#060c16"
+  hero-sky-low: "#0a1524"
+  hero-electric: "#8fe6ff"
+  hero-hub-light: "#154649"
+  hero-hub-deep: "#0a2f32"
   hero-gold-line: "#e8c77e"
   teal-soft: "color-mix(in srgb, #0E3A3D 8%, #FFFDF8)"
   rule: "color-mix(in srgb, #172A2C 14%, transparent)"
@@ -107,7 +112,7 @@ components:
 
 A calm, premium operations brand for non-technical business owners. The page reads like a well-run office: deep teal and warm limestone surfaces, one brass accent, generous space, and plain, specific language. Confidence comes from restraint and real product evidence (recorded workflows with fictional data), never from hype, metrics or decoration.
 
-The one deliberate exception is the hero. On the owner's repeated request (August 2026) it is a dark night-teal scene with glowing source cards, brass intake routes, an ivory "circuit" return charge and the Assistall box turning once on its Y-axis. That glow and depth belongs **only** to the hero; every section below it returns to flat, quiet surfaces.
+The one deliberate exception is the hero. Since 19 October 2026 it is a placeholder chosen by the owner: a dark night-sky field (no stars) with the Assistall mark as a quiet, softly glowing hub, thin brass circuit traces running in to it from the screen edges on every side and corner, and tiny electric packets travelling in along them like electrons through a circuit. That glow and depth belongs **only** to the hero; every section below it returns to flat, quiet surfaces.
 
 Rhythm alternates surfaces down the page: dark hero, limestone story, ivory capabilities, teal connections, ivory product, limestone value, ivory trust, teal call to action and footer. Each band carries one idea.
 
@@ -127,11 +132,14 @@ A restrained teal-and-stone palette with one warm metal accent.
 - **Deep Teal** (deep-teal): headings on light surfaces, full dark sections (connections, call to action, footer), header bar at 88% opacity, the hero box inner face, and the "Ready" seal on the output document.
 
 ### Secondary
-- **Muted Brass** (muted-brass): the single accent. Primary button fill, focus outlines, thin section rules ("operational current" line), active tab underline, active capability marker, borders on the demo form and outputs strip. Brass is a line-and-fill colour, not a text colour on light backgrounds (see the Brass Is Not Ink Rule).
+- **Muted Brass** (muted-brass): the single accent. Primary button fill, focus outlines, thin section rules ("operational current" line), active tab underline, the active capability outline, scrollbar thumbs, borders on the demo form and outputs strip. Brass is a line-and-fill colour, not a text colour on light backgrounds (see the Brass Is Not Ink Rule).
 
 ### Tertiary (hero only)
-- **Hero Night** (hero-night): the hero scene background and video letterbox.
-- **Hero Gold Line** (hero-gold-line): the glowing intake routes in the hero animation. Do not reuse elsewhere.
+- **Hero Sky** (hero-sky-top, hero-sky-mid, hero-sky-low): a real night sky, near-black at the top easing to deep navy low down, with a faint blue haze behind the hub. Deliberately not the brand teal (owner request, 19 October 2026).
+- **Hero Electric** (hero-electric): the light packets' glow, a cool electric blue-cyan around a near-white core. The one extra hue on the site, hero only, owner request.
+- **Hub Face** (hero-hub-light, hero-hub-deep): the two ends of the hub tile's deep-teal gradient.
+- **Hero Gold Line** (hero-gold-line): the signal traces, their bend vias and the glow around the light packets. Do not reuse elsewhere.
+- The workflow video letterbox keeps #06191b.
 
 ### Neutral
 - **Warm Ivory** (warm-ivory): page background, text on dark surfaces, form field fill.
@@ -144,7 +152,7 @@ A restrained teal-and-stone palette with one warm metal accent.
 ### Named Rules
 **The One Accent Rule.** Brass is the only accent. No new hues; any missing colour is a question for the owner, not a new token (brand.css says the same).
 
-**The Brass Is Not Ink Rule.** Brass text passes contrast on teal (5.2:1) but fails on ivory (2.4:1) and limestone (2.1:1). Current eyebrows, step numbers and outcome labels on light surfaces break this; treat them as known defects, not as precedent.
+**The Brass Is Not Ink Rule.** Brass text passes contrast on teal (5.2:1) but fails on ivory (2.4:1) and limestone (2.1:1). Step numbers and outcome labels on light surfaces still break this; treat them as known defects, not as precedent.
 
 **The Mixed, Not Invented Rule.** Tints are made with `color-mix()` from the six brand colours, never new hex values.
 
@@ -162,7 +170,7 @@ A restrained teal-and-stone palette with one warm metal accent.
 - **Title** (600, step 1, 1.2–1.5rem): card and panel H3s.
 - **Lede** (400, step 1, muted colour): the paragraph under a section headline.
 - **Body** (400, step 0, 1–1.09rem, line-height 1.6, max 62ch).
-- **Label** (700, step −1 or smaller, uppercase, 0.06–0.09em tracking): tab labels, window bars, outcome terms, and the eyebrows (see Don'ts).
+- **Label** (700, step −1 or smaller, uppercase, 0.06–0.09em tracking): tab labels, window bars and outcome terms. Never as an eyebrow above a heading.
 
 ### Named Rules
 **The Fixed Scale Rule.** Only `--step--1` to `--step-4`, plus the two documented headline clamps. Small UI labels (0.7–0.9rem) exist inside components; keep them, do not multiply them.
@@ -181,14 +189,14 @@ Flat by default. Light sections separate with tone (ivory vs. limestone) and 1px
 - **Soft lift** (`0 24px 80px` teal at 15%): product windows on light sections.
 - **Evidence drop** (`0 20px 54px rgba(0,0,0,.18)`, video `0 18px 38px rgba(0,0,0,.24)`): the dark Living Work Queue panel.
 - **Hover lift** (`0 16px 34px rgba(0,0,0,.2)`): connector cards on hover/focus only, paired with a 4px rise.
-- **Hero glow** (drop-shadow halos on routes, dots, cards, box and output document): hero only.
+- **Hero glow** (drop-shadow halos on the signal traces, the light packets and the hub, which brightens a little as lights arrive): hero only.
 
 ### Named Rules
 **The Glow Stays Home Rule.** Gradients, glows and halos are approved for the hero scene alone. The brand token file says "no gradients, decorative shadows"; the hero is the owner-approved exception, not a licence for other sections.
 
 ## Shapes
 
-Softly rounded, never pill-heavy. Controls 10px, cards and tiles 12px, framed product windows, trust cards and the demo form 18px, a 28px large radius reserved but unused. Pills (999px) appear only on the hero fallback chips and the "human work" list. Hairline borders (1px rule or brass) define most shapes. The hero box uses an 18% radius with an inner frame at 16%.
+Softly rounded, never pill-heavy. Controls 10px, cards and tiles 12px, framed product windows, trust cards and the demo form 18px, a 28px large radius reserved but unused. Pills (999px) appear only on the "human work" list and scrollbar thumbs. Hairline borders (1px rule or brass) define most shapes. The hero hub uses a 24% radius with a faint inner frame at 19%.
 
 ## Components
 
@@ -203,10 +211,10 @@ Softly rounded, never pill-heavy. Controls 10px, cards and tiles 12px, framed pr
 - **Step cards (workday list):** ivory at 90%, 1px rule border, 12px radius, number in brass; on hover they shift 6px right and the border turns brass.
 - **Connector cards:** limestone on the teal section, 52px charcoal mark tile with a monochrome provider or format mark, name plus an honest status ("Setup-dependent" or "Imported source"). Hover: rise 4px, brass border, mark turns brass.
 - **Trust cards:** 18px radius, rule border, short brass bar above the title.
-- **Product window:** 18px radius frame with a teal title bar (uppercase label), real product screenshot inside.
+- **Product window:** 18px radius frame with a teal title bar (uppercase label), real product screenshot inside. On phones (560px and below) the screenshot is cropped to one readable slice (the overview and what needs attention, at about twice the size) with an "Open the full workspace view" link to the full image; desktop shows it whole.
 
 ### Tabs
-- **Capability tabs:** full-width outlined buttons stacked in a column; the active one gets a limestone fill, brass border and brass marker. Only the summary text and labels change; the image stays the same.
+- **Capability tabs:** full-width outlined buttons stacked in a column; the active one gets a limestone fill and a full 2px brass outline (no side marker). Only the summary text and labels change; the image stays the same.
 - **Workflow tabs:** a flat strip on the dark panel; the selected tab is ivory with a 2px brass underline. Arrow, Home and End keys move between them.
 
 ### Inputs / Fields
@@ -217,8 +225,14 @@ Softly rounded, never pill-heavy. Controls 10px, cards and tiles 12px, framed pr
 ### Navigation
 - Fixed translucent teal header with an 18px blur, ivory wordmark with brass "AI", 0.88rem semibold links at 82% ivory, and a brass "Book a demo" button. At 1060px and below, links collapse into a "Menu" dropdown panel (teal, brass border, 48px rows) that closes on link, outside click, Escape, focus leaving or resize. Without JavaScript the links stay visible.
 
-### Hero animation (signature)
-An 11.8-second loop generated in DOM/SVG/CSS by `assets/site.js`: 14 named monochrome source cards sit above and beside the box, glide together into its top edge, an ivory charge returns along every route at once, the box spins once on its Y-axis, and a small "Ready" document descends and fades. A static fallback (logo plus labelled chips) shows for reduced motion or no JavaScript. Treat the whole build (markup, CSS, JS, tests) as one unit; refine it, never rebuild it.
+### Hero signal hub (placeholder, 19 October 2026)
+The owner replaced the source-card animation with a placeholder while a final hero is chosen. Built in DOM/SVG/CSS by `assets/site.js` (`planHeroSignals`, `heroSignalSchedule`, `heroSignalState`, `enableHeroMotion`).
+
+- **The hub** is the Assistall mark on a plain deep-teal tile (100–148px): soft gradient, 1px brass hairline, faint inner frame, a slow breathing halo and a glow that brightens slightly as each light arrives. No bevel, no spin. On desktop and tablets it is centred in the space right of the copy, a little above the middle; on phones it sits centred below the copy (the hero gains bottom padding to hold it).
+- **Traces** are circuit-style and symmetric: 1.6px brass at 22%, square ends, straight runs joined by 45° or 90° bends with a small rounded corner and a 3.5px square via at each real bend. Every side has five (one straight, two each way swinging 45° outwards, the outer pair further) and every corner three (one straight along the diagonal, one turning horizontal, one vertical). Every trace runs from the edge of the screen: where the copy is in the way of traces heading left, they hug it: they turn up or down just clear of its right edge and run out just above or below it, nested 10px apart, to the left edge. On short windows, traces with no room for a lane above or below the copy run straight up or down to the screen edge instead, so the full set always shows. On phones the copy sits above the hub, so top traces stop at its lower edge. Traces carry on 18px under the hub so their lights vanish inside it. Planned in real pixels from the measured hero, copy and header, re-planned whenever the hero changes size; nothing enters the copy (plus 18px) and any trace that would cross or come within 6px of another is dropped (tests check the full count of 32 at every modelled size, from short laptop windows to 1920 and phones).
+- **Lights** are electrons: a tiny packet of square-ended dashes the width of the trace (1.5, 2 and 6px, longest at the front), near-white with an electric blue glow, and a thin 14px trail at 22% a few pixels behind. They travel at about 400px a second (0.6 to 1.7 seconds a trace, easing in and out), in bursts of three to six from different sides, 0.18 to 0.5 seconds apart, never two on one trace, and disappear under the hub tile. A fixed, seeded 60-second timetable makes it look spontaneous while any moment can be held for review.
+- **Reduced motion** keeps the still traces and hub with no lights or breathing. Without JavaScript the hub shows alone.
+- **Review aids:** `?motion=on|off` forces or stops the motion, and `?frame=<ms>` holds one moment (lights included) for screenshots.
 
 ### Living Work Queue (signature)
 A dark teal panel with three tabs, each pairing a muted, looping product recording (played at 0.65× speed, 11-second rotation, paused when off-screen or hovered) with a limestone note card and a "Replay workflow" button. Recordings use fictional data only.
@@ -237,9 +251,10 @@ A dark teal panel with three tabs, each pairing a muted, looping product recordi
 ### Don't:
 - **Don't** add new hues, webfonts or type sizes.
 - **Don't** use brass as text on ivory or limestone (fails AA).
-- **Don't** add more eyebrow labels above headings; the existing ones conflict with the owner's standing design rules and await a decision.
-- **Don't** add coloured side-bars to cards or rows; the capability tab marker is an existing case awaiting the same decision.
+- **Don't** use eyebrow labels above headings (all removed 19 October 2026).
+- **Don't** add coloured side-bars to cards or rows (the capability marker was removed 19 October 2026).
+- **Don't** leave a system scrollbar: brand.css gives every scrolling area a slim brass thumb (deep teal track for the page).
 - **Don't** spread the hero's glow, gradients or night background to other sections.
-- **Don't** use provider brand colours, the old WadiH "W" marks, black-hole, orbit or printer imagery, or an x-axis spin in the hero.
+- **Don't** use provider brand colours, the old WadiH "W" marks, black-hole, orbit or printer imagery, stars, or a spin in the hero.
 - **Don't** publish invented metrics, testimonials, customer names or "fully autonomous" claims.
 - **Don't** use gradient text, glass or blob decoration, nested cards or emoji as icons.
