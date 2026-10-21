@@ -165,6 +165,56 @@ function post_signed_json(string $url, string $body, string $timestamp, string $
     return $decoded;
 }
 
+const LEAD_NOTIFY_DEFAULT_RECIPIENT = 'hello@assistall.ai';
+const LEAD_NOTIFY_SUBJECT = 'New Assistall demo request';
+
+/** One-line value for an email: no line breaks or NUL bytes. */
+function safe_line(string $value): string {
+    return str_replace(["\r", "\n", "\0"], ' ', $value);
+}
+
+/**
+ * The new-lead alert. The recipient comes only from the secrets file ('lead_notify_recipient'),
+ * never from the request; the subject is fixed; every short field is a single line; and nothing
+ * else from the configuration reaches the message.
+ */
+function lead_notification(array $config, string $requestId, string $name, string $email, string $company, string $workNeed): array {
+    $to = trim((string)($config['lead_notify_recipient'] ?? ''));
+    if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) $to = LEAD_NOTIFY_DEFAULT_RECIPIENT;
+    $body = "New Assistall demo request\n\n"
+        . 'Request ID: ' . safe_line($requestId) . "\n"
+        . 'Name: ' . safe_line($name) . "\n"
+        . 'Email: ' . safe_line($email) . "\n"
+        . 'Company: ' . safe_line($company) . "\n\n"
+        . "Work slowing the team down:\n"
+        . str_replace(["\r\n", "\r", "\0"], ["\n", "\n", ''], $workNeed) . "\n\n"
+        . "The full record is in Supabase (public.demo_requests). Reply to this email to answer the visitor.\n";
+    $headers = [
+        'From: Assistall Website <no-reply@assistall.ai>',
+        'Reply-To: ' . safe_line($email),
+        'Content-Type: text/plain; charset=UTF-8',
+        'X-Assistall-Request-Id: ' . safe_line($requestId),
+    ];
+    return ['to' => $to, 'subject' => LEAD_NOTIFY_SUBJECT, 'body' => $body, 'headers' => implode("\r\n", $headers)];
+}
+
+/**
+ * Runs at shutdown, after respond() has sent the 201. Where the host supports it (PHP-FPM or
+ * LiteSpeed) the visitor's connection is finished first, so a slow or broken mail server never
+ * delays or fails the submission. The lead is already saved; a failed alert only logs a code.
+ */
+function send_lead_notification(array $config, string $requestId, string $name, string $email, string $company, string $workNeed): void {
+    try {
+        if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+        elseif (function_exists('litespeed_finish_request')) litespeed_finish_request();
+        $message = lead_notification($config, $requestId, $name, $email, $company, $workNeed);
+        $sent = @mail($message['to'], $message['subject'], $message['body'], $message['headers']);
+        log_code($requestId, $sent ? 'lead_notified' : 'lead_notify_failed');
+    } catch (\Throwable) {
+        log_code($requestId, 'lead_notify_failed');
+    }
+}
+
 $requestId = request_id();
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Allow: POST');
@@ -260,18 +310,7 @@ if (($ingest['ok'] ?? false) !== true) {
     respond($status === 429 ? 429 : 503, false, $status === 429 ? 'request_rejected' : 'temporarily_unavailable', $requestId);
 }
 
-$safeName = str_replace(["\r", "\n"], ' ', $name);
-$safeCompany = str_replace(["\r", "\n"], ' ', $company);
-$mailBody = "New Assistall demo request\n\nRequest ID: {$requestId}\nName: {$safeName}\nEmail: {$email}\nCompany: {$safeCompany}\n\nWork slowing the team down:\n{$workNeed}\n";
-$mailHeaders = [
-    'From: Assistall Website <no-reply@assistall.ai>',
-    'Reply-To: ' . $email,
-    'Content-Type: text/plain; charset=UTF-8',
-    'X-Assistall-Request-Id: ' . $requestId,
-];
-if (!@mail('hello@assistall.ai', 'New Assistall demo request', $mailBody, implode("\r\n", $mailHeaders))) {
-    log_code($requestId, 'email_failed_lead_saved');
-} else {
-    log_code($requestId, 'accepted');
-}
+// The lead is saved. The alert email is sent only now, and only after the visitor has their answer.
+log_code($requestId, 'accepted');
+register_shutdown_function('send_lead_notification', $config, $requestId, $name, $email, $company, $workNeed);
 respond(201, true, 'accepted', $requestId);

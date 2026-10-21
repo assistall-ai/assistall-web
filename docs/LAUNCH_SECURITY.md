@@ -67,6 +67,16 @@ Fill in:
 - allowed Turnstile hostnames
 - deployed Supabase `demo-ingest` URL
 - the same HMAC secret used by the Edge Function
+- `lead_notify_recipient`: the one address that gets the new-lead alert email
+
+### New-lead alert email
+
+Once Supabase has saved a demo request, `demo-request.php` sends a short plain-text email, subject **New Assistall demo request**, through the host's PHP `mail()`. It goes only to `lead_notify_recipient` from the secrets file (or `hello@assistall.ai` if that entry is missing or not a valid address). The recipient is never taken from the request.
+
+- It holds the request ID, name, email, company and the "work slowing the team down" text. It never holds the visitor's IP address or any secret. Reply-To is the visitor's address, so a reply goes straight to them.
+- It is sent only for accepted requests, after the visitor's response has gone out. Rejected, rate-limited or failed submissions send nothing.
+- A mail failure never affects the visitor: the lead is already saved. The PHP error log records only `lead_notified` or `lead_notify_failed` with the request ID.
+- If alerts do not arrive, check the spam folder, then cPanel **Email → Track Delivery**. The sender is `no-reply@assistall.ai`, so the domain's SPF record must allow the cPanel host (cPanel **Email Deliverability** shows the right record; mail DNS records stay unproxied in Cloudflare).
 
 Set the file permission to owner read/write only where the hosting account permits it. Behind Cloudflare, the form reads the visitor's address from `CF-Connecting-IP` only when the request comes from one of Cloudflare's published server ranges (`CLOUDFLARE_RANGES` in the PHP), so a forged header sent straight to the origin is ignored. No setting is needed.
 
@@ -102,6 +112,7 @@ Run these against a staging hostname first:
 - Honeypot, too-fast completion, malformed email and CRLF input are rejected.
 - Turnstile pass, failure, expiry, replay, hostname mismatch and action mismatch are tested using official test keys.
 - Signed ingestion accepts one valid request and rejects a tampered signature, a timestamp older than 60 seconds and a replayed request ID.
+- One accepted submission produces exactly one new-lead alert email at `lead_notify_recipient`; a rejected submission produces none.
 - The sixth accepted IP request in one hour and fourth accepted email request in one day return rate-limit failures.
 - No raw IP is stored. No secret appears in page source, browser network responses, logs or Git history.
 - Cloudflare caches static assets and never caches the form response.

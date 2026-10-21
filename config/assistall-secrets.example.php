@@ -8,6 +8,9 @@ return [
     'website_hmac_secret' => 'replace-with-at-least-32-random-bytes',
     // The visitor's address behind Cloudflare is handled in code: CF-Connecting-IP is trusted only
     // from Cloudflare's own servers. The old 'trust_cloudflare_proxy' setting is no longer read.
+    // demo-request.php — where the "New Assistall demo request" alert is emailed once a lead is
+    // saved in Supabase. Never taken from the request. Falls back to hello@assistall.ai when unset.
+    'lead_notify_recipient' => 'you@example.com',
 
     // diagnostic-intake.php — receives self-diagnostic reports from the app.
     // Must match WADIH_AI_DIAGNOSTIC_SECRET baked into the app build.
