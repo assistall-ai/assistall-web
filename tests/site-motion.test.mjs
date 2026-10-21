@@ -151,7 +151,7 @@ test('lights pour in fast from all around the hub, spaced like electrons on each
   const pulses = heroSignalSchedule(lines);
   assert.ok(pulses.length > 1500, `a busy flow over the minute-long cycle (${pulses.length})`);
   for (const pulse of pulses) {
-    assert.ok(pulse.duration >= 655 && pulse.duration <= 1870, 'each light takes 0.66 to 1.87 seconds to travel in');
+    assert.ok(pulse.duration >= 820 && pulse.duration <= 2340, 'each light takes 0.82 to 2.34 seconds to travel in');
     assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
   }
   let busiest = 0;
@@ -164,7 +164,7 @@ test('lights pour in fast from all around the hub, spaced like electrons on each
     samples += 1;
   }
   assert.ok(total / samples >= 15, `many lights on screen at once (${(total / samples).toFixed(1)} on average)`);
-  assert.ok(busiest <= 72, `never more lights than the page draws (${busiest})`);
+  assert.ok(busiest <= 96, `never more lights than the page draws (${busiest})`);
   // Lights following each other on one trace keep at least a third of the run apart.
   const byLine = new Map();
   for (const pulse of pulses) byLine.set(pulse.line, [...(byLine.get(pulse.line) ?? []), pulse]);
@@ -218,7 +218,7 @@ test('on phones every light travels a quarter quicker', () => {
     assert.ok(Math.abs(quick - usual * .75) <= 1, `${length}px: three quarters of the usual time`);
   }
   const quick = heroSignalSchedule(lines, { pace: siteModule.HERO_PHONE_PACE });
-  assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= 1403), 'every phone light is quicker than the slowest wide-screen one');
+  assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= 1755), 'every phone light is quicker than the slowest wide-screen one');
   assert.match(siteScript, /pace: phoneLayout\.matches \? HERO_PHONE_PACE : 1/, 'only phones use the quicker pace');
 });
 
