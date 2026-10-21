@@ -174,7 +174,8 @@ BODY='{"app_version":"2.0.9","summary":"11 of 12 checks passed.","passed":11,"to
    ends up HTTPS. *Fix:* `.htaccess` already checks this header; confirm.
 8. **Direct-to-origin bypass** (if Cloudflare fronts the site) — the origin IP
    should not accept diagnostic POSTs from arbitrary sources. *Fix:* restrict
-   origin to Cloudflare IPs; set `trust_cloudflare_proxy` only then.
+   origin to Cloudflare IPs if the host allows it. The endpoint already trusts
+   `CF-Connecting-IP` only from Cloudflare's own servers (`CLOUDFLARE_RANGES`).
 
 ### B. HTTP method & routing (9–16)
 
@@ -332,9 +333,9 @@ BODY='{"app_version":"2.0.9","summary":"11 of 12 checks passed.","passed":11,"to
 75. **Rate-limit window reset** — after the hour, the per-IP counter resets.
     *Confirm* legitimate use is not permanently blocked.
 76. **IP spoof via `X-Forwarded-For`** — the endpoint uses `REMOTE_ADDR` (or
-    `CF-Connecting-IP` only when `trust_cloudflare_proxy` is on), so a forged
-    `X-Forwarded-For` does not reset the counter. *Fix:* keep
-    `trust_cloudflare_proxy` off unless the origin is Cloudflare-only.
+    `CF-Connecting-IP` only when the connection comes from a Cloudflare server),
+    so a forged `X-Forwarded-For` or `CF-Connecting-IP` sent straight to the
+    origin does not reset the counter. *Confirm* both forgeries are ignored.
 77. **Slowloris / slow POST** — the host/CDN should time out slow requests.
     *Fix:* server/Cloudflare request timeouts.
 78. **Regex DoS (ReDoS)** — long crafted strings in `detail` do not hang the
@@ -358,9 +359,9 @@ the rest are enforced by `diagnostic-intake.php` itself and are covered by
 
 - **Turn on HSTS** once every subdomain is HTTPS-clean (step 5 above).
 - **Front with Cloudflare** and enable a WAF rule + rate limiting on
-  `/diagnostic-intake.php` as a second layer above the PHP limiter. Then set
-  `trust_cloudflare_proxy => true` and lock the origin to Cloudflare IPs so the
-  PHP sees real client IPs and nobody can hit the origin directly.
+  `/diagnostic-intake.php` as a second layer above the PHP limiter. The PHP
+  already sees real client IPs behind Cloudflare; locking the origin to
+  Cloudflare IPs would also stop anyone hitting it directly.
 - **Deliverability:** set SPF, DKIM and DMARC for assistall.ai (cPanel → Email
   Deliverability) so the reports are not spam-filtered and `no-reply@` is not
   spoofable.

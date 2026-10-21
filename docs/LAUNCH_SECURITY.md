@@ -68,7 +68,7 @@ Fill in:
 - deployed Supabase `demo-ingest` URL
 - the same HMAC secret used by the Edge Function
 
-Set the file permission to owner read/write only where the hosting account permits it. Keep `trust_cloudflare_proxy` false until direct origin access is blocked; otherwise an attacker could forge `CF-Connecting-IP` at the origin.
+Set the file permission to owner read/write only where the hosting account permits it. Behind Cloudflare, the form reads the visitor's address from `CF-Connecting-IP` only when the request comes from one of Cloudflare's published server ranges (`CLOUDFLARE_RANGES` in the PHP), so a forged header sent straight to the origin is ignored. No setting is needed.
 
 Confirm cPanel uses PHP 8.1+ and has cURL enabled. Run:
 
@@ -86,7 +86,7 @@ php -l public_html/demo-request.php
 6. Add a rate-limiting rule for path `/demo-request.php`: five requests per IP in ten seconds, then managed challenge or temporary block. On Free, use only fields the plan exposes.
 7. Bypass cache for `/demo-request.php`. Cache HTML briefly and fingerprinted/local static assets longer.
 8. Audit DNS-only and historical records that may expose the cPanel origin.
-9. Ask Namecheap whether ports 80/443 can accept only Cloudflare IP ranges. Leave `trust_cloudflare_proxy` false unless this is enforced.
+9. Optionally ask Namecheap whether ports 80/443 can accept only Cloudflare IP ranges. The visitor-address check works either way.
 10. Enable HSTS only after the apex and every required subdomain pass HTTPS testing. The repository leaves it commented out intentionally.
 
 ## 6. Production tests
