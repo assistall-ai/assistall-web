@@ -54,6 +54,15 @@ button, .button { border-radius: 10px; }
 .hero-hub::after { content: ""; position: absolute; inset: -18%; border-radius: 34%; background: radial-gradient(closest-side, rgb(232 199 126 / .1), transparent); animation: hub-breathe 6s ease-in-out infinite alternate; }
 .hero-hub__mark { position: absolute; inset: 22%; width: 56%; height: 56%; filter: drop-shadow(0 0 calc(3px + 8px * var(--charge)) rgb(232 199 126 / calc(.22 + .45 * var(--charge)))); }
 .hero-hub__mark rect { fill: var(--limestone); }
+/* The pause button: small and quiet, bottom right of the hero, above the film and animation. */
+.hero-pause { position: absolute; z-index: 4; right: var(--gutter); bottom: 1.25rem; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 1px solid rgb(232 199 126 / .38); border-radius: 50%; color: rgb(255 253 248 / .72); background: rgb(3 6 11 / .45); cursor: pointer; transition: color .2s ease, border-color .2s ease, background .2s ease; }
+.hero-pause[hidden] { display: none; }
+.hero-pause:hover { color: var(--ivory); border-color: var(--brass); background: rgb(3 6 11 / .7); }
+.hero-pause:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+.hero-pause svg { width: 14px; height: 14px; fill: currentColor; }
+.hero-pause .hero-pause__play, .hero-pause[aria-pressed="true"] .hero-pause__pause { display: none; }
+.hero-pause[aria-pressed="true"] .hero-pause__play { display: block; }
+.hero-signal--paused .hero-hub::after { animation-play-state: paused; }
 .hero-hub__mark .hero-hub__bar--brass { fill: var(--brass); }
 .hero__film { background: linear-gradient(90deg, rgb(3 6 11 / .55) 0%, rgb(3 6 11 / .35) 43%, transparent 62%); }
 .hero-grid { position: relative; z-index: 3; }
@@ -302,7 +311,7 @@ html.reveal-enhanced [data-reveal].is-visible { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   html.reveal-enhanced [data-reveal] { opacity: 1; transform: none; transition: none; }
-  html:not([data-motion-preview="on"]) .hero-hub::after { animation: none; }
+  html .hero-signal .hero-hub::after { animation-duration: 6s !important; }
   .connector-card, .connector-card:hover, .connector-card:focus-visible, .connector-card:focus-within { transform: none; transition-property: border-color, box-shadow, color; }
   .workflow-current::after { animation: none; opacity: 1; transform: none; }
   [data-workflow-panel][data-active="true"] { animation: none; opacity: 1; transform: none; }
