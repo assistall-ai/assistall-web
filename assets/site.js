@@ -23,6 +23,11 @@ const HERO_TRACE_RADIUS = 7;
 export const HERO_SIGNAL_SPEED = .4;
 export const HERO_SIGNAL_MIN_MS = 600;
 export const HERO_SIGNAL_MAX_MS = 1700;
+// For visitors who have turned animations off, a gentle version: one light at a time (now and
+// then two), at about 100px a second, 3 to 6.5 seconds a trace, with 1.4 to 3 second pauses.
+export const HERO_GENTLE_SPEED = .1;
+export const HERO_GENTLE_MIN_MS = 3000;
+export const HERO_GENTLE_MAX_MS = 6500;
 
 function seededRandom(seed) {
   let state = seed >>> 0;
@@ -240,25 +245,27 @@ export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margi
   return lines;
 }
 
-export function heroSignalDuration(length) {
+export function heroSignalDuration(length, gentle = false) {
+  if (gentle) return Math.round(Math.min(HERO_GENTLE_MAX_MS, Math.max(HERO_GENTLE_MIN_MS, length / HERO_GENTLE_SPEED)));
   return Math.round(Math.min(HERO_SIGNAL_MAX_MS, Math.max(HERO_SIGNAL_MIN_MS, length / HERO_SIGNAL_SPEED)));
 }
 
 // A fixed, seeded timetable of lights, so the hub looks spontaneous but any moment can be
 // held for review with ?frame=. Bursts of three to six lights leave from different sides,
 // about half a second apart, and a line never carries two lights at once.
-export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS } = {}) {
+export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS, gentle = false } = {}) {
   const random = seededRandom(seed);
   const pulses = [];
   if (!lines.length) return pulses;
   let time = 300;
-  while (time < loopMs - HERO_SIGNAL_MAX_MS - 400) {
+  const longest = gentle ? HERO_GENTLE_MAX_MS : HERO_SIGNAL_MAX_MS;
+  while (time < loopMs - longest - 400) {
     const roll = random();
-    const count = roll < .2 ? 6 : roll < .5 ? 5 : roll < .8 ? 4 : 3;
+    const count = gentle ? (roll < .2 ? 2 : 1) : roll < .2 ? 6 : roll < .5 ? 5 : roll < .8 ? 4 : 3;
     const sides = new Set();
     let last = time;
     for (let k = 0; k < count; k += 1) {
-      const start = Math.round(time + k * (60 + random() * 160));
+      const start = Math.round(time + k * (gentle ? 500 + random() * 700 : 60 + random() * 160));
       last = start;
       let pick = -1;
       for (let tries = 0; tries < 16 && pick < 0; tries += 1) {
@@ -269,10 +276,10 @@ export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_
       }
       if (pick < 0) continue;
       sides.add(lines[pick].side);
-      pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length) });
+      pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length, gentle) });
     }
-    // The next burst waits 0.18 to 0.5 seconds after this one's last light.
-    time = last + 180 + random() * 320;
+    // The next burst waits 0.18 to 0.5 seconds after this one's last light (1.4 to 3 seconds when gentle).
+    time = last + (gentle ? 1400 + random() * 1600 : 180 + random() * 320);
   }
   return pulses;
 }
@@ -462,7 +469,10 @@ function enableHeroMotion() {
   const map = scene?.querySelector('[data-hero-signal-map]');
   const hub = scene?.querySelector('[data-hero-hub]');
   if (!scene || !map || !hub) return;
-  const reduced = prefersReducedMotion();
+  // Visitors who turned animations off still see the lights, but gently: fewer and slower.
+  // Only the ?motion=off review aid holds the hero completely still.
+  const stillOnly = motionPreviewOverride() === 'off';
+  const gentle = !stillOnly && prefersReducedMotion();
   const params = new URLSearchParams(window.location.search);
   const frameParam = params.get('frame');
   const heldFrame = frameParam !== null && Number.isFinite(Number(frameParam)) ? Number(frameParam) : null;
@@ -507,7 +517,7 @@ function enableHeroMotion() {
       // not where it sits on screen (that moves if the page loads part-scrolled).
       top: (header?.offsetHeight ?? 0) + 12,
     });
-    pulses = heroSignalSchedule(lines);
+    pulses = heroSignalSchedule(lines, { gentle });
     map.setAttribute('viewBox', `0 0 ${bounds.width.toFixed(0)} ${bounds.height.toFixed(0)}`);
     // Pin the drawing to the top-left so a brief size mismatch can never shift it.
     map.setAttribute('preserveAspectRatio', 'xMinYMin meet');
@@ -550,7 +560,7 @@ function enableHeroMotion() {
     hub.style.setProperty('--charge', state.charge.toFixed(3));
   };
 
-  const relayout = () => { layout(); if (reduced || heldFrame !== null) render(heldFrame ?? 0); };
+  const relayout = () => { layout(); if (stillOnly || heldFrame !== null) render(heldFrame ?? 0); };
   layout();
   scene.classList.add('hero-signal--ready');
   // The copy can reflow once the web font arrives, so plan again then.
@@ -570,7 +580,7 @@ function enableHeroMotion() {
   else window.addEventListener('resize', replanIfResized, { passive: true });
   // ?frame= holds one moment for review; reduced motion keeps the still network and hub.
   if (heldFrame !== null) { render(heldFrame); return; }
-  if (reduced) return;
+  if (stillOnly) return;
   let visible = true;
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(scene);
