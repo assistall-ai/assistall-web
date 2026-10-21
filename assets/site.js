@@ -19,10 +19,10 @@ const HERO_SIGNAL_DIRECTIONS = Object.freeze({ right: [1, 0], bottom: [0, 1], le
 // Traces keep at least this many pixels between them everywhere.
 export const HERO_TRACE_GAP = 6;
 const HERO_TRACE_RADIUS = 7;
-// A packet travels at about 420px a second, never quicker than 0.59s or slower than 1.68s a trace.
-export const HERO_SIGNAL_SPEED = .42;
-export const HERO_SIGNAL_MIN_MS = 590;
-export const HERO_SIGNAL_MAX_MS = 1680;
+// A packet travels at about 380px a second, never quicker than 0.66s or slower than 1.87s a trace.
+export const HERO_SIGNAL_SPEED = .38;
+export const HERO_SIGNAL_MIN_MS = 655;
+export const HERO_SIGNAL_MAX_MS = 1870;
 // Lights following each other on one trace keep at least this share of the run apart.
 export const HERO_TRAIN_SPACING = .34;
 // Phones run every light a quarter quicker than larger screens.
