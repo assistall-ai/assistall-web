@@ -28,6 +28,8 @@ export const HERO_SIGNAL_MAX_MS = 1700;
 export const HERO_GENTLE_SPEED = .1;
 export const HERO_GENTLE_MIN_MS = 3000;
 export const HERO_GENTLE_MAX_MS = 6500;
+// Phones run every light a quarter quicker than larger screens, in both versions.
+export const HERO_PHONE_PACE = .75;
 
 function seededRandom(seed) {
   let state = seed >>> 0;
@@ -245,15 +247,17 @@ export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margi
   return lines;
 }
 
-export function heroSignalDuration(length, gentle = false) {
-  if (gentle) return Math.round(Math.min(HERO_GENTLE_MAX_MS, Math.max(HERO_GENTLE_MIN_MS, length / HERO_GENTLE_SPEED)));
-  return Math.round(Math.min(HERO_SIGNAL_MAX_MS, Math.max(HERO_SIGNAL_MIN_MS, length / HERO_SIGNAL_SPEED)));
+export function heroSignalDuration(length, gentle = false, pace = 1) {
+  const duration = gentle
+    ? Math.min(HERO_GENTLE_MAX_MS, Math.max(HERO_GENTLE_MIN_MS, length / HERO_GENTLE_SPEED))
+    : Math.min(HERO_SIGNAL_MAX_MS, Math.max(HERO_SIGNAL_MIN_MS, length / HERO_SIGNAL_SPEED));
+  return Math.round(duration * pace);
 }
 
 // A fixed, seeded timetable of lights, so the hub looks spontaneous but any moment can be
 // held for review with ?frame=. Bursts of three to six lights leave from different sides,
 // about half a second apart, and a line never carries two lights at once.
-export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS, gentle = false } = {}) {
+export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS, gentle = false, pace = 1 } = {}) {
   const random = seededRandom(seed);
   const pulses = [];
   if (!lines.length) return pulses;
@@ -276,7 +280,7 @@ export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_
       }
       if (pick < 0) continue;
       sides.add(lines[pick].side);
-      pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length, gentle) });
+      pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length, gentle, pace) });
     }
     // The next burst waits 0.18 to 0.5 seconds after this one's last light (1.4 to 3 seconds when gentle).
     time = last + (gentle ? 1400 + random() * 1600 : 180 + random() * 320);
@@ -473,6 +477,7 @@ function enableHeroMotion() {
   // Only the ?motion=off review aid holds the hero completely still.
   const stillOnly = motionPreviewOverride() === 'off';
   const gentle = !stillOnly && prefersReducedMotion();
+  const phoneLayout = window.matchMedia('(max-width: 820px)');
   const params = new URLSearchParams(window.location.search);
   const frameParam = params.get('frame');
   const heldFrame = frameParam !== null && Number.isFinite(Number(frameParam)) ? Number(frameParam) : null;
@@ -512,12 +517,14 @@ function enableHeroMotion() {
       width: bounds.width,
       height: bounds.height,
       hub: hubPlace,
-      avoid: measureCopy(bounds),
+      // On phones the network runs behind the copy (a film keeps the text readable), so only
+      // wider screens route the traces around it.
+      avoid: phoneLayout.matches ? [] : measureCopy(bounds),
       // The hero starts at the top of the page under the fixed header, so use its height,
       // not where it sits on screen (that moves if the page loads part-scrolled).
       top: (header?.offsetHeight ?? 0) + 12,
     });
-    pulses = heroSignalSchedule(lines, { gentle });
+    pulses = heroSignalSchedule(lines, { gentle, pace: phoneLayout.matches ? HERO_PHONE_PACE : 1 });
     map.setAttribute('viewBox', `0 0 ${bounds.width.toFixed(0)} ${bounds.height.toFixed(0)}`);
     // Pin the drawing to the top-left so a brief size mismatch can never shift it.
     map.setAttribute('preserveAspectRatio', 'xMinYMin meet');

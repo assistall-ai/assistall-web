@@ -53,7 +53,8 @@ const HERO_LAYOUTS = [
   { name: '1440 short window', width: 1430, height: 760, hub: { x: 1088, y: 372, size: 144 }, avoid: [{ left: 49, right: 713, top: 110, bottom: 700 }], top: 88 },
   { name: '1280 short window', width: 1270, height: 680, hub: { x: 990, y: 337, size: 128 }, avoid: [{ left: 31, right: 691, top: 100, bottom: 640 }], top: 88 },
   { name: '900 tablet', width: 890, height: 700, hub: { x: 745, y: 346, size: 100 }, avoid: [{ left: 18, right: 560, top: 120, bottom: 650 }], top: 88 },
-  { name: '390 phone', width: 390, height: 1060, hub: { x: 195, y: 916, size: 104 }, avoid: [{ left: -8, right: 398, top: 110, bottom: 768 }], top: 80 },
+  // On phones the network runs behind the copy, so nothing is avoided.
+  { name: '390 phone', width: 390, height: 844, hub: { x: 195, y: 439, size: 104 }, avoid: [], top: 80 },
 ];
 
 function pointsAlong(points, step = 3) {
@@ -187,6 +188,33 @@ test('with animations turned off, the lights are gentle: one at a time, slow, wi
   assert.ok(busiest <= 4, `at most four lights travel at once (${busiest})`);
   assert.ok(new Set(gentle.map((pulse) => lines[pulse.line].side)).size >= 6, 'they still come from around the hub');
   assert.match(siteScript, /const stillOnly = motionPreviewOverride\(\) === 'off';\s*const gentle = !stillOnly && prefersReducedMotion\(\);/, 'only ?motion=off holds the hero completely still');
+});
+
+test('on phones the network fills the hero behind the copy, under a dark film', () => {
+  const phone = pageCss.match(/@media \(max-width: 820px\) \{([\s\S]*?)\n\}/);
+  assert.ok(phone, 'has a phone layout');
+  assert.match(phone[1], /\.hero-signal \{ z-index: 1; \}/, 'the network sits underneath');
+  assert.match(phone[1], /\.hero__film \{ z-index: 2; background: linear-gradient\(180deg, rgb\(3 6 11 \/ \.45\)/, 'the film sits over the network');
+  assert.match(phone[1], /\.hero-hub \{ left: 50%; top: 52%;/, 'the hub is centred behind the copy');
+  assert.match(pageCss, /\.hero-grid \{ position: relative; z-index: 3; \}/, 'the copy stays above the film');
+  assert.match(siteScript, /avoid: phoneLayout\.matches \? \[\] : measureCopy\(bounds\)/, 'phones do not route traces around the copy');
+});
+
+test('on phones every light travels a quarter quicker, in both versions', () => {
+  const phone = HERO_LAYOUTS.find(({ name }) => name === '390 phone');
+  const lines = planHeroSignals(phone);
+  assert.equal(siteModule.HERO_PHONE_PACE, .75);
+  for (const gentle of [false, true]) {
+    for (const length of [60, 150, 400, 900]) {
+      const usual = siteModule.heroSignalDuration(length, gentle);
+      const quick = siteModule.heroSignalDuration(length, gentle, siteModule.HERO_PHONE_PACE);
+      assert.ok(Math.abs(quick - usual * .75) <= 1, `${gentle ? 'gentle' : 'normal'} ${length}px: three quarters of the usual time`);
+    }
+    const quick = heroSignalSchedule(lines, { gentle, pace: siteModule.HERO_PHONE_PACE });
+    const longest = gentle ? 6500 : 1700;
+    assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= Math.round(longest * .75)), `${gentle ? 'gentle' : 'normal'}: every phone light is quicker than the slowest wide-screen one`);
+  }
+  assert.match(siteScript, /pace: phoneLayout\.matches \? HERO_PHONE_PACE : 1/, 'only phones use the quicker pace');
 });
 
 test('the hub glows from recent arrivals and settles back', () => {
