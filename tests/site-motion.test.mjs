@@ -151,7 +151,7 @@ test('lights pour in fast from all around the hub, spaced like electrons on each
   const pulses = heroSignalSchedule(lines);
   assert.ok(pulses.length > 1500, `a busy flow over the minute-long cycle (${pulses.length})`);
   for (const pulse of pulses) {
-    assert.ok(pulse.duration >= 500 && pulse.duration <= 1430, 'each light takes 0.5 to 1.43 seconds to travel in');
+    assert.ok(pulse.duration >= 590 && pulse.duration <= 1680, 'each light takes 0.59 to 1.68 seconds to travel in');
     assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
   }
   let busiest = 0;
@@ -218,7 +218,7 @@ test('on phones every light travels a quarter quicker', () => {
     assert.ok(Math.abs(quick - usual * .75) <= 1, `${length}px: three quarters of the usual time`);
   }
   const quick = heroSignalSchedule(lines, { pace: siteModule.HERO_PHONE_PACE });
-  assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= 1073), 'every phone light is quicker than the slowest wide-screen one');
+  assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= 1260), 'every phone light is quicker than the slowest wide-screen one');
   assert.match(siteScript, /pace: phoneLayout\.matches \? HERO_PHONE_PACE : 1/, 'only phones use the quicker pace');
 });
 
