@@ -6,8 +6,8 @@ return [
     'turnstile_hostnames' => ['assistall.ai', 'www.assistall.ai'],
     'supabase_function_url' => 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/demo-ingest',
     'website_hmac_secret' => 'replace-with-at-least-32-random-bytes',
-    // Enable only after the origin accepts traffic solely from Cloudflare.
-    'trust_cloudflare_proxy' => false,
+    // The visitor's address behind Cloudflare is handled in code: CF-Connecting-IP is trusted only
+    // from Cloudflare's own servers. The old 'trust_cloudflare_proxy' setting is no longer read.
 
     // diagnostic-intake.php — receives self-diagnostic reports from the app.
     // Must match WADIH_AI_DIAGNOSTIC_SECRET baked into the app build.

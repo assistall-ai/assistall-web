@@ -57,13 +57,52 @@ function log_code(string $requestId, string $code): void {
     error_log(json_encode(['endpoint' => 'diagnostic-intake', 'request_id' => $requestId, 'code' => $code], JSON_UNESCAPED_SLASHES));
 }
 
+// Cloudflare's published edge server ranges (https://www.cloudflare.com/ips/, checked 21 October 2026).
+// Review them if Cloudflare announces a change.
+const CLOUDFLARE_RANGES = [
+    '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18',
+    '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17',
+    '162.158.0.0/15', '104.16.0.0/13', '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+    '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32',
+    '2a06:98c0::/29', '2c0f:f248::/32',
+];
+
+/** Whether a valid IPv4 or IPv6 address falls inside a CIDR range. */
+function ip_in_range(string $ip, string $cidr): bool {
+    [$subnet, $bits] = explode('/', $cidr, 2);
+    $address = inet_pton($ip);
+    $network = inet_pton($subnet);
+    if ($address === false || $network === false || strlen($address) !== strlen($network)) return false;
+    $bits = (int)$bits;
+    $whole = intdiv($bits, 8);
+    if ($whole > 0 && strncmp($address, $network, $whole) !== 0) return false;
+    $rest = $bits % 8;
+    if ($rest === 0) return true;
+    $mask = (0xFF << (8 - $rest)) & 0xFF;
+    return (ord($address[$whole]) & $mask) === (ord($network[$whole]) & $mask);
+}
+
+function from_cloudflare(string $ip): bool {
+    foreach (CLOUDFLARE_RANGES as $range) {
+        if (ip_in_range($ip, $range)) return true;
+    }
+    return false;
+}
+
+/**
+ * The visitor's address. Behind Cloudflare the connection comes from a Cloudflare server and the
+ * visitor's real address arrives in CF-Connecting-IP. That header is trusted only when the request
+ * really comes from a Cloudflare server, so anyone reaching the origin directly cannot forge it.
+ * (If the host already restores the visitor's address into REMOTE_ADDR, that is used as it is.)
+ */
 function visitor_ip(array $config): string {
-    if (($config['trust_cloudflare_proxy'] ?? false) === true && !empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
-        $candidate = trim((string)$_SERVER['HTTP_CF_CONNECTING_IP']);
+    $peer = trim((string)($_SERVER['REMOTE_ADDR'] ?? ''));
+    if (!filter_var($peer, FILTER_VALIDATE_IP)) return '0.0.0.0';
+    if (from_cloudflare($peer)) {
+        $candidate = trim((string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? ''));
         if (filter_var($candidate, FILTER_VALIDATE_IP)) return $candidate;
     }
-    $candidate = trim((string)($_SERVER['REMOTE_ADDR'] ?? ''));
-    return filter_var($candidate, FILTER_VALIDATE_IP) ? $candidate : '0.0.0.0';
+    return $peer;
 }
 
 /** A writable directory outside the web root for rate-limit and nonce state. */

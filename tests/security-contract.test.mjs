@@ -114,3 +114,26 @@ test('server headers constrain framing, capabilities and content sources', () =>
   assert.match(headers, /Permissions-Policy/);
   assert.match(headers, /Cross-Origin-Opener-Policy "same-origin"/);
 });
+
+test('behind Cloudflare, both endpoints trust the visitor address header only from Cloudflare servers', async () => {
+  const published = [
+    '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18',
+    '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17',
+    '162.158.0.0/15', '104.16.0.0/13', '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+    '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32',
+    '2a06:98c0::/29', '2c0f:f248::/32',
+  ];
+  const diagnostic = await read('diagnostic-intake.php');
+  for (const [name, source] of [['demo-request.php', php], ['diagnostic-intake.php', diagnostic]]) {
+    const block = source.match(/const CLOUDFLARE_RANGES = \[([\s\S]*?)\];/);
+    assert.ok(block, `${name}: lists Cloudflare's ranges`);
+    assert.deepEqual([...block[1].matchAll(/'([^']+)'/g)].map(([, range]) => range), published, `${name}: matches Cloudflare's published ranges`);
+    const visitor = source.match(/function visitor_ip\(array \$config\): string \{([\s\S]*?)\n\}/);
+    assert.ok(visitor, `${name}: has visitor_ip`);
+    // The header is read only inside the from_cloudflare branch, never on its own.
+    assert.match(visitor[1], /if \(from_cloudflare\(\$peer\)\) \{\s*\$candidate = trim\(\(string\)\(\$_SERVER\['HTTP_CF_CONNECTING_IP'\]/);
+    assert.equal((visitor[1].match(/HTTP_CF_CONNECTING_IP/g) ?? []).length, 1, `${name}: reads the header in one place`);
+    assert.doesNotMatch(source, /trust_cloudflare_proxy|HTTP_X_FORWARDED_FOR/, `${name}: no settings or headers that would let a direct caller forge the address`);
+    assert.match(source, /function ip_in_range\(string \$ip, string \$cidr\): bool \{[\s\S]*?inet_pton\(\$ip\)[\s\S]*?strncmp\(\$address, \$network, \$whole\)/);
+  }
+});
