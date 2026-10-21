@@ -796,7 +796,9 @@ function enableTurnstile() {
   const sitekey = normaliseTurnstileSiteKey(meta?.content);
   if (!slot || !field) return;
   // Without a site key there is no check to show, so the slot stays out of the form entirely.
-  if (!sitekey) return;
+  // The widget only accepts assistall.ai, so the local preview skips it rather than show an error.
+  const localPreview = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+  if (!sitekey || localPreview) return;
 
   const render = () => {
     if (!window.turnstile || slot.dataset.rendered === 'true') return;

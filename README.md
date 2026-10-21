@@ -41,7 +41,7 @@ Serve this folder instead of opening `index.html` directly:
 python -m http.server 55264 --bind 127.0.0.1
 ```
 
-Open `http://127.0.0.1:55264/?motion=on`. Use `?motion=off` to verify the static reduced-motion experience. The local preview deliberately shows a Turnstile placeholder because the real widget is restricted to the production hostname.
+Open `http://127.0.0.1:55264/?motion=on`. Use `?motion=off` to verify the static reduced-motion experience. The local preview skips the Turnstile check because the widget only accepts assistall.ai and www.assistall.ai.
 
 ## Verification
 
