@@ -172,6 +172,23 @@ test('lights arrive unhurried, a few sides at a time, never two on one trace', (
   assert.match(siteScript, /HERO_TRAIL_LENGTH = 14;/, 'its trail is short');
 });
 
+test('with animations turned off, the lights are gentle: one at a time, slow, with long pauses', () => {
+  const lines = planHeroSignals(HERO_LAYOUTS[0]);
+  const normal = heroSignalSchedule(lines);
+  const gentle = heroSignalSchedule(lines, { gentle: true });
+  assert.ok(gentle.length >= 10 && gentle.length < normal.length / 5, `far fewer lights (${gentle.length} against ${normal.length})`);
+  for (const pulse of gentle) {
+    assert.ok(pulse.duration >= 3000 && pulse.duration <= 6500, 'each light takes 3 to 6.5 seconds to travel in');
+    assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
+    assert.ok(gentle.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1400).length <= 2, `never more than two leave together (at ${pulse.start})`);
+  }
+  let busiest = 0;
+  for (let time = 0; time < HERO_SIGNAL_LOOP_MS; time += 100) busiest = Math.max(busiest, heroSignalState(time, gentle).active.length);
+  assert.ok(busiest <= 4, `at most four lights travel at once (${busiest})`);
+  assert.ok(new Set(gentle.map((pulse) => lines[pulse.line].side)).size >= 6, 'they still come from around the hub');
+  assert.match(siteScript, /const stillOnly = motionPreviewOverride\(\) === 'off';\s*const gentle = !stillOnly && prefersReducedMotion\(\);/, 'only ?motion=off holds the hero completely still');
+});
+
 test('the hub glows from recent arrivals and settles back', () => {
   const lines = planHeroSignals(HERO_LAYOUTS[0]);
   const pulses = heroSignalSchedule(lines);
