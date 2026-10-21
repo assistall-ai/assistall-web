@@ -249,7 +249,7 @@ export function heroSignalDuration(length, pace = 1) {
 }
 
 // A fixed, seeded timetable of lights, so the hub looks spontaneous but any moment can be
-// held for review with ?frame=. Bursts of eight to twelve lights leave from around the hub
+// held for review with ?frame=. Bursts of five to seven lights leave from around the hub
 // (at most two from any one side) a fraction of a second apart. A trace can carry a train of
 // lights, like electrons, but each keeps at least a third of the run behind the one ahead.
 export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS, pace = 1 } = {}) {
@@ -259,7 +259,7 @@ export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_
   let time = 300;
   while (time < loopMs - HERO_SIGNAL_MAX_MS - 400) {
     const roll = random();
-    const count = roll < .3 ? 12 : roll < .6 ? 10 : 8;
+    const count = roll < .3 ? 7 : roll < .6 ? 6 : 5;
     const sides = new Map();
     let last = time;
     for (let k = 0; k < count; k += 1) {
@@ -276,8 +276,8 @@ export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_
       sides.set(lines[pick].side, (sides.get(lines[pick].side) ?? 0) + 1);
       pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length, pace) });
     }
-    // The next burst follows 0.02 to 0.1 seconds after this one's last light.
-    time = last + 20 + random() * 80;
+    // The next burst follows 0.18 to 0.36 seconds after this one's last light.
+    time = last + 180 + random() * 180;
   }
   return pulses;
 }
@@ -447,7 +447,7 @@ function enableSectionGlide() {
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const HERO_PULSE_POOL = 120;
+const HERO_PULSE_POOL = 72;
 // The hero redraws at most 30 times a second, which looks smooth and halves the work.
 const HERO_FRAME_MS = 1000 / 30;
 const HERO_PAUSE_KEY = 'assistall-hero-paused';

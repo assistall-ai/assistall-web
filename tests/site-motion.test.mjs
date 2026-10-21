@@ -149,7 +149,7 @@ test('traces are straight runs joined by 45 degree bends, never crossing or touc
 test('lights pour in fast from all around the hub, spaced like electrons on each trace', () => {
   const lines = planHeroSignals(HERO_LAYOUTS[0]);
   const pulses = heroSignalSchedule(lines);
-  assert.ok(pulses.length > 1500, `a busy flow over the minute-long cycle (${pulses.length})`);
+  assert.ok(pulses.length > 600, `a busy flow over the minute-long cycle (${pulses.length})`);
   for (const pulse of pulses) {
     assert.ok(pulse.duration >= 1260 && pulse.duration <= 3600, 'each light takes 1.26 to 3.6 seconds to travel in');
     assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
@@ -164,7 +164,7 @@ test('lights pour in fast from all around the hub, spaced like electrons on each
     samples += 1;
   }
   assert.ok(total / samples >= 15, `many lights on screen at once (${(total / samples).toFixed(1)} on average)`);
-  assert.ok(busiest <= 120, `never more lights than the page draws (${busiest})`);
+  assert.ok(busiest <= 72, `never more lights than the page draws (${busiest})`);
   // Lights following each other on one trace keep at least a third of the run apart.
   const byLine = new Map();
   for (const pulse of pulses) byLine.set(pulse.line, [...(byLine.get(pulse.line) ?? []), pulse]);
