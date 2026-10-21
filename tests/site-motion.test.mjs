@@ -146,48 +146,56 @@ test('traces are straight runs joined by 45 degree bends, never crossing or touc
   }
 });
 
-test('lights arrive unhurried, a few sides at a time, never two on one trace', () => {
+test('lights pour in fast from all around the hub, spaced like electrons on each trace', () => {
   const lines = planHeroSignals(HERO_LAYOUTS[0]);
   const pulses = heroSignalSchedule(lines);
-  assert.ok(pulses.length > 150, 'a busy flow over the minute-long cycle');
+  assert.ok(pulses.length > 1500, `a busy flow over the minute-long cycle (${pulses.length})`);
   for (const pulse of pulses) {
-    assert.ok(pulse.duration >= 600 && pulse.duration <= 1700, 'each light takes 0.6 to 1.7 seconds to travel in');
+    assert.ok(pulse.duration >= 350 && pulse.duration <= 1000, 'each light takes 0.35 to 1 second to travel in');
     assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
   }
-  for (const pulse of pulses) {
-    assert.ok(pulses.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1000).length <= 14, `burst at ${pulse.start}`);
-    assert.ok(pulses.filter((other) => other.start <= pulse.start && pulse.start < other.start + other.duration).length <= 24, `crowd at ${pulse.start}`);
+  let busiest = 0;
+  let total = 0;
+  let samples = 0;
+  for (let time = 0; time < HERO_SIGNAL_LOOP_MS; time += 50) {
+    const count = heroSignalState(time, pulses).active.length;
+    busiest = Math.max(busiest, count);
+    total += count;
+    samples += 1;
   }
-  for (let i = 0; i < pulses.length; i += 1) {
-    for (let j = i + 1; j < pulses.length; j += 1) {
-      if (pulses[i].line !== pulses[j].line) continue;
-      const [a, b] = [pulses[i], pulses[j]].sort((x, y) => x.start - y.start);
-      assert.ok(b.start >= a.start + a.duration, `trace ${a.line} carries one light at a time`);
+  assert.ok(total / samples >= 15, `many lights on screen at once (${(total / samples).toFixed(1)} on average)`);
+  assert.ok(busiest <= 72, `never more lights than the page draws (${busiest})`);
+  // Lights following each other on one trace keep at least a third of the run apart.
+  const byLine = new Map();
+  for (const pulse of pulses) byLine.set(pulse.line, [...(byLine.get(pulse.line) ?? []), pulse]);
+  for (const [line, run] of byLine) {
+    run.sort((a, b) => a.start - b.start);
+    for (let i = 1; i < run.length; i += 1) {
+      assert.ok(run[i].start >= run[i - 1].start + run[i - 1].duration * siteModule.HERO_TRAIN_SPACING - 1, `trace ${line}: lights stay spaced apart`);
     }
   }
   const sides = new Set(pulses.map((pulse) => lines[pulse.line].side));
-  assert.equal(sides.size, HERO_SIGNAL_SIDES.length, 'over a cycle, light arrives from every side and corner');
-  const together = pulses.filter((pulse, index) => pulses.some((other, k) => k !== index && Math.abs(other.start - pulse.start) < 400 && lines[other.line].side !== lines[pulse.line].side));
-  assert.ok(together.length > 100, 'several sides light at once');
+  assert.equal(sides.size, HERO_SIGNAL_SIDES.length, 'light arrives from every side and corner');
   assert.match(siteScript, /HERO_PACKET = Object\.freeze\(\[1\.5, 2, 6\]\)/, 'each light is a tiny packet of dashes, not a dot');
   assert.match(siteScript, /HERO_TRAIL_LENGTH = 14;/, 'its trail is short');
 });
 
-test('with animations turned off, the lights are gentle: one at a time, slow, with long pauses', () => {
-  const lines = planHeroSignals(HERO_LAYOUTS[0]);
-  const normal = heroSignalSchedule(lines);
-  const gentle = heroSignalSchedule(lines, { gentle: true });
-  assert.ok(gentle.length >= 10 && gentle.length < normal.length / 5, `far fewer lights (${gentle.length} against ${normal.length})`);
-  for (const pulse of gentle) {
-    assert.ok(pulse.duration >= 3000 && pulse.duration <= 6500, 'each light takes 3 to 6.5 seconds to travel in');
-    assert.ok(pulse.start + pulse.duration <= HERO_SIGNAL_LOOP_MS, 'the cycle closes cleanly');
-    assert.ok(gentle.filter((other) => other.start >= pulse.start && other.start < pulse.start + 1400).length <= 2, `never more than two leave together (at ${pulse.start})`);
-  }
-  let busiest = 0;
-  for (let time = 0; time < HERO_SIGNAL_LOOP_MS; time += 100) busiest = Math.max(busiest, heroSignalState(time, gentle).active.length);
-  assert.ok(busiest <= 4, `at most four lights travel at once (${busiest})`);
-  assert.ok(new Set(gentle.map((pulse) => lines[pulse.line].side)).size >= 6, 'they still come from around the hub');
-  assert.match(siteScript, /const stillOnly = motionPreviewOverride\(\) === 'off';\s*const gentle = !stillOnly && prefersReducedMotion\(\);/, 'only ?motion=off holds the hero completely still');
+test('the full animation plays for everyone, at most 30 frames a second, with a pause button', () => {
+  const hero = siteScript.slice(siteScript.indexOf('function enableHeroMotion'), siteScript.indexOf('function renderCapability'));
+  assert.doesNotMatch(hero, /prefersReducedMotion|gentle/, 'the system animation setting no longer changes the hero');
+  assert.match(hero, /const stillOnly = motionPreviewOverride\(\) === 'off';/, 'only ?motion=off holds it still, for review');
+  assert.match(siteScript, /const HERO_FRAME_MS = 1000 \/ 30;/);
+  assert.match(hero, /now - lastDraw >= HERO_FRAME_MS - 1/, 'redraws at most 30 times a second');
+  const button = pageHtml.match(/<button class="hero-pause"[^>]*>/);
+  assert.ok(button, 'the hero has a pause button');
+  assert.match(button[0], /type="button"/);
+  assert.match(button[0], /aria-pressed="false"/);
+  assert.match(button[0], /aria-label="Pause the background animation"/);
+  assert.match(button[0], / hidden>/, 'hidden until the animation runs');
+  assert.match(hero, /aria-label', paused \? 'Play the background animation' : 'Pause the background animation'/);
+  assert.match(hero, /localStorage\.setItem\(HERO_PAUSE_KEY/, 'the choice is remembered on this device');
+  assert.match(pageCss, /\.hero-pause:focus-visible \{ outline: 2px solid var\(--brass\);/, 'keyboard focus is visible');
+  assert.match(pageCss, /html \.hero-signal \.hero-hub::after \{ animation-duration: 6s !important; \}/, 'the breathing halo keeps going for everyone');
 });
 
 test('on phones the network fills the hero behind the copy, under a dark film', () => {
@@ -200,20 +208,17 @@ test('on phones the network fills the hero behind the copy, under a dark film', 
   assert.match(siteScript, /avoid: phoneLayout\.matches \? \[\] : measureCopy\(bounds\)/, 'phones do not route traces around the copy');
 });
 
-test('on phones every light travels a quarter quicker, in both versions', () => {
+test('on phones every light travels a quarter quicker', () => {
   const phone = HERO_LAYOUTS.find(({ name }) => name === '390 phone');
   const lines = planHeroSignals(phone);
   assert.equal(siteModule.HERO_PHONE_PACE, .75);
-  for (const gentle of [false, true]) {
-    for (const length of [60, 150, 400, 900]) {
-      const usual = siteModule.heroSignalDuration(length, gentle);
-      const quick = siteModule.heroSignalDuration(length, gentle, siteModule.HERO_PHONE_PACE);
-      assert.ok(Math.abs(quick - usual * .75) <= 1, `${gentle ? 'gentle' : 'normal'} ${length}px: three quarters of the usual time`);
-    }
-    const quick = heroSignalSchedule(lines, { gentle, pace: siteModule.HERO_PHONE_PACE });
-    const longest = gentle ? 6500 : 1700;
-    assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= Math.round(longest * .75)), `${gentle ? 'gentle' : 'normal'}: every phone light is quicker than the slowest wide-screen one`);
+  for (const length of [60, 150, 400, 900]) {
+    const usual = siteModule.heroSignalDuration(length);
+    const quick = siteModule.heroSignalDuration(length, siteModule.HERO_PHONE_PACE);
+    assert.ok(Math.abs(quick - usual * .75) <= 1, `${length}px: three quarters of the usual time`);
   }
+  const quick = heroSignalSchedule(lines, { pace: siteModule.HERO_PHONE_PACE });
+  assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= 750), 'every phone light is quicker than the slowest wide-screen one');
   assert.match(siteScript, /pace: phoneLayout\.matches \? HERO_PHONE_PACE : 1/, 'only phones use the quicker pace');
 });
 

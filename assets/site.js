@@ -19,16 +19,13 @@ const HERO_SIGNAL_DIRECTIONS = Object.freeze({ right: [1, 0], bottom: [0, 1], le
 // Traces keep at least this many pixels between them everywhere.
 export const HERO_TRACE_GAP = 6;
 const HERO_TRACE_RADIUS = 7;
-// A packet travels at about 400px a second, never quicker than 0.6s or slower than 1.7s a trace.
-export const HERO_SIGNAL_SPEED = .4;
-export const HERO_SIGNAL_MIN_MS = 600;
-export const HERO_SIGNAL_MAX_MS = 1700;
-// For visitors who have turned animations off, a gentle version: one light at a time (now and
-// then two), at about 100px a second, 3 to 6.5 seconds a trace, with 1.4 to 3 second pauses.
-export const HERO_GENTLE_SPEED = .1;
-export const HERO_GENTLE_MIN_MS = 3000;
-export const HERO_GENTLE_MAX_MS = 6500;
-// Phones run every light a quarter quicker than larger screens, in both versions.
+// A packet travels at about 700px a second, never quicker than 0.35s or slower than 1s a trace.
+export const HERO_SIGNAL_SPEED = .7;
+export const HERO_SIGNAL_MIN_MS = 350;
+export const HERO_SIGNAL_MAX_MS = 1000;
+// Lights following each other on one trace keep at least this share of the run apart.
+export const HERO_TRAIN_SPACING = .34;
+// Phones run every light a quarter quicker than larger screens.
 export const HERO_PHONE_PACE = .75;
 
 function seededRandom(seed) {
@@ -247,43 +244,40 @@ export function planHeroSignals({ width, height, hub, avoid = [], top = 0, margi
   return lines;
 }
 
-export function heroSignalDuration(length, gentle = false, pace = 1) {
-  const duration = gentle
-    ? Math.min(HERO_GENTLE_MAX_MS, Math.max(HERO_GENTLE_MIN_MS, length / HERO_GENTLE_SPEED))
-    : Math.min(HERO_SIGNAL_MAX_MS, Math.max(HERO_SIGNAL_MIN_MS, length / HERO_SIGNAL_SPEED));
-  return Math.round(duration * pace);
+export function heroSignalDuration(length, pace = 1) {
+  return Math.round(Math.min(HERO_SIGNAL_MAX_MS, Math.max(HERO_SIGNAL_MIN_MS, length / HERO_SIGNAL_SPEED)) * pace);
 }
 
 // A fixed, seeded timetable of lights, so the hub looks spontaneous but any moment can be
-// held for review with ?frame=. Bursts of three to six lights leave from different sides,
-// about half a second apart, and a line never carries two lights at once.
-export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS, gentle = false, pace = 1 } = {}) {
+// held for review with ?frame=. Bursts of eight to twelve lights leave from around the hub
+// (at most two from any one side) a fraction of a second apart. A trace can carry a train of
+// lights, like electrons, but each keeps at least a third of the run behind the one ahead.
+export function heroSignalSchedule(lines, { seed = 7, loopMs = HERO_SIGNAL_LOOP_MS, pace = 1 } = {}) {
   const random = seededRandom(seed);
   const pulses = [];
   if (!lines.length) return pulses;
   let time = 300;
-  const longest = gentle ? HERO_GENTLE_MAX_MS : HERO_SIGNAL_MAX_MS;
-  while (time < loopMs - longest - 400) {
+  while (time < loopMs - HERO_SIGNAL_MAX_MS - 400) {
     const roll = random();
-    const count = gentle ? (roll < .2 ? 2 : 1) : roll < .2 ? 6 : roll < .5 ? 5 : roll < .8 ? 4 : 3;
-    const sides = new Set();
+    const count = roll < .3 ? 12 : roll < .6 ? 10 : 8;
+    const sides = new Map();
     let last = time;
     for (let k = 0; k < count; k += 1) {
-      const start = Math.round(time + k * (gentle ? 500 + random() * 700 : 60 + random() * 160));
+      const start = Math.round(time + k * (10 + random() * 30));
       last = start;
       let pick = -1;
       for (let tries = 0; tries < 16 && pick < 0; tries += 1) {
         const index = Math.floor(random() * lines.length);
-        if (sides.has(lines[index].side)) continue;
-        if (pulses.some((pulse) => pulse.line === index && start < pulse.start + pulse.duration + 400)) continue;
+        if ((sides.get(lines[index].side) ?? 0) >= 2) continue;
+        if (pulses.some((pulse) => pulse.line === index && start < pulse.start + pulse.duration * HERO_TRAIN_SPACING)) continue;
         pick = index;
       }
       if (pick < 0) continue;
-      sides.add(lines[pick].side);
-      pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length, gentle, pace) });
+      sides.set(lines[pick].side, (sides.get(lines[pick].side) ?? 0) + 1);
+      pulses.push({ line: pick, start, duration: heroSignalDuration(lines[pick].length, pace) });
     }
-    // The next burst waits 0.18 to 0.5 seconds after this one's last light (1.4 to 3 seconds when gentle).
-    time = last + (gentle ? 1400 + random() * 1600 : 180 + random() * 320);
+    // The next burst follows 0.02 to 0.1 seconds after this one's last light.
+    time = last + 20 + random() * 80;
   }
   return pulses;
 }
@@ -453,7 +447,10 @@ function enableSectionGlide() {
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const HERO_PULSE_POOL = 24;
+const HERO_PULSE_POOL = 72;
+// The hero redraws at most 30 times a second, which looks smooth and halves the work.
+const HERO_FRAME_MS = 1000 / 30;
+const HERO_PAUSE_KEY = 'assistall-hero-paused';
 // A light is an electron: a tiny packet of square-ended dashes the width of its trace, longest
 // at the front, with a thin, barely visible trail a little way behind. Lengths in pixels, back to front.
 const HERO_PACKET = Object.freeze([1.5, 2, 6]);
@@ -473,10 +470,9 @@ function enableHeroMotion() {
   const map = scene?.querySelector('[data-hero-signal-map]');
   const hub = scene?.querySelector('[data-hero-hub]');
   if (!scene || !map || !hub) return;
-  // Visitors who turned animations off still see the lights, but gently: fewer and slower.
-  // Only the ?motion=off review aid holds the hero completely still.
+  // Owner decision (22 October 2026): the full animation plays for everyone, including people who
+  // turned animations off; the pause button lets anyone stop it. Only ?motion=off holds it still.
   const stillOnly = motionPreviewOverride() === 'off';
-  const gentle = !stillOnly && prefersReducedMotion();
   const phoneLayout = window.matchMedia('(max-width: 820px)');
   const params = new URLSearchParams(window.location.search);
   const frameParam = params.get('frame');
@@ -524,7 +520,7 @@ function enableHeroMotion() {
       // not where it sits on screen (that moves if the page loads part-scrolled).
       top: (header?.offsetHeight ?? 0) + 12,
     });
-    pulses = heroSignalSchedule(lines, { gentle, pace: phoneLayout.matches ? HERO_PHONE_PACE : 1 });
+    pulses = heroSignalSchedule(lines, { pace: phoneLayout.matches ? HERO_PHONE_PACE : 1 });
     map.setAttribute('viewBox', `0 0 ${bounds.width.toFixed(0)} ${bounds.height.toFixed(0)}`);
     // Pin the drawing to the top-left so a brief size mismatch can never shift it.
     map.setAttribute('preserveAspectRatio', 'xMinYMin meet');
@@ -585,16 +581,43 @@ function enableHeroMotion() {
   };
   if ('ResizeObserver' in window) new ResizeObserver(replanIfResized).observe(scene);
   else window.addEventListener('resize', replanIfResized, { passive: true });
-  // ?frame= holds one moment for review; reduced motion keeps the still network and hub.
+  // ?frame= holds one moment for review; ?motion=off keeps the still network and hub.
   if (heldFrame !== null) { render(heldFrame); return; }
   if (stillOnly) return;
   let visible = true;
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(scene);
   }
-  const startedAt = performance.now();
+  // The pause button stops the clock where it is; the choice is remembered on this device.
+  const pauseButton = document.querySelector('[data-hero-pause]');
+  let paused = false;
+  try { paused = window.localStorage.getItem(HERO_PAUSE_KEY) === '1'; } catch { paused = false; }
+  let elapsed = 0;
+  let lastTick = null;
+  let lastDraw = -Infinity;
+  const showPaused = () => {
+    scene.classList.toggle('hero-signal--paused', paused);
+    if (!pauseButton) return;
+    pauseButton.setAttribute('aria-pressed', String(paused));
+    pauseButton.setAttribute('aria-label', paused ? 'Play the background animation' : 'Pause the background animation');
+  };
+  if (pauseButton) {
+    pauseButton.hidden = false;
+    pauseButton.addEventListener('click', () => {
+      paused = !paused;
+      try { window.localStorage.setItem(HERO_PAUSE_KEY, paused ? '1' : '0'); } catch { /* the choice just isn't remembered */ }
+      showPaused();
+    });
+  }
+  showPaused();
+  render(0);
   const tick = (now) => {
-    if (visible && !document.hidden) render(now - startedAt);
+    if (lastTick !== null && visible && !document.hidden && !paused) elapsed += Math.min(now - lastTick, 100);
+    lastTick = now;
+    if (!paused && visible && !document.hidden && now - lastDraw >= HERO_FRAME_MS - 1) {
+      lastDraw = now;
+      render(elapsed);
+    }
     window.requestAnimationFrame(tick);
   };
   window.requestAnimationFrame(tick);
