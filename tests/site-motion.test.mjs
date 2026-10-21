@@ -200,6 +200,23 @@ test('on phones the network fills the hero behind the copy, under a dark film', 
   assert.match(siteScript, /avoid: phoneLayout\.matches \? \[\] : measureCopy\(bounds\)/, 'phones do not route traces around the copy');
 });
 
+test('on phones every light travels a quarter quicker, in both versions', () => {
+  const phone = HERO_LAYOUTS.find(({ name }) => name === '390 phone');
+  const lines = planHeroSignals(phone);
+  assert.equal(siteModule.HERO_PHONE_PACE, .75);
+  for (const gentle of [false, true]) {
+    for (const length of [60, 150, 400, 900]) {
+      const usual = siteModule.heroSignalDuration(length, gentle);
+      const quick = siteModule.heroSignalDuration(length, gentle, siteModule.HERO_PHONE_PACE);
+      assert.ok(Math.abs(quick - usual * .75) <= 1, `${gentle ? 'gentle' : 'normal'} ${length}px: three quarters of the usual time`);
+    }
+    const quick = heroSignalSchedule(lines, { gentle, pace: siteModule.HERO_PHONE_PACE });
+    const longest = gentle ? 6500 : 1700;
+    assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= Math.round(longest * .75)), `${gentle ? 'gentle' : 'normal'}: every phone light is quicker than the slowest wide-screen one`);
+  }
+  assert.match(siteScript, /pace: phoneLayout\.matches \? HERO_PHONE_PACE : 1/, 'only phones use the quicker pace');
+});
+
 test('the hub glows from recent arrivals and settles back', () => {
   const lines = planHeroSignals(HERO_LAYOUTS[0]);
   const pulses = heroSignalSchedule(lines);
