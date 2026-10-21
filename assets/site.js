@@ -473,6 +473,7 @@ function enableHeroMotion() {
   // Only the ?motion=off review aid holds the hero completely still.
   const stillOnly = motionPreviewOverride() === 'off';
   const gentle = !stillOnly && prefersReducedMotion();
+  const phoneLayout = window.matchMedia('(max-width: 820px)');
   const params = new URLSearchParams(window.location.search);
   const frameParam = params.get('frame');
   const heldFrame = frameParam !== null && Number.isFinite(Number(frameParam)) ? Number(frameParam) : null;
@@ -512,7 +513,9 @@ function enableHeroMotion() {
       width: bounds.width,
       height: bounds.height,
       hub: hubPlace,
-      avoid: measureCopy(bounds),
+      // On phones the network runs behind the copy (a film keeps the text readable), so only
+      // wider screens route the traces around it.
+      avoid: phoneLayout.matches ? [] : measureCopy(bounds),
       // The hero starts at the top of the page under the fixed header, so use its height,
       // not where it sits on screen (that moves if the page loads part-scrolled).
       top: (header?.offsetHeight ?? 0) + 12,
