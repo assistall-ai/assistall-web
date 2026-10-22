@@ -47,7 +47,9 @@ button, .button { border-radius: 10px; }
 /* Lights are electric: a cool white core with a blue-cyan glow, the one hue the hero adds. */
 .hero-signal__trail, .hero-signal__packet { fill: none; stroke-linecap: butt; opacity: 0; }
 .hero-signal__trail { stroke: #8fe6ff; stroke-width: 1; }
-.hero-signal__packet { stroke: #e9fcff; stroke-width: 1.6; filter: drop-shadow(0 0 1.5px rgb(143 230 255 / .95)) drop-shadow(0 0 5px rgb(64 196 255 / .85)); }
+/* One glow for all the lights together: cheaper than a glow per light, and it can never lag behind one. */
+.hero-signal__pulses { filter: drop-shadow(0 0 1.5px rgb(143 230 255 / .95)) drop-shadow(0 0 5px rgb(64 196 255 / .8)); }
+.hero-signal__packet { stroke: #e9fcff; stroke-width: 1.6; }
 /* The hub is centred in the space right of the copy (the copy is min(680px, 58vw) wide inside .wrap). */
 .hero-hub { --charge: 0; position: absolute; left: calc((100% - min(100% - var(--gutter) * 2, 1296px)) / 4 + min(680px, 58vw) / 2 + 50%); top: calc(44% + var(--header-h) / 2); width: clamp(100px, 10vw, 148px); aspect-ratio: 1; transform: translate(-50%, -50%); border: 1px solid rgb(232 199 126 / calc(.34 + .3 * var(--charge))); border-radius: 24%; background: linear-gradient(165deg, #154649 0%, #0e3a3d 48%, #0a2f32 100%); box-shadow: inset 0 1px 0 rgb(255 253 248 / .1), 0 0 calc(22px + 26px * var(--charge)) rgb(232 199 126 / calc(.12 + .22 * var(--charge))), 0 0 90px rgb(41 104 106 / .45); }
 .hero-hub::before { content: ""; position: absolute; inset: 9%; border: 1px solid rgb(232 199 126 / .13); border-radius: 19%; }

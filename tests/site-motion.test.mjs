@@ -176,16 +176,16 @@ test('lights pour in fast from all around the hub, spaced like electrons on each
   }
   const sides = new Set(pulses.map((pulse) => lines[pulse.line].side));
   assert.equal(sides.size, HERO_SIGNAL_SIDES.length, 'light arrives from every side and corner');
-  assert.match(siteScript, /HERO_PACKET = Object\.freeze\(\[1\.5, 2, 6\]\)/, 'each light is a tiny packet of dashes, not a dot');
+  assert.match(siteScript, /const HERO_PACKET_LENGTH = 7;/, 'each light is one short solid streak, not shimmering dash fragments');
   assert.match(siteScript, /HERO_TRAIL_LENGTH = 14;/, 'its trail is short');
 });
 
-test('the full animation plays for everyone, at most 30 frames a second, with a pause button', () => {
+test('the full animation plays for everyone, at most 60 frames a second, with a pause button', () => {
   const hero = siteScript.slice(siteScript.indexOf('function enableHeroMotion'), siteScript.indexOf('function renderCapability'));
   assert.doesNotMatch(hero, /prefersReducedMotion|gentle/, 'the system animation setting no longer changes the hero');
   assert.match(hero, /const stillOnly = motionPreviewOverride\(\) === 'off';/, 'only ?motion=off holds it still, for review');
-  assert.match(siteScript, /const HERO_FRAME_MS = 1000 \/ 30;/);
-  assert.match(hero, /now - lastDraw >= HERO_FRAME_MS - 1/, 'redraws at most 30 times a second');
+  assert.match(siteScript, /const HERO_FRAME_MS = 1000 \/ 60;/);
+  assert.match(hero, /now - lastDraw >= HERO_FRAME_MS - 1/, 'redraws at most 60 times a second');
   const button = pageHtml.match(/<button class="hero-pause"[^>]*>/);
   assert.ok(button, 'the hero has a pause button');
   assert.match(button[0], /type="button"/);
@@ -220,6 +220,21 @@ test('on phones every light travels a quarter quicker', () => {
   const quick = heroSignalSchedule(lines, { pace: siteModule.HERO_PHONE_PACE });
   assert.ok(quick.length > 0 && quick.every((pulse) => pulse.duration <= 2700), 'every phone light is quicker than the slowest wide-screen one');
   assert.match(siteScript, /pace: phoneLayout\.matches \? HERO_PHONE_PACE : 1/, 'only phones use the quicker pace');
+});
+
+test('each light keeps one drawing slot for its whole journey, so lights never jump or blink', () => {
+  const lines = planHeroSignals(HERO_LAYOUTS[0]);
+  const pulses = heroSignalSchedule(lines);
+  const pool = Number(siteScript.match(/const HERO_PULSE_POOL = (\d+);/)[1]);
+  for (let time = 0; time < HERO_SIGNAL_LOOP_MS; time += 20) {
+    const ids = heroSignalState(time, pulses).active.map(({ id }) => id);
+    assert.equal(new Set(ids.map((id) => id % pool)).size, ids.length, `no two lights share a slot at ${time}ms`);
+  }
+  const hero = siteScript.slice(siteScript.indexOf('function enableHeroMotion'), siteScript.indexOf('function renderCapability'));
+  assert.match(hero, /const slot = pulse\.id % HERO_PULSE_POOL;/, 'the slot comes from the light itself, not its place in the list');
+  assert.match(hero, /if \(slotOwner\[slot\] !== pulse\.id\) \{[\s\S]*?setAttribute\('d', line\.d\)/, 'a light\'s path is set once, when it starts');
+  assert.match(pageCss, /\.hero-signal__pulses \{ filter: drop-shadow/, 'one shared glow for all the lights');
+  assert.doesNotMatch(pageCss, /\.hero-signal__packet \{[^}]*filter/, 'no glow per light');
 });
 
 test('the hub glows from recent arrivals and settles back', () => {

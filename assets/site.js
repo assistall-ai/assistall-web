@@ -291,14 +291,14 @@ export function heroSignalState(elapsedMs, pulses, loopMs = HERO_SIGNAL_LOOP_MS)
   const time = Math.max(0, Number(elapsedMs) || 0) % loopMs;
   const active = [];
   let charge = 0;
-  for (const pulse of pulses) {
+  pulses.forEach((pulse, id) => {
     const raw = (time - pulse.start) / pulse.duration;
     if (raw >= 0 && raw < 1) {
-      active.push({ line: pulse.line, progress: easeInOutSine(raw), opacity: clampUnit(raw / .12) * (1 - clampUnit((raw - .94) / .06)) });
+      active.push({ id, line: pulse.line, progress: easeInOutSine(raw), opacity: clampUnit(raw / .12) * (1 - clampUnit((raw - .94) / .06)) });
     }
     const since = time - (pulse.start + pulse.duration);
     if (since >= 0 && since < 2400) charge += .42 * Math.exp(-since / 700);
-  }
+  });
   return { active, charge: clampUnit(charge) };
 }
 
@@ -447,14 +447,15 @@ function enableSectionGlide() {
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const HERO_PULSE_POOL = 72;
-// The hero redraws at most 30 times a second, which looks smooth and halves the work.
-const HERO_FRAME_MS = 1000 / 30;
+// Enough drawing slots that lights started within any few seconds never share one.
+const HERO_PULSE_POOL = 96;
+// The hero redraws at most 60 times a second: smooth on every screen, without extra work on
+// 120Hz and faster displays.
+const HERO_FRAME_MS = 1000 / 60;
 const HERO_PAUSE_KEY = 'assistall-hero-paused';
-// A light is an electron: a tiny packet of square-ended dashes the width of its trace, longest
-// at the front, with a thin, barely visible trail a little way behind. Lengths in pixels, back to front.
-const HERO_PACKET = Object.freeze([1.5, 2, 6]);
-const HERO_PACKET_LENGTH = HERO_PACKET.reduce((sum, part) => sum + part, 0);
+// A light is an electron: one short, solid, square-ended streak the width of its trace (tiny
+// dash fragments shimmered as they moved), with a thin, barely visible trail a little way behind.
+const HERO_PACKET_LENGTH = 7;
 const HERO_TRAIL_LENGTH = 14;
 const HERO_TRAIL_GAP = 3;
 
@@ -483,6 +484,9 @@ function enableHeroMotion() {
   let pulses = [];
   let lineElements = [];
   const pulseElements = [];
+  // Which light each drawing slot is showing, and the hub glow last painted.
+  let slotOwner = [];
+  let lastCharge = -1;
 
   // The copy's text extent, ignoring its reveal slide-in, padded so lines keep clear of it.
   const measureCopy = (bounds) => {
@@ -534,6 +538,8 @@ function enableHeroMotion() {
     lines.forEach((line, index) => { line.measured = lineElements[index].getTotalLength?.() || line.length; });
     const pulseGroup = svgElement('g', { class: 'hero-signal__pulses' }, map);
     pulseElements.length = 0;
+    slotOwner = [];
+    lastCharge = -1;
     for (let i = 0; i < HERO_PULSE_POOL; i += 1) {
       const trail = svgElement('path', { class: 'hero-signal__trail' }, pulseGroup);
       const packet = svgElement('path', { class: 'hero-signal__packet' }, pulseGroup);
@@ -541,26 +547,44 @@ function enableHeroMotion() {
     }
   };
 
+  // Each light keeps one drawing slot for its whole journey (slot = its id in the timetable, so
+  // lights never swap elements as others finish) and its path is set once, when it starts.
   const render = (elapsed) => {
     const state = heroSignalState(elapsed, pulses);
-    pulseElements.forEach(({ trail, packet }, slot) => {
-      const pulse = state.active[slot];
-      if (!pulse) { trail.style.opacity = '0'; packet.style.opacity = '0'; return; }
+    const used = new Set();
+    for (const pulse of state.active) {
+      const slot = pulse.id % HERO_PULSE_POOL;
+      if (used.has(slot)) continue;
+      used.add(slot);
+      const { trail, packet } = pulseElements[slot];
       const line = lines[pulse.line];
       const total = line.measured;
+      if (slotOwner[slot] !== pulse.id) {
+        slotOwner[slot] = pulse.id;
+        trail.setAttribute('d', line.d);
+        packet.setAttribute('d', line.d);
+        // Each dash pattern is longer than the trace, so it can never wrap back onto it.
+        trail.style.strokeDasharray = `${HERO_TRAIL_LENGTH} ${total + HERO_TRAIL_LENGTH * 2}`;
+        packet.style.strokeDasharray = `${HERO_PACKET_LENGTH} ${total + HERO_PACKET_LENGTH * 2}`;
+      }
       const position = pulse.progress * total;
-      trail.setAttribute('d', line.d);
-      packet.setAttribute('d', line.d);
-      // Each dash pattern is longer than the trace, so it can never wrap back onto it.
       const trailEnd = position - HERO_PACKET_LENGTH - HERO_TRAIL_GAP;
-      trail.style.strokeDasharray = `${HERO_TRAIL_LENGTH} ${total + HERO_TRAIL_LENGTH * 2}`;
-      trail.style.strokeDashoffset = `${HERO_TRAIL_LENGTH - trailEnd}`;
-      packet.style.strokeDasharray = `${HERO_PACKET.join(' ')} ${total + HERO_PACKET_LENGTH * 2}`;
-      packet.style.strokeDashoffset = `${HERO_PACKET_LENGTH - position}`;
+      trail.style.strokeDashoffset = (HERO_TRAIL_LENGTH - trailEnd).toFixed(2);
+      packet.style.strokeDashoffset = (HERO_PACKET_LENGTH - position).toFixed(2);
       trail.style.opacity = (pulse.opacity * .22).toFixed(3);
       packet.style.opacity = pulse.opacity.toFixed(3);
+    }
+    pulseElements.forEach(({ trail, packet }, slot) => {
+      if (used.has(slot) || slotOwner[slot] === undefined) return;
+      slotOwner[slot] = undefined;
+      trail.style.opacity = '0';
+      packet.style.opacity = '0';
     });
-    hub.style.setProperty('--charge', state.charge.toFixed(3));
+    // The hub's glow is a large soft shadow; only repaint it when it visibly changes.
+    if (Math.abs(state.charge - lastCharge) >= .01) {
+      lastCharge = state.charge;
+      hub.style.setProperty('--charge', state.charge.toFixed(3));
+    }
   };
 
   const relayout = () => { layout(); if (stillOnly || heldFrame !== null) render(heldFrame ?? 0); };
