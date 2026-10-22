@@ -10,7 +10,8 @@ test('capability state activates the requested workflow and keeps one active ite
 
   assert.equal(state.activeId, 'contracts');
   assert.equal(state.items.filter((item) => item.active).length, 1);
-  assert.equal(state.items.find((item) => item.active)?.result, 'Renewal dates and changes ready to review');
+  assert.equal(state.items.find((item) => item.active)?.result, 'A reminder before the notice date');
+  assert.equal(state.items.find((item) => item.active)?.image, 'cap-contracts');
 });
 
 test('unknown capability selection falls back to inbox work', () => {
@@ -19,14 +20,27 @@ test('unknown capability selection falls back to inbox work', () => {
   const state = site.createCapabilityState('not-a-workflow');
 
   assert.equal(state.activeId, 'inbox');
-  assert.equal(state.items.find((item) => item.active)?.input, 'Email or business message');
+  assert.equal(state.items.find((item) => item.active)?.input, 'A customer or supplier email');
 });
 
 test('workflow evidence keeps one valid active workflow', () => {
-  assert.deepEqual(site.WORKFLOW_IDS, ['contract', 'shipment', 'report']);
-  assert.equal(site.WORKFLOW_ROTATION_MS, 11000);
-  assert.equal(site.createWorkflowState('shipment').activeId, 'shipment');
-  assert.equal(site.createWorkflowState('unknown').activeId, 'contract');
+  assert.deepEqual(site.WORKFLOW_IDS, ['build', 'library', 'approve', 'board', 'reply']);
+  assert.equal(site.createWorkflowState('board').activeId, 'board');
+  assert.equal(site.createWorkflowState('unknown').activeId, 'build');
+});
+
+test('each How it works step shows its own screen', () => {
+  assert.equal(site.createFlowState('prepare').step.image, 'flow-prepare');
+  assert.equal(site.createFlowState('nope').activeId, 'connect');
+  assert.equal(site.showcaseImage('flow-find'), 'assets/media/showcase/flow-find.webp');
+});
+
+test('the step beside a clip follows what is on screen', () => {
+  const times = [0.2, 1.65, 3.26, 5.1];
+  assert.equal(site.workflowStepIndex(times, 0), 0);
+  assert.equal(site.workflowStepIndex(times, 1.7), 1);
+  assert.equal(site.workflowStepIndex(times, 4), 2);
+  assert.equal(site.workflowStepIndex(times, 30), 3);
 });
 
 test('workflow media plays only for the active visible queue card when motion is allowed', () => {

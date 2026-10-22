@@ -15,14 +15,14 @@ import {
   heroSignalState,
   heroTraceDistance,
   planHeroSignals,
-  WORKFLOW_ROTATION_MS,
 } from '../assets/site.js';
 import * as siteModule from '../assets/site.js';
 
 const pageCss = await readFile(new URL('../assets/page.css', import.meta.url), 'utf8');
 const brandCss = await readFile(new URL('../assets/brand.css', import.meta.url), 'utf8');
 const siteScript = await readFile(new URL('../assets/site.js', import.meta.url), 'utf8');
-const captureScript = await readFile(new URL('../tools/capture_workflow_media.py', import.meta.url), 'utf8');
+const captureScript = await readFile(new URL('../tools/showcase/capture_videos.py', import.meta.url), 'utf8');
+const screencastScript = await readFile(new URL('../tools/showcase/screencast.py', import.meta.url), 'utf8');
 const pageHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
 test('section glide duration stays deliberate without becoming slow', () => {
@@ -252,21 +252,21 @@ test('the hub glows from recent arrivals and settles back', () => {
   }
 });
 
-test('workflow evidence gives source viewers time to be understood before advancing', () => {
-  const video = { defaultPlaybackRate: 1, playbackRate: 1 };
+test('clips are recorded calmly and sped up 1.4x, so they play at normal speed and advance when they end', () => {
+  const video = { defaultPlaybackRate: .5, playbackRate: .5 };
   assert.equal(typeof siteModule.setWorkflowPlaybackRate, 'function');
   siteModule.setWorkflowPlaybackRate(video);
-  assert.equal(video.defaultPlaybackRate, 0.65);
-  assert.equal(video.playbackRate, 0.65);
-  assert.equal(WORKFLOW_ROTATION_MS, 11000);
-  assert.match(captureScript, /WORKFLOW_VIEWER_ACTIONS/);
+  assert.equal(video.defaultPlaybackRate, 1);
+  assert.equal(video.playbackRate, 1);
+  assert.equal('WORKFLOW_ROTATION_MS' in siteModule, false, 'no timer cuts a clip short');
+  assert.match(siteScript, /addEventListener\('ended'/);
+  assert.match(captureScript, /cast\.stop\(OUT \/ f"\{name\}\.mp4"\)/);
+  assert.match(screencastScript, /speed: float = 1\.4/);
 });
 
-test('workflow labels use the professional fictional capture records', () => {
-  assert.match(pageHtml, /Northstar Supplies Framework Agreement/);
-  assert.match(pageHtml, /NSC-4427/);
-  assert.match(pageHtml, /Daily Sales Report/);
-  assert.doesNotMatch(pageHtml, /Demo Trading|SHP-2048|daily_sales\.xlsx/);
+test('clips name the made-up company they were recorded with', () => {
+  assert.match(pageHtml, /made-up company, Cedarvale Trading/);
+  assert.doesNotMatch(pageHtml, /Demo Trading|SHP-2048|daily_sales\.xlsx|Fake Trading/);
 });
 
 test('motion preview and reduced motion explicitly control workflow movement', () => {

@@ -3,9 +3,9 @@ const MAX_SCROLL_DURATION = 1400;
 const SCROLL_SPEED = 0.8;
 const SECTION_GAP = 16;
 
-export const WORKFLOW_ROTATION_MS = 11000;
-export const WORKFLOW_PLAYBACK_RATE = 0.65;
-export const WORKFLOW_IDS = Object.freeze(['contract', 'shipment', 'report']);
+// The clips are recorded at a calm pace and already sped up 1.4x, so they play at normal speed.
+export const WORKFLOW_PLAYBACK_RATE = 1;
+export const WORKFLOW_IDS = Object.freeze(['build', 'library', 'approve', 'board', 'reply']);
 
 // Hero: the Assistall mark as a quiet signal hub. Thin traces run in from the edges of the
 // screen on every side and corner, circuit-style: straight runs joined by 45° bends, each
@@ -303,12 +303,20 @@ export function heroSignalState(elapsedMs, pulses, loopMs = HERO_SIGNAL_LOOP_MS)
 }
 
 const CAPABILITIES = Object.freeze([
-  { id: 'inbox', label: 'Inbox and controlled replies', summary: 'Messages in. Checked replies ready.', input: 'Email or business message', preparation: 'A clear reply draft', result: 'Nothing sends without you' },
-  { id: 'files', label: 'Files, OCR and reports', summary: 'Documents read. Reports prepared.', input: 'PDF, image, spreadsheet or folder', preparation: 'Key details and a prepared report', result: 'The source stays linked to the result' },
-  { id: 'contracts', label: 'Contracts and renewals', summary: 'Changes, dates and review points surfaced.', input: 'Contract or renewal document', preparation: 'Terms, changes and important dates', result: 'Renewal dates and changes ready to review' },
-  { id: 'shipments', label: 'Shipments and delivery', summary: 'Status changes and records organised.', input: 'Shipment or delivery record', preparation: 'Status changes and missing details', result: 'A clear delivery update for your team' },
-  { id: 'clients', label: 'Clients and service requests', summary: 'Requests gathered and next steps prepared.', input: 'Client or vendor request', preparation: 'The request, owner and next step', result: 'A person decides what moves forward' },
-  { id: 'booking', label: 'Booking and marketing', summary: 'Calendar and outreach work made clearer.', input: 'Booking, calendar or campaign work', preparation: 'A prepared schedule or outreach draft', result: 'Your team checks timing and message' },
+  { id: 'inbox', label: 'Email replies', input: 'A customer or supplier email', preparation: 'Writes a reply in your company’s words', result: 'A reply you check. Nothing sends without you.', image: 'cap-inbox', alt: 'Prepared email replies waiting for approval, one card per customer email' },
+  { id: 'files', label: 'Documents and reports', input: 'A PDF, photo, spreadsheet or report', preparation: 'Reads it and pulls out the key numbers', result: 'A short summary, with the original one click away', image: 'cap-files', alt: 'Three reports read by Assistall, each with a short summary and its total' },
+  { id: 'contracts', label: 'Contracts and renewals', input: 'A contract, or a new version of one', preparation: 'Finds the dates and what changed', result: 'A reminder before the notice date', image: 'cap-contracts', alt: 'A supply agreement due for review, with its notice date, renewal date and both versions of the contract' },
+  { id: 'shipments', label: 'Shipments', input: 'Shipping documents and status updates', preparation: 'Tracks where each shipment is and what is missing', result: 'Your team acts before the customer asks', image: 'cap-shipments', alt: 'A shipment held at customs, with its route, ETA, container and the documents linked to it' },
+  { id: 'clients', label: 'Client requests', input: 'A request by email or WhatsApp', preparation: 'Records it with an owner and a due date', result: 'Nothing gets forgotten', image: 'cap-clients', alt: 'Open client requests, each with a priority, an owner and a due date' },
+  { id: 'booking', label: 'Bookings and calendar', input: 'A request for a visit or a call', preparation: 'Finds a time that suits your team', result: 'Confirmed and on the calendar', image: 'cap-booking', alt: 'Upcoming showroom visits, supplier calls and delivery planning, each confirmed with an owner' },
+  { id: 'workflows', label: 'Workflows', input: 'Something happens: an email, a due date, a delay', preparation: 'Runs the steps you set, in order', result: 'A person approves before anything is done', image: 'cap-workflows', alt: 'Workflows running on this PC, each showing how many runs are waiting for approval' },
+  { id: 'records', label: 'Records and reminders', input: 'Licences, permits, certificates and insurance', preparation: 'Keeps a list of what expires and when', result: 'A reminder in time to renew', image: 'cap-records', alt: 'The expiry register: a vehicle registration, a fire safety permit and a trade licence, with days left before each expires' },
+]);
+const FLOW_STEPS = Object.freeze([
+  { id: 'connect', caption: 'Connections', image: 'flow-connect', alt: 'The Assistall Integrations screen: the mailbox, shipment files, QuickBooks Online and lead research are connected' },
+  { id: 'find', caption: 'Home', image: 'flow-find', alt: 'The Assistall Home screen: 24 items need attention, with shipments, requests, renewals and approvals counted and a timeline of what is due' },
+  { id: 'prepare', caption: 'A prepared reply', image: 'flow-prepare', alt: 'A customer’s order email on the left and the reply Assistall prepared on the right, waiting for approval' },
+  { id: 'decide', caption: 'An approval', image: 'flow-decide', alt: 'A large order waiting for two people to approve, listing what Assistall will do and what it will never do' },
 ]);
 const turnstileState = { widgetId: null };
 
@@ -348,6 +356,22 @@ export function getTargetScrollTop(targetTop, headerHeight) {
 export function createCapabilityState(requestedId) {
   const activeId = CAPABILITIES.some(({ id }) => id === requestedId) ? requestedId : 'inbox';
   return { activeId, items: CAPABILITIES.map((item) => ({ ...item, active: item.id === activeId })) };
+}
+
+export function createFlowState(requestedId) {
+  const activeId = FLOW_STEPS.some(({ id }) => id === requestedId) ? requestedId : FLOW_STEPS[0].id;
+  return { activeId, step: FLOW_STEPS.find(({ id }) => id === activeId) };
+}
+
+export function showcaseImage(name) {
+  return `assets/media/showcase/${name}.webp`;
+}
+
+// Which step of a clip is on screen: the last one whose start time has passed.
+export function workflowStepIndex(times, currentTime) {
+  let index = 0;
+  times.forEach((time, position) => { if (currentTime + .05 >= time) index = position; });
+  return index;
 }
 
 export function createWorkflowState(requestedId) {
@@ -661,6 +685,7 @@ function renderCapability(root, requestedId) {
     const target = root.querySelector(`[data-capability-${key}]`);
     if (target) target.textContent = value;
   }
+  showShot(root.querySelector('[data-capability-image]'), root.querySelector('[data-capability-open]'), selected.image, selected.alt);
 }
 
 function enableCapabilitySwitcher() {
@@ -671,16 +696,71 @@ function enableCapabilitySwitcher() {
     const button = event.target.closest('[data-capability-id]');
     if (button) renderCapability(root, button.dataset.capabilityId);
   });
+  enableTabKeys(root, '[data-capability-id]', (button) => renderCapability(root, button.dataset.capabilityId));
+  preloadShots(CAPABILITIES.map(({ image }) => image));
+}
+
+// Changes a screenshot with a short fade, so the picture never jumps.
+function showShot(image, link, name, alt) {
+  if (!image) return;
+  const src = showcaseImage(name);
+  if (link) link.href = src;
+  if (image.getAttribute('src') === src) return;
+  image.classList.add('is-swapping');
+  const reveal = () => image.classList.remove('is-swapping');
+  window.setTimeout(() => {
+    image.addEventListener('load', reveal, { once: true });
+    image.addEventListener('error', reveal, { once: true });
+    image.src = src;
+    image.alt = alt;
+  }, prefersReducedMotion() ? 0 : 140);
+}
+
+function preloadShots(names) {
+  const load = () => names.forEach((name) => { const image = new Image(); image.src = showcaseImage(name); });
+  if ('requestIdleCallback' in window) window.requestIdleCallback(load, { timeout: 2500 });
+  else window.setTimeout(load, 1200);
+}
+
+function enableTabKeys(root, selector, activate) {
   root.addEventListener('keydown', (event) => {
-    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft'].includes(event.key)) return;
-    const buttons = [...root.querySelectorAll('[data-capability-id]')];
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+    const buttons = [...root.querySelectorAll(selector)];
     const current = buttons.indexOf(document.activeElement);
     if (current < 0) return;
     event.preventDefault();
-    const direction = ['ArrowDown', 'ArrowRight'].includes(event.key) ? 1 : -1;
-    const next = buttons[(current + direction + buttons.length) % buttons.length];
-    next.focus(); renderCapability(root, next.dataset.capabilityId);
+    let next = current + (['ArrowDown', 'ArrowRight'].includes(event.key) ? 1 : -1);
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = buttons.length - 1;
+    const target = buttons[(next + buttons.length) % buttons.length];
+    target.focus();
+    activate(target);
   });
+}
+
+function renderFlow(root, requestedId) {
+  const { activeId, step } = createFlowState(requestedId);
+  root.querySelectorAll('[data-flow-step]').forEach((button) => {
+    const active = button.dataset.flowStep === activeId;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  root.querySelector('#flow-panel')?.setAttribute('aria-labelledby', `flow-tab-${activeId}`);
+  const caption = root.querySelector('[data-flow-caption]');
+  if (caption) caption.textContent = step.caption;
+  showShot(root.querySelector('[data-flow-image]'), root.querySelector('[data-flow-open]'), step.image, step.alt);
+}
+
+function enableFlowSwitcher() {
+  const root = document.querySelector('[data-flow-switcher]');
+  if (!root) return;
+  root.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-flow-step]');
+    if (button) renderFlow(root, button.dataset.flowStep);
+  });
+  enableTabKeys(root, '[data-flow-step]', (button) => renderFlow(root, button.dataset.flowStep));
+  preloadShots(FLOW_STEPS.map(({ image }) => image));
 }
 
 function enableWorkflowEvidence() {
@@ -694,7 +774,6 @@ function enableWorkflowEvidence() {
   let visible = false;
   let pointerPaused = false;
   let focusPaused = false;
-  let timerId;
 
   const syncVideos = () => {
     panels.forEach((panel) => {
@@ -713,13 +792,7 @@ function enableWorkflowEvidence() {
     });
   };
 
-  const clearTimer = () => {
-    if (timerId) window.clearTimeout(timerId);
-    timerId = undefined;
-  };
-
-  let schedule = () => {};
-  const activate = (requestedId, { focus = false, resetTimer = true } = {}) => {
+  const activate = (requestedId, { focus = false } = {}) => {
     activeId = createWorkflowState(requestedId).activeId;
     tabs.forEach((tab) => {
       const active = tab.dataset.workflowTab === activeId;
@@ -735,18 +808,44 @@ function enableWorkflowEvidence() {
     });
     root.dataset.activeWorkflow = activeId;
     syncVideos();
-    if (resetTimer) schedule();
   };
 
-  schedule = () => {
-    clearTimer();
-    if (!shouldRotateWorkflow({ visible, reducedMotion: prefersReducedMotion(), interactionPaused: pointerPaused || focusPaused })) return;
-    timerId = window.setTimeout(() => {
-      const nextIndex = (WORKFLOW_IDS.indexOf(activeId) + 1) % WORKFLOW_IDS.length;
-      activate(WORKFLOW_IDS[nextIndex], { resetTimer: false });
-      schedule();
-    }, WORKFLOW_ROTATION_MS);
-  };
+  panels.forEach((panel) => {
+    const video = panel.querySelector('[data-workflow-video]');
+    const steps = [...panel.querySelectorAll('[data-workflow-seek]')];
+    if (!video) return;
+    const times = steps.map((step) => Number(step.dataset.workflowSeek) || 0);
+    const markStep = () => {
+      const current = workflowStepIndex(times, video.currentTime);
+      steps.forEach((step, index) => {
+        step.classList.toggle('is-current', index === current);
+        if (index === current) step.setAttribute('aria-current', 'step');
+        else step.removeAttribute('aria-current');
+      });
+    };
+    video.addEventListener('timeupdate', markStep);
+    video.addEventListener('seeked', markStep);
+    markStep();
+    // When a clip finishes, the next one starts, unless someone is reading or using this one.
+    video.addEventListener('ended', () => {
+      if (panel.dataset.workflowPanel !== activeId) return;
+      if (shouldRotateWorkflow({ visible, reducedMotion: prefersReducedMotion(), interactionPaused: pointerPaused || focusPaused })) {
+        activate(WORKFLOW_IDS[(WORKFLOW_IDS.indexOf(activeId) + 1) % WORKFLOW_IDS.length]);
+      } else {
+        window.setTimeout(() => {
+          if (panel.dataset.workflowPanel !== activeId || !visible) return;
+          try { video.currentTime = 0; } catch { /* Metadata may not be ready yet. */ }
+          syncVideos();
+        }, 1600);
+      }
+    });
+    panel.addEventListener('click', (event) => {
+      const step = event.target.closest('[data-workflow-seek]');
+      if (!step) return;
+      try { video.currentTime = Number(step.dataset.workflowSeek) || 0; } catch { /* Metadata may not be ready yet. */ }
+      video.play().catch(() => {});
+    });
+  });
 
   tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => activate(tab.dataset.workflowTab));
@@ -767,27 +866,25 @@ function enableWorkflowEvidence() {
     video.play().catch(() => {});
   });
 
-  root.addEventListener('mouseenter', () => { pointerPaused = true; schedule(); });
-  root.addEventListener('mouseleave', () => { pointerPaused = false; schedule(); });
-  root.addEventListener('focusin', () => { focusPaused = true; schedule(); });
+  root.addEventListener('mouseenter', () => { pointerPaused = true; });
+  root.addEventListener('mouseleave', () => { pointerPaused = false; });
+  root.addEventListener('focusin', () => { focusPaused = true; });
   root.addEventListener('focusout', (event) => {
     if (event.relatedTarget && root.contains(event.relatedTarget)) return;
     focusPaused = false;
-    schedule();
   });
 
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
       syncVideos();
-      schedule();
     }, { threshold: 0.35 }).observe(root);
   } else {
     visible = true;
   }
 
   root.classList.add('is-enhanced');
-  activate(activeId, { resetTimer: false });
+  activate(activeId);
 }
 
 function enableConnectorKeyboardScroll() {
@@ -928,6 +1025,7 @@ function initialiseSite() {
   enableSectionGlide();
   // The hero plans its layout from measurements; start it after the first paint so the copy shows at once.
   window.requestAnimationFrame(() => window.setTimeout(enableHeroMotion, 0));
+  enableFlowSwitcher();
   enableCapabilitySwitcher();
   enableConnectorKeyboardScroll();
   enableWorkflowEvidence();
