@@ -110,6 +110,8 @@ components:
 
 **Creative North Star: "Quiet Authority"**
 
+**Business tagline (owner, 23 October 2026): "Automate Operations. Unlock time."** It is the hero headline and the page title, and the copy around it should reflect it: Assistall takes on routine operations so people get their time back, and people still approve what matters. Write it exactly like this, capital O on Operations.
+
 A calm, premium operations brand for non-technical business owners. The page reads like a well-run office: deep teal and warm limestone surfaces, one brass accent, generous space, and plain, specific language. Confidence comes from restraint and real product evidence (recorded workflows with fictional data), never from hype, metrics or decoration.
 
 The one deliberate exception is the hero. Since 19 October 2026 it is a placeholder chosen by the owner: a dark night-sky field (no stars) with the Assistall mark as a quiet, softly glowing hub, thin brass circuit traces running in to it from the screen edges on every side and corner, and tiny electric packets travelling in along them like electrons through a circuit. That glow and depth belongs **only** to the hero; every section below it returns to flat, quiet surfaces.

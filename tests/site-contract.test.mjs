@@ -6,7 +6,10 @@ const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
 test('landing page exposes one continuous journey with working anchor destinations', () => {
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
-  assert.match(html, /Clear the work that slows your business down\./);
+  // The business tagline (owner, 23 October 2026).
+  assert.match(html, /<h1 id="hero-title">Automate Operations\. Unlock time\.<\/h1>/);
+  assert.match(html, /<title>Assistall AI — Automate Operations\. Unlock time\.<\/title>/);
+  assert.doesNotMatch(html, /Clear the work/i, 'the old tagline is gone');
 
   for (const id of ['how-it-works', 'capabilities', 'connections', 'product', 'human-value', 'trust', 'demo']) {
     assert.match(html, new RegExp(`id=["']${id}["']`));
