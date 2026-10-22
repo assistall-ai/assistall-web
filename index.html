@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="assets/site.webmanifest">
   <link rel="stylesheet" href="assets/brand.css?v=20261019a">
-  <link rel="stylesheet" href="assets/page.css?v=20261023a">
+  <link rel="stylesheet" href="assets/page.css?v=20261023b">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -63,19 +63,20 @@
 
     <section id="how-it-works" class="story-section story-section--limestone" aria-labelledby="work-story-title">
       <div class="operational-current" aria-hidden="true"></div>
-      <div class="wrap section-grid section-grid--workday">
+      <div class="wrap section-grid section-grid--workday" data-flow-switcher>
         <div class="section-copy" data-reveal>
           <h2 id="work-story-title">One clear flow for work coming from everywhere.</h2>
-          <ol class="workday-steps">
-            <li><span>01</span><div><strong>Connect the work</strong><p>Email, files, contracts and business systems.</p></div></li>
-            <li><span>02</span><div><strong>Find what matters</strong><p>Important changes and requests come forward.</p></div></li>
-            <li><span>03</span><div><strong>Prepare the next step</strong><p>Replies, reports and review work get ready.</p></div></li>
-            <li><span>04</span><div><strong>Your team decides</strong><p>People approve what moves forward.</p></div></li>
+          <p class="flow-hint">Choose a step to see that part of the real app.</p>
+          <ol class="workday-steps" role="tablist" aria-label="How Assistall works, step by step" aria-orientation="vertical">
+            <li role="presentation"><button id="flow-tab-connect" type="button" role="tab" aria-selected="true" aria-controls="flow-panel" tabindex="0" data-flow-step="connect"><span class="workday-steps__number">01</span><span class="workday-steps__text"><strong>Connect the work</strong><span>Email, files, accounting and the tools you already use.</span></span></button></li>
+            <li role="presentation"><button id="flow-tab-find" type="button" role="tab" aria-selected="false" aria-controls="flow-panel" tabindex="-1" data-flow-step="find"><span class="workday-steps__number">02</span><span class="workday-steps__text"><strong>Find what matters</strong><span>Anything urgent or due today comes to the top.</span></span></button></li>
+            <li role="presentation"><button id="flow-tab-prepare" type="button" role="tab" aria-selected="false" aria-controls="flow-panel" tabindex="-1" data-flow-step="prepare"><span class="workday-steps__number">03</span><span class="workday-steps__text"><strong>Prepare the next step</strong><span>Replies, reminders and checks are drafted for you.</span></span></button></li>
+            <li role="presentation"><button id="flow-tab-decide" type="button" role="tab" aria-selected="false" aria-controls="flow-panel" tabindex="-1" data-flow-step="decide"><span class="workday-steps__number">04</span><span class="workday-steps__text"><strong>Your team decides</strong><span>Nothing moves until a person approves it.</span></span></button></li>
           </ol>
         </div>
-        <figure class="product-window product-window--sticky" data-reveal>
-          <figcaption><span>Assistall workspace · Overview</span><span class="live-dot">Live product</span></figcaption>
-          <div class="shot-frame"><img src="assets/media/workspace-limestone.png" alt="Assistall AI workspace overview showing reports, contracts, shipments and connected work" width="1220" height="760"></div><a class="shot-open" href="assets/media/workspace-limestone.png" target="_blank" rel="noopener">Open the full workspace view <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <figure id="flow-panel" class="product-window product-window--sticky" role="tabpanel" aria-labelledby="flow-tab-connect" data-reveal>
+          <figcaption><span>Assistall · <span data-flow-caption>Connections</span></span><span class="live-dot">Real app</span></figcaption>
+          <div class="shot-frame"><img src="assets/media/showcase/flow-connect.webp" alt="The Assistall Integrations screen: the mailbox, shipment files, QuickBooks Online and lead research are connected" width="1440" height="900" data-flow-image></div><a class="shot-open" href="assets/media/showcase/flow-connect.webp" target="_blank" rel="noopener" data-flow-open>Open the full screen <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </figure>
       </div>
     </section>
@@ -85,25 +86,28 @@
       <div class="wrap">
         <header class="section-heading" data-reveal>
           <h2 id="capabilities-title">See what Assistall can take off your team’s plate.</h2>
+          <p>Choose a job to see the screen your team would use for it.</p>
         </header>
         <div class="capability-experience">
-          <div class="capability-controls" role="tablist" aria-label="Assistall capabilities" data-reveal>
-            <button id="capability-tab-inbox" type="button" role="tab" aria-controls="capability-panel" aria-selected="true" tabindex="0" data-capability-id="inbox"><strong>Inbox and controlled replies</strong><span>Messages in. Checked replies ready.</span></button>
-            <button id="capability-tab-files" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="files"><strong>Files, OCR and reports</strong><span>Documents read. Reports prepared.</span></button>
-            <button id="capability-tab-contracts" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="contracts"><strong>Contracts and renewals</strong><span>Changes, dates and review points surfaced.</span></button>
-            <button id="capability-tab-shipments" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="shipments"><strong>Shipments and delivery</strong><span>Status changes and records organised.</span></button>
-            <button id="capability-tab-clients" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="clients"><strong>Clients and service requests</strong><span>Requests gathered and next steps prepared.</span></button>
-            <button id="capability-tab-booking" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="booking"><strong>Booking and marketing</strong><span>Calendar and outreach work made clearer.</span></button>
+          <div class="capability-controls" role="tablist" aria-label="What Assistall can do" aria-orientation="vertical" data-reveal>
+            <button id="capability-tab-inbox" type="button" role="tab" aria-controls="capability-panel" aria-selected="true" tabindex="0" data-capability-id="inbox"><strong>Email replies</strong><span>Messages in. Replies drafted.</span></button>
+            <button id="capability-tab-files" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="files"><strong>Documents and reports</strong><span>Files read. Numbers summarised.</span></button>
+            <button id="capability-tab-contracts" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="contracts"><strong>Contracts and renewals</strong><span>Dates and changes spotted.</span></button>
+            <button id="capability-tab-shipments" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="shipments"><strong>Shipments</strong><span>Delays and holds flagged.</span></button>
+            <button id="capability-tab-clients" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="clients"><strong>Client requests</strong><span>Every request has an owner.</span></button>
+            <button id="capability-tab-booking" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="booking"><strong>Bookings and calendar</strong><span>Visits and calls organised.</span></button>
+            <button id="capability-tab-workflows" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="workflows"><strong>Workflows</strong><span>Your routines, done the same way every time.</span></button>
+            <button id="capability-tab-records" type="button" role="tab" aria-controls="capability-panel" aria-selected="false" tabindex="-1" data-capability-id="records"><strong>Records and reminders</strong><span>Licences and permits renewed on time.</span></button>
           </div>
           <div id="capability-panel" class="capability-evidence" role="tabpanel" aria-labelledby="capability-tab-inbox" data-reveal>
             <div class="product-window">
-              <div class="product-window__bar"><span>Real workspace</span><span data-capability-title>Inbox and controlled replies</span></div>
-              <div class="shot-frame"><img src="assets/media/workspace-limestone.png" alt="Real Assistall workspace used to demonstrate the selected capability" width="1220" height="760"></div><a class="shot-open" href="assets/media/workspace-limestone.png" target="_blank" rel="noopener">Open the full workspace view <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+              <div class="product-window__bar"><span>Real app</span><span data-capability-title>Email replies</span></div>
+              <div class="shot-frame"><img src="assets/media/showcase/cap-inbox.webp" alt="Prepared email replies waiting for approval, one card per customer email" width="1440" height="900" data-capability-image></div><a class="shot-open" href="assets/media/showcase/cap-inbox.webp" target="_blank" rel="noopener" data-capability-open>Open the full screen <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
             </div>
             <dl class="capability-outcome">
-              <div><dt>Input</dt><dd data-capability-input>Email or business message</dd></div>
-              <div><dt>Assistall prepares</dt><dd data-capability-preparation>A clear reply draft</dd></div>
-              <div><dt>Your team approves</dt><dd data-capability-result>Nothing sends without you</dd></div>
+              <div><dt>What comes in</dt><dd data-capability-input>A customer or supplier email</dd></div>
+              <div><dt>What Assistall does</dt><dd data-capability-preparation>Writes a reply in your company’s words</dd></div>
+              <div><dt>What you get</dt><dd data-capability-result>A reply you check. Nothing sends without you.</dd></div>
             </dl>
           </div>
         </div>
@@ -166,51 +170,103 @@
       <div class="wrap">
         <header class="section-heading" data-reveal>
           <h2 id="product-title">See the work, not just the promise.</h2>
-          <p>Follow real business work from the source to a clear next step your team can check.</p>
+          <p>Short clips from the real Assistall app, using a made-up company. Each one shows a job from start to finish.</p>
         </header>
         <div class="workflow-evidence" data-workflow-evidence>
-          <div class="workflow-tabs" role="tablist" aria-label="Assistall workflow examples">
-            <button id="workflow-tab-contract" type="button" role="tab" aria-selected="true" aria-controls="workflow-panel-contract" tabindex="0" data-workflow-tab="contract">Contract review</button>
-            <button id="workflow-tab-shipment" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel-shipment" tabindex="-1" data-workflow-tab="shipment">Shipment tracking</button>
-            <button id="workflow-tab-report" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel-report" tabindex="-1" data-workflow-tab="report">Report preparation</button>
+          <div class="workflow-tabs" role="tablist" aria-label="Assistall in action">
+            <button id="workflow-tab-build" type="button" role="tab" aria-selected="true" aria-controls="workflow-panel-build" tabindex="0" data-workflow-tab="build">Build a workflow</button>
+            <button id="workflow-tab-library" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel-library" tabindex="-1" data-workflow-tab="library">Use a ready-made one</button>
+            <button id="workflow-tab-approve" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel-approve" tabindex="-1" data-workflow-tab="approve">Approve the work</button>
+            <button id="workflow-tab-board" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel-board" tabindex="-1" data-workflow-tab="board">Approve from any PC</button>
+            <button id="workflow-tab-reply" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel-reply" tabindex="-1" data-workflow-tab="reply">Check a prepared reply</button>
           </div>
 
-          <div id="workflow-panel-contract" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-contract" data-workflow-panel="contract" tabindex="0">
+          <div id="workflow-panel-build" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-build" data-workflow-panel="build" tabindex="0">
             <figure class="workflow-media">
-              <video data-workflow-video muted loop playsinline controls preload="metadata" poster="assets/media/workflows/contract-review.png" aria-label="Assistall workspace showing a contract review workflow"><source src="assets/media/workflows/contract-review.mp4" type="video/mp4"></video>
-              <figcaption>Real Assistall workspace · fictional capture</figcaption>
+              <video data-workflow-video muted playsinline controls preload="metadata" poster="assets/media/workflows/build-a-workflow.webp" aria-label="Assistall workflow builder: a new workflow is built step by step, tried on an example and turned on"><source src="assets/media/workflows/build-a-workflow.mp4" type="video/mp4"></video>
+              <figcaption>Real Assistall app · made-up company, Cedarvale Trading</figcaption>
             </figure>
             <article class="workflow-stage">
-              <h3>Contract review</h3>
-              <p><strong>Northstar Supplies Framework Agreement</strong> is marked for review with the counterparty, owner and renewal date together.</p>
-              <p>Assistall gives the person checking it one clear place to open the record and decide the next step.</p>
-              <button class="workflow-result" type="button" data-workflow-replay>Replay workflow</button>
+              <h3>Build a workflow in plain steps</h3>
+              <p>Here, an overdue invoice starts a polite payment reminder. A manager approves it before it goes to Drafts.</p>
+              <ol class="workflow-steps" aria-label="Steps in this clip">
+                <li><button type="button" data-workflow-seek="0.2">Start a new workflow</button></li>
+                <li><button type="button" data-workflow-seek="1.65">Pick what starts it: an invoice goes overdue</button></li>
+                <li><button type="button" data-workflow-seek="3.26">Choose the details it collects</button></li>
+                <li><button type="button" data-workflow-seek="5.1">Write the reminder it will draft</button></li>
+                <li><button type="button" data-workflow-seek="12.98">Choose who approves</button></li>
+                <li><button type="button" data-workflow-seek="14.42">Choose what happens after approval</button></li>
+                <li><button type="button" data-workflow-seek="20.0">Name it and try it on a real example</button></li>
+                <li><button type="button" data-workflow-seek="27.93">Turn it on</button></li>
+              </ol>
+              <button class="workflow-result" type="button" data-workflow-replay>Play again</button>
             </article>
           </div>
-
-          <div id="workflow-panel-shipment" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-shipment" data-workflow-panel="shipment" tabindex="0" hidden>
+          <div id="workflow-panel-library" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-library" data-workflow-panel="library" tabindex="0" hidden>
             <figure class="workflow-media">
-              <video data-workflow-video muted loop playsinline controls preload="metadata" poster="assets/media/workflows/shipment-review.png" aria-label="Assistall workspace showing a shipment customs review workflow"><source src="assets/media/workflows/shipment-review.mp4" type="video/mp4"></video>
-              <figcaption>Real Assistall workspace · fictional capture</figcaption>
+              <video data-workflow-video muted playsinline controls preload="metadata" poster="assets/media/workflows/ready-made-workflow.webp" aria-label="The Assistall workflow library: a trading workflow for delayed shipments is set up and turned on"><source src="assets/media/workflows/ready-made-workflow.mp4" type="video/mp4"></video>
+              <figcaption>Real Assistall app · made-up company, Cedarvale Trading</figcaption>
             </figure>
             <article class="workflow-stage">
-              <h3>Shipment tracking</h3>
-              <p><strong>NSC-4427</strong> brings the route, ETA, container and customs status into one reviewable record.</p>
-              <p>Your team sees what changed before they contact a client, carrier or vendor.</p>
-              <button class="workflow-result" type="button" data-workflow-replay>Replay workflow</button>
+              <h3>Start from a ready-made workflow</h3>
+              <p>Pick your industry, choose a workflow, answer a few questions and turn it on.</p>
+              <ol class="workflow-steps" aria-label="Steps in this clip">
+                <li><button type="button" data-workflow-seek="0.2">Open the library</button></li>
+                <li><button type="button" data-workflow-seek="1.71">Choose your industry</button></li>
+                <li><button type="button" data-workflow-seek="3.2">Pick a ready-made workflow</button></li>
+                <li><button type="button" data-workflow-seek="5.73">Answer a few questions</button></li>
+                <li><button type="button" data-workflow-seek="6.88">Check it and turn it on</button></li>
+              </ol>
+              <button class="workflow-result" type="button" data-workflow-replay>Play again</button>
             </article>
           </div>
-
-          <div id="workflow-panel-report" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-report" data-workflow-panel="report" tabindex="0" hidden>
+          <div id="workflow-panel-approve" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-approve" data-workflow-panel="approve" tabindex="0" hidden>
             <figure class="workflow-media">
-              <video data-workflow-video muted loop playsinline controls preload="metadata" poster="assets/media/workflows/report-preparation.png" aria-label="Assistall workspace showing a prepared sales report workflow"><source src="assets/media/workflows/report-preparation.mp4" type="video/mp4"></video>
-              <figcaption>Real Assistall workspace · fictional capture</figcaption>
+              <video data-workflow-video muted playsinline controls preload="metadata" poster="assets/media/workflows/approve-a-run.webp" aria-label="A customs hold reply waiting for approval is opened from Home and approved"><source src="assets/media/workflows/approve-a-run.mp4" type="video/mp4"></video>
+              <figcaption>Real Assistall app · made-up company, Cedarvale Trading</figcaption>
             </figure>
             <article class="workflow-stage">
-              <h3>Report preparation</h3>
-              <p><strong>Daily Sales Report</strong> is read into a clear summary, with its source and export step kept together.</p>
-              <p>Your team reviews the prepared report before sharing it or using it to decide what happens next.</p>
-              <button class="workflow-result" type="button" data-workflow-replay>Replay workflow</button>
+              <h3>Approve the work in seconds</h3>
+              <p>Home shows what is waiting. Open it, see exactly what will happen, then approve.</p>
+              <ol class="workflow-steps" aria-label="Steps in this clip">
+                <li><button type="button" data-workflow-seek="0.21">Home shows what is waiting for you</button></li>
+                <li><button type="button" data-workflow-seek="1.94">Open the workflow</button></li>
+                <li><button type="button" data-workflow-seek="3.81">See exactly what will happen</button></li>
+                <li><button type="button" data-workflow-seek="6.91">Approve, and Assistall does the rest</button></li>
+              </ol>
+              <button class="workflow-result" type="button" data-workflow-replay>Play again</button>
+            </article>
+          </div>
+          <div id="workflow-panel-board" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-board" data-workflow-panel="board" tabindex="0" hidden>
+            <figure class="workflow-media">
+              <video data-workflow-video muted playsinline controls preload="metadata" poster="assets/media/workflows/company-board.webp" aria-label="The Assistall company board lists approvals from the warehouse and sales PCs, and one is approved"><source src="assets/media/workflows/company-board.mp4" type="video/mp4"></video>
+              <figcaption>Real Assistall app · made-up company, Cedarvale Trading</figcaption>
+            </figure>
+            <article class="workflow-stage">
+              <h3>Approve from any PC in the company</h3>
+              <p>The company board shows what is waiting on every PC, so the right person can decide from wherever they are.</p>
+              <ol class="workflow-steps" aria-label="Steps in this clip">
+                <li><button type="button" data-workflow-seek="0.21">Open the company board</button></li>
+                <li><button type="button" data-workflow-seek="2.15">See what waits on every PC</button></li>
+                <li><button type="button" data-workflow-seek="5.38">Approve it from this PC</button></li>
+              </ol>
+              <button class="workflow-result" type="button" data-workflow-replay>Play again</button>
+            </article>
+          </div>
+          <div id="workflow-panel-reply" class="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-reply" data-workflow-panel="reply" tabindex="0" hidden>
+            <figure class="workflow-media">
+              <video data-workflow-video muted playsinline controls preload="metadata" poster="assets/media/workflows/reply-approval.webp" aria-label="A customer's order email beside the prepared reply, which is then approved"><source src="assets/media/workflows/reply-approval.mp4" type="video/mp4"></video>
+              <figcaption>Real Assistall app · made-up company, Cedarvale Trading</figcaption>
+            </figure>
+            <article class="workflow-stage">
+              <h3>Check a reply before it is sent</h3>
+              <p>The customer's email and the prepared reply sit side by side. Approve it and it goes to Drafts.</p>
+              <ol class="workflow-steps" aria-label="Steps in this clip">
+                <li><button type="button" data-workflow-seek="0.19">A customer's order comes in</button></li>
+                <li><button type="button" data-workflow-seek="2.14">The email and the prepared reply, side by side</button></li>
+                <li><button type="button" data-workflow-seek="4.67">Approve: the reply goes to Drafts</button></li>
+              </ol>
+              <button class="workflow-result" type="button" data-workflow-replay>Play again</button>
             </article>
           </div>
         </div>
@@ -222,14 +278,23 @@
       <div class="wrap" data-reveal>
         <header class="section-heading">
           <h2 id="human-title">Give people more time for people.</h2>
-          <p>Spend less time searching, copying and chasing updates. Spend more time with clients, building trust, finding sales and growing the business.</p>
+          <p>These are jobs Assistall takes on, so your team can spend the day with customers instead of paperwork.</p>
         </header>
-        <div class="workday-comparison" aria-label="Illustration of administrative work becoming shorter">
-          <article><p><strong>Before</strong> Search, copy and chase updates</p><span class="time-track"><i></i></span></article>
-          <article class="is-assisted"><p><strong>With Assistall</strong> Review work that is ready</p><span class="time-track"><i></i></span></article>
-        </div>
-        <ul class="human-work"><li>Client relationships</li><li>Sales</li><li>Outreach</li><li>Decisions</li></ul>
-        <p class="illustration-note">Illustrative workday — not a performance claim.</p>
+        <div class="chore-head" aria-hidden="true"><span>Without Assistall</span><span>With Assistall</span></div>
+        <ul class="chore-list" aria-label="Jobs Assistall takes on">
+          <li style="--i: 0"><span class="chore-list__before"><span class="visually-hidden">Without Assistall: </span>Dig through emails to find a customer’s order</span><svg class="chore-list__arrow" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false"><path d="M4 11h13M12.5 6.5 17 11l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="chore-list__after"><span class="visually-hidden">With Assistall: </span>The order is found and a reply is drafted</span></li>
+          <li style="--i: 1"><span class="chore-list__before"><span class="visually-hidden">Without Assistall: </span>Type the same reply again and again</span><svg class="chore-list__arrow" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false"><path d="M4 11h13M12.5 6.5 17 11l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="chore-list__after"><span class="visually-hidden">With Assistall: </span>The reply is ready. You approve it.</span></li>
+          <li style="--i: 2"><span class="chore-list__before"><span class="visually-hidden">Without Assistall: </span>Check every contract for its renewal date</span><svg class="chore-list__arrow" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false"><path d="M4 11h13M12.5 6.5 17 11l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="chore-list__after"><span class="visually-hidden">With Assistall: </span>You are reminded before the notice date</span></li>
+          <li style="--i: 3"><span class="chore-list__before"><span class="visually-hidden">Without Assistall: </span>Chase carriers for shipment updates</span><svg class="chore-list__arrow" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false"><path d="M4 11h13M12.5 6.5 17 11l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="chore-list__after"><span class="visually-hidden">With Assistall: </span>Delays and customs holds are flagged for you</span></li>
+          <li style="--i: 4"><span class="chore-list__before"><span class="visually-hidden">Without Assistall: </span>Copy invoice details into a spreadsheet</span><svg class="chore-list__arrow" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false"><path d="M4 11h13M12.5 6.5 17 11l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="chore-list__after"><span class="visually-hidden">With Assistall: </span>The amount and due date are filled in</span></li>
+          <li style="--i: 5"><span class="chore-list__before"><span class="visually-hidden">Without Assistall: </span>Remember when each licence expires</span><svg class="chore-list__arrow" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false"><path d="M4 11h13M12.5 6.5 17 11l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="chore-list__after"><span class="visually-hidden">With Assistall: </span>A reminder arrives in time to renew</span></li>
+        </ul>
+        <h3 class="gains-title">What you get back</h3>
+        <ul class="gains">
+          <li><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M3.5 19c.6-3.3 2.8-5.2 5.5-5.2s4.9 1.9 5.5 5.2M14.6 14.2c2.6-.4 4.6 1.2 5.2 4.3"/></svg><h3>Your team</h3><p>Less searching and copying. More time with customers.</p></li>
+          <li><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9h17M8 13.5l2.2 2.2L16 10.5"/></svg><h3>Managers</h3><p>Everything waiting for a decision, in one place, from any PC.</p></li>
+          <li><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 19.5 6.5v5.2c0 4.3-3.1 7.6-7.5 8.8-4.4-1.2-7.5-4.5-7.5-8.8V6.5Z"/><path d="m8.8 12.2 2.2 2.2 4.3-4.6"/></svg><h3>The business</h3><p>Renewals, payments and deliveries stop slipping through.</p></li>
+        </ul>
       </div>
     </section>
 
@@ -280,6 +345,6 @@
       <nav aria-label="Footer navigation"><a href="privacy.html">Privacy</a><a href=".well-known/security.txt">Security</a><a href="mailto:hello@assistall.ai">Contact</a></nav>
     </div>
   </footer>
-  <script type="module" src="assets/site.js?v=20261023a"></script>
+  <script type="module" src="assets/site.js?v=20261023b"></script>
 </body>
 </html>

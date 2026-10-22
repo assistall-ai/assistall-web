@@ -16,11 +16,11 @@ test('landing page exposes one continuous journey with working anchor destinatio
   }
 });
 
-test('capability controls cover the six approved business workflows', () => {
+test('capability controls cover the eight things Assistall takes on', () => {
   const capabilityControls = html.match(/data-capability-id=/g) ?? [];
-  assert.equal(capabilityControls.length, 6);
+  assert.equal(capabilityControls.length, 8);
 
-  for (const id of ['inbox', 'files', 'contracts', 'shipments', 'clients', 'booking']) {
+  for (const id of ['inbox', 'files', 'contracts', 'shipments', 'clients', 'booking', 'workflows', 'records']) {
     assert.match(html, new RegExp(`data-capability-id=["']${id}["']`));
     const tab = html.match(new RegExp(`<button[^>]*data-capability-id=["']${id}["'][^>]*>`));
     assert.ok(tab, id);
@@ -73,13 +73,13 @@ test('connector ecosystem uses stable native marks and honest capability labels'
   assert.equal((html.match(/Imported source/g) ?? []).length, 4);
 });
 
-test('product evidence is a semantic three-workflow queue without theme media', () => {
+test('product evidence is a semantic five-clip queue of the real app', () => {
   assert.match(html, /data-workflow-evidence/);
   const workflowEvidence = html.match(/<div[^>]*data-workflow-evidence[^>]*>/);
   assert.ok(workflowEvidence);
   assert.doesNotMatch(workflowEvidence[0], /data-reveal/);
 
-  for (const id of ['contract', 'shipment', 'report']) {
+  for (const id of ['build', 'library', 'approve', 'board', 'reply']) {
     assert.match(html, new RegExp(`data-workflow-tab=["']${id}["']`));
     assert.match(html, new RegExp(`data-workflow-panel=["']${id}["']`));
 
@@ -88,19 +88,21 @@ test('product evidence is a semantic three-workflow queue without theme media', 
     assert.match(workflowPanel[0], /tabindex=["']0["']/);
   }
   assert.equal((html.match(/role="tab"/g) ?? []).length >= 3, true);
-  for (const file of ['contract-review', 'shipment-review', 'report-preparation']) {
+  for (const file of ['build-a-workflow', 'ready-made-workflow', 'approve-a-run', 'company-board', 'reply-approval']) {
     assert.match(html, new RegExp(`assets/media/workflows/${file}\\.mp4`));
-    assert.match(html, new RegExp(`assets/media/workflows/${file}\\.png`));
+    assert.match(html, new RegExp(`assets/media/workflows/${file}\\.webp`));
   }
-  assert.equal((html.match(/data-workflow-video/g) ?? []).length, 3);
-  assert.equal((html.match(/data-workflow-replay/g) ?? []).length, 3);
+  assert.equal((html.match(/data-workflow-video/g) ?? []).length, 5);
+  assert.equal((html.match(/data-workflow-replay/g) ?? []).length, 5);
+  assert.doesNotMatch(html, /data-workflow-video[^>]*\bloop\b/, 'a finished clip hands over to the next one');
+  assert.ok((html.match(/data-workflow-seek="[\d.]+"/g) ?? []).length >= 15, 'each clip lists its steps with start times');
   assert.doesNotMatch(html, /workspace-theme-comparison|workspace-cobalt|data-workspace-video|data-video-toggle/);
 });
 
 test('workspace screenshots crop to a readable slice on phones with a link to the full image', async () => {
   const css = await readFile(new URL('../assets/page.css', import.meta.url), 'utf8');
-  assert.equal((html.match(/<div class="shot-frame"><img src="assets\/media\/workspace-limestone\.png"/g) ?? []).length, 2);
-  assert.equal((html.match(/<a class="shot-open" href="assets\/media\/workspace-limestone\.png"[^>]*>Open the full workspace view/g) ?? []).length, 2);
+  assert.equal((html.match(/<div class="shot-frame"><img src="assets\/media\/showcase\/[a-z-]+\.webp"/g) ?? []).length, 2);
+  assert.equal((html.match(/<a class="shot-open" href="assets\/media\/showcase\/[a-z-]+\.webp"[^>]*>Open the full screen/g) ?? []).length, 2);
   assert.match(css, /\.shot-open \{ display: none; \}/, 'desktop keeps the whole screenshot and no link');
-  assert.match(css, /@media \(max-width: 560px\)[\s\S]*\.shot-frame img \{ position: absolute;[^}]*width: 174\.3%;/, 'phones show the overview at about twice the size');
+  assert.match(css, /@media \(max-width: 560px\)[\s\S]*\.shot-frame img \{ position: absolute;[^}]*width: 140%;/, 'phones show the main part of each screen a little larger');
 });

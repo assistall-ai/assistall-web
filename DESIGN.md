@@ -236,8 +236,18 @@ The owner replaced the source-card animation with a placeholder while a final he
 - **Everyone sees the full animation** (owner decision, 22 October 2026), including visitors who have turned animations off, together with the breathing halo. A small round **pause button** (34px, brass hairline, bottom right of the hero, above the film) stops and restarts it; its label switches between "Pause the background animation" and "Play the background animation", and the choice is remembered on that device. It stays hidden until the animation runs. `?motion=off` still holds the hero completely still for review. Without JavaScript the hub shows alone.
 - **Review aids:** `?motion=on|off` forces or stops the motion, and `?frame=<ms>` holds one moment (lights included) for screenshots.
 
+### Real app screens (22 October 2026)
+Every screenshot and clip comes from the real app running on a throwaway copy filled with one made-up company, Cedarvale Trading LLC (a Dubai trading and logistics business with clients, suppliers, emails, contracts, shipments, reports, requests, bookings, records and workflows). `tools/showcase/` holds the seeder and capture scripts; its README lists the steps. Screens are 1440x900 WebP in `assets/media/showcase/`.
+
+- **How it works**: the four steps are tabs. Choosing one swaps the picture beside it (a 140ms fade) and its caption: Connections, Home, A prepared reply, An approval. On phones the steps become a two-by-two grid of titles right above the picture, so a tap visibly changes it.
+- **Capabilities**: eight tabs (email replies, documents and reports, contracts and renewals, shipments, client requests, bookings and calendar, workflows, records and reminders). Each swaps the picture and the three plain boxes "What comes in", "What Assistall does", "What you get". On phones the tabs become one swipeable row of titles above the picture.
+- Phones show the main part of each screen (without the side menu) at 140% with an "Open the full screen" link.
+
 ### Living Work Queue (signature)
-A dark teal panel with three tabs, each pairing a muted, looping product recording (played at 0.65× speed, 11-second rotation, paused when off-screen or hovered) with a limestone note card and a "Replay workflow" button. Recordings use fictional data only.
+A dark teal panel with five tabs: Build a workflow, Use a ready-made one, Approve the work, Approve from any PC, Check a prepared reply. Each pairs a muted clip (10 to 31 seconds) with a limestone card: a one-line summary, the clip's steps as a numbered list and a "Play again" button. The step on screen is highlighted as the clip plays, and choosing a step jumps the clip to it. Clips are recorded through Chrome's screencast at a calm pace with a visible pointer and smooth scrolling, sped up 1.4x when encoded (owner request), and checked for blinks; the site plays them at normal speed. When a clip ends the next tab starts, unless the visitor is pointing at or using the panel, which replays the same clip. Clips pause when off-screen.
+
+### Time back (Give people more time for people)
+Six rows read straight across: the old chore, struck through in muted text, then a brass arrow and what Assistall does instead in teal. As the section scrolls in, each row's line is drawn through and its result fades in, one after another (shown at once with reduced motion or `?motion=off`). Below it, "What you get back": three plain cards (your team, managers, the business) with drawn line icons. No figures or time claims.
 
 ## Do's and Don'ts
 

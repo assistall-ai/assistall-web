@@ -19,10 +19,13 @@ Assert-True ($h1Count -eq 1) "Expected exactly one h1; found $h1Count."
 
 $requiredFiles = @(
   'assets/apple-touch-icon.png',
-  'assets/media/workspace-limestone.png',
-  'assets/media/workflows/contract-review.mp4',
-  'assets/media/workflows/shipment-review.mp4',
-  'assets/media/workflows/report-preparation.mp4',
+  'assets/media/showcase/flow-connect.webp',
+  'assets/media/showcase/cap-inbox.webp',
+  'assets/media/workflows/build-a-workflow.mp4',
+  'assets/media/workflows/ready-made-workflow.mp4',
+  'assets/media/workflows/approve-a-run.mp4',
+  'assets/media/workflows/company-board.mp4',
+  'assets/media/workflows/reply-approval.mp4',
   'assets/site.js',
   'demo-request.php',
   'privacy.html',
@@ -48,11 +51,11 @@ foreach ($id in @('how-it-works', 'capabilities', 'connections', 'product', 'hum
 Assert-True ($html -match 'data-connector-mark="microsoft"') 'The stable connector marks are not mounted.'
 Assert-True (-not ($html -match 'connector-icons\.svg|<use\b|textLength=')) 'A distorted external connector sprite remains on the page.'
 Assert-True ($html -match 'data-workflow-evidence') 'The Living Work Queue is not mounted.'
-foreach ($workflow in @('contract', 'shipment', 'report')) {
+foreach ($workflow in @('build', 'library', 'approve', 'board', 'reply')) {
   Assert-True ($html -match ('data-workflow-tab=["'']' + [regex]::Escape($workflow) + '["'']')) "Missing workflow tab marker: $workflow"
   Assert-True ($html -match ('data-workflow-panel=["'']' + [regex]::Escape($workflow) + '["'']')) "Missing workflow panel marker: $workflow"
 }
-Assert-True (([regex]::Matches($html, 'data-workflow-video')).Count -eq 3) 'The Living Work Queue must include the three recorded workflow videos.'
+Assert-True (([regex]::Matches($html, 'data-workflow-video')).Count -eq 5) 'The Living Work Queue must include the five recorded clips.'
 Assert-True ($html -match 'data-hero-signal') 'The hero signal scene is not mounted.'
 Assert-True ($html -match 'data-hero-hub') 'The hero hub is not mounted.'
 Assert-True ($html -match 'data-scroll-link') 'Section navigation has no slow-glide marker.'
@@ -67,7 +70,7 @@ Assert-True ($script -match 'hero-signal__line') 'The hero signal lines are miss
 Assert-True ($css -match 'hero-signal__pulses { filter: drop-shadow') 'The hero light glow is missing.'
 Assert-True ($css -match 'hero__film') 'The translucent teal readability film is missing.'
 Assert-True ($script -match 'enableWorkflowEvidence') 'The workflow evidence controller is not present.'
-Assert-True ($script -match 'WORKFLOW_ROTATION_MS') 'Workflow rotation is not configured.'
+Assert-True ($script -match "addEventListener\('ended'") 'Clips do not hand over to the next one when they end.'
 Assert-True ($script -match 'shouldRotateWorkflow') 'Workflow rotation guards are not present.'
 Assert-True ($script -match 'enableConnectorKeyboardScroll') 'Connector keyboard scrolling is not wired.'
 Assert-True ($script -match 'getConnectorScrollTarget') 'Connector keyboard scroll bounds are not present.'
