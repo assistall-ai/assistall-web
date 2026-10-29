@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Assistall AI share card (1200 x 627)</title>
+<!-- Source for assets/social-share.png, the picture LinkedIn and other sites show when assistall.ai is shared.
+     Rebuild with: node tools/social-card/build.mjs  (it loads Aptos from the Office font cache when present). -->
+<!--FONTS-->
+<style>
+  :root {
+    --teal: #0E3A3D;
+    --limestone: #F4EFE4;
+    --ivory: #FFFDF8;
+    --brass: #C8A25D;
+    --hub: color-mix(in srgb, #0E3A3D 92%, #FFFDF8);
+  }
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 627px; overflow: hidden; background: var(--teal); }
+  body {
+    position: relative;
+    font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+    color: var(--ivory);
+    -webkit-font-smoothing: antialiased;
+  }
+  .traces { position: absolute; inset: 0; }
+  .traces path { fill: none; stroke: var(--brass); stroke-width: 2.5; stroke-opacity: .38; stroke-linecap: square; stroke-linejoin: round; }
+  .traces .via { fill: var(--brass); fill-opacity: .6; }
+  .traces .light { stroke: var(--brass); stroke-width: 3; stroke-opacity: 1; }
+  .hub {
+    position: absolute; left: 962px; top: 292px; width: 156px; height: 156px;
+    border-radius: 24%; background: var(--hub);
+    border: 1.5px solid color-mix(in srgb, #C8A25D 70%, transparent);
+    display: grid; place-items: center;
+  }
+  .hub svg { width: 152px; height: 152px; }
+  .hub rect { fill: var(--limestone); }
+  .hub .brass { fill: var(--brass); }
+  .copy { position: absolute; left: 76px; top: 76px; }
+  .wordmark { font-size: 44px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+  .wordmark b { color: var(--brass); font-weight: inherit; }
+  h1 {
+    margin-top: 80px;
+    font-size: 98px; font-weight: 700; line-height: 1; letter-spacing: -.045em;
+  }
+  .rule { width: 72px; height: 5px; background: var(--brass); margin: 40px 0 34px; }
+  .line { font-size: 54px; font-weight: 400; line-height: 1.1; letter-spacing: -.02em; color: var(--limestone); }
+</style>
+</head>
+<body>
+  <svg class="traces" width="1200" height="627" viewBox="0 0 1200 627" aria-hidden="true">
+    <!-- Circuit traces run in to the hub from the top, right and bottom edges (a still echo of the site's hero). -->
+    <path d="M1000 0 V310"/>
+    <path d="M1040 0 V310"/>
+    <path d="M1120 0 V200 L1080 240 V310"/>
+    <path d="M1200 210 L1100 310"/>
+    <path d="M1200 290 H1180 L1140 330 H1100"/>
+    <path d="M1200 370 H1100"/>
+    <path d="M1200 450 H1180 L1140 410 H1100"/>
+    <path d="M1200 530 L1100 430"/>
+    <path d="M1120 627 V540 L1080 500 V430"/>
+    <path d="M1040 627 V430"/>
+    <path d="M960 627 V540 L1000 500 V430"/>
+    <rect class="via" x="1117" y="197" width="6" height="6"/>
+    <rect class="via" x="1077" y="237" width="6" height="6"/>
+    <rect class="via" x="1177" y="287" width="6" height="6"/>
+    <rect class="via" x="1137" y="327" width="6" height="6"/>
+    <rect class="via" x="1177" y="447" width="6" height="6"/>
+    <rect class="via" x="1137" y="407" width="6" height="6"/>
+    <rect class="via" x="1117" y="537" width="6" height="6"/>
+    <rect class="via" x="1077" y="497" width="6" height="6"/>
+    <rect class="via" x="957" y="537" width="6" height="6"/>
+    <rect class="via" x="997" y="497" width="6" height="6"/>
+    <path class="light" d="M1040 96 V112"/>
+    <path class="light" d="M1176 370 H1160"/>
+    <path class="light" d="M1166 248 L1155 259"/>
+    <path class="light" d="M1040 578 V562"/>
+    <path class="light" d="M1120 600 V584"/>
+  </svg>
+  <div class="hub"><svg viewBox="0 0 512 512" aria-hidden="true"><rect x="112" y="142" width="189" height="49" rx="14"/><rect class="brass" x="112" y="232" width="239" height="49" rx="14"/><rect x="112" y="322" width="289" height="49" rx="14"/></svg></div>
+
+  <div class="copy">
+    <div class="wordmark">Assistall <b>AI</b></div>
+    <h1>Automate Operations.<br>Unlock time.</h1>
+    <div class="rule"></div>
+    <p class="line">AI prepares. People approve.</p>
+  </div>
+</body>
+</html>

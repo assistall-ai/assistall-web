@@ -106,3 +106,19 @@ test('workspace screenshots crop to a readable slice on phones with a link to th
   assert.match(css, /\.shot-open \{ display: none; \}/, 'desktop keeps the whole screenshot and no link');
   assert.match(css, /@media \(max-width: 560px\)[\s\S]*\.shot-frame img \{ position: absolute;[^}]*width: 140%;/, 'phones show the main part of each screen a little larger');
 });
+
+test('shared links show the 1200 x 627 share card', async () => {
+  const meta = (key) => html.match(new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)">`))?.[1];
+  assert.equal(meta('og:image'), 'https://assistall.ai/assets/social-share.png', 'an absolute address, as LinkedIn needs');
+  assert.equal(meta('og:image:width'), '1200');
+  assert.equal(meta('og:image:height'), '627');
+  assert.match(meta('og:image:alt') ?? '', /Automate Operations\. Unlock time\./);
+  assert.equal(meta('og:url'), 'https://assistall.ai/');
+  assert.equal(meta('og:type'), 'website');
+  assert.equal(meta('twitter:card'), 'summary_large_image');
+
+  const png = await readFile(new URL('../assets/social-share.png', import.meta.url));
+  assert.equal(png.toString('latin1', 1, 4), 'PNG');
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 627], 'the picture matches its declared size');
+  assert.ok(png.length < 1024 * 1024, 'small enough for every preview service');
+});
