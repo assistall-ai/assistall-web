@@ -249,6 +249,9 @@ A dark teal panel with five tabs: Build a workflow, Use a ready-made one, Approv
 ### Time back (Give people more time for people)
 Six rows read straight across: the old chore, struck through in muted text, then a brass arrow and what Assistall does instead in teal. As the section scrolls in, each row's line is drawn through and its result fades in, one after another (shown at once with reduced motion or `?motion=off`). Below it, "What you get back": three plain cards (your team, managers, the business) with drawn line icons. No figures or time claims.
 
+### Share card (29 October 2026)
+`assets/social-share.png` (1200 x 627) is the picture LinkedIn, X and messaging apps show when assistall.ai is shared. It follows the email signature banner: flat deep teal, the ivory wordmark with brass "AI", the tagline in large ivory type, a short brass bar, then "AI prepares. People approve." in limestone. On the right sits a still echo of the hero: the mark on a flat hub tile with brass traces running in from the top, right and bottom edges, a few short brass light streaks and no glow. Text sizes are set so both lines stay readable at a 160px thumbnail. Source is `tools/social-card/card.html`; `node tools/social-card/build.mjs` renders it with headless Edge (Aptos from the Office font cache, Segoe UI otherwise). LinkedIn caches the picture by address, so a redesign gets a new file name and the `og:image` tag follows it.
+
 ## Do's and Don'ts
 
 ### Do:

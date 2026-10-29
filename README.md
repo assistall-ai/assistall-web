@@ -24,6 +24,7 @@ The page tells one continuous story: work comes in, Assistall makes it clear, pe
 | `assets/page.css` | Responsive layout and motion |
 | `assets/site.js` | Hero, section glide, capability tabs, Living Work Queue and form enhancement |
 | `assets/media/` | Local, sanitised product captures used by page evidence |
+| `assets/social-share.png` | 1200 x 627 picture shown when assistall.ai is shared; source and build in `tools/social-card/` |
 | `demo-request.php` | cPanel validation, Turnstile verification and signed ingestion |
 | `privacy.html` / `security.html` | Public trust pages |
 | `supabase/migrations/` | Private lead tables, forced RLS and retention function |
