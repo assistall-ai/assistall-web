@@ -7,8 +7,8 @@ const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 test('landing page exposes one continuous journey with working anchor destinations', () => {
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   // The business tagline (owner, 23 October 2026).
-  assert.match(html, /<h1 id="hero-title">Automate Operations\. Unlock time\.<\/h1>/);
-  assert.match(html, /<title>Assistall AI — Automate Operations\. Unlock time\.<\/title>/);
+  assert.match(html, /<h1 id="hero-title">Automate Operations\. Unlock Time\.<\/h1>/);
+  assert.match(html, /<title>Assistall AI — Automate Operations\. Unlock Time\.<\/title>/);
   assert.doesNotMatch(html, /Clear the work/i, 'the old tagline is gone');
 
   for (const id of ['how-it-works', 'capabilities', 'connections', 'product', 'human-value', 'trust', 'demo']) {
@@ -112,7 +112,7 @@ test('shared links show the 1200 x 627 share card', async () => {
   assert.equal(meta('og:image'), 'https://assistall.ai/assets/social-share.png', 'an absolute address, as LinkedIn needs');
   assert.equal(meta('og:image:width'), '1200');
   assert.equal(meta('og:image:height'), '627');
-  assert.match(meta('og:image:alt') ?? '', /Automate Operations\. Unlock time\./);
+  assert.match(meta('og:image:alt') ?? '', /Automate Operations\. Unlock Time\./);
   assert.equal(meta('og:url'), 'https://assistall.ai/');
   assert.equal(meta('og:type'), 'website');
   assert.equal(meta('twitter:card'), 'summary_large_image');
