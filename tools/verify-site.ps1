@@ -42,8 +42,11 @@ foreach ($file in $requiredFiles) {
   Assert-True (Test-Path -LiteralPath (Join-Path $root $file)) "Missing required file: $file"
 }
 
+# Outbound links to our own social profiles are plain <a> links, not page assets, so only these exact ones are allowed.
+$approvedOutboundLinks = '(?is)<a\b[^>]*\bhref\s*=\s*["'']https://www\.(?:instagram\.com/assistall\.ai/|tiktok\.com/@assistall\.ai|linkedin\.com/company/assistall-ai)["'']'
+$htmlWithoutOutboundLinks = [regex]::Replace($html, $approvedOutboundLinks, '<a')
 $externalSource = '(?is)\b(?:src|href)\s*=\s*["'']https?://(?!(?:www\.)?assistall\.ai(?:[/:]|["'']))'
-Assert-True (-not [regex]::IsMatch($html, $externalSource)) 'Unexpected third-party page asset found. Turnstile must load only through the controlled script integration.'
+Assert-True (-not [regex]::IsMatch($htmlWithoutOutboundLinks, $externalSource))'Unexpected third-party page asset found. Turnstile must load only through the controlled script integration.'
 
 foreach ($id in @('how-it-works', 'capabilities', 'connections', 'product', 'human-value', 'trust', 'demo')) {
   Assert-True ($html -match ('id=["'']' + [regex]::Escape($id) + '["'']')) "Missing continuous-story section: $id"
