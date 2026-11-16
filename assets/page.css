@@ -310,6 +310,7 @@ html.reveal-enhanced [data-reveal].is-visible { opacity: 1; transform: none; }
   .header-inner { gap: .5rem; }
   .wordmark { font-size: 1rem; gap: .4rem; }.wordmark img { width: 28px; height: 28px; }.header-action { padding: .64rem .65rem; font-size: .75rem; }
   .nav-toggle:not([hidden]) { padding-inline: .55rem; gap: .4rem; font-size: .8rem; }
+  .wordmark { flex-shrink: 0; }
   .hero h1 { font-size: clamp(3.1rem, 15vw, 4.2rem); }.hero-lede { font-size: 1rem; }
   .button-row { display: grid; }.button-row .button { width: 100%; }
   .section-heading h2, .section-copy h2 { font-size: clamp(2.35rem, 12vw, 3.4rem); }
@@ -368,4 +369,13 @@ html[data-motion-preview="off"] .human-value .chore-list__before::after, html[da
 
 @media (max-width: 560px) {
   html[data-motion-preview="on"] .workflow-current::after { animation-name: workflow-current-mobile; }
+}
+
+/* Small phones (iPhone SE and similar, 320px): tighten the header so the wordmark, Menu and Book a demo sit side by side without touching. */
+@media (max-width: 380px) {
+  .site-header .wrap { width: calc(100% - 2rem); }
+  .header-inner { gap: .4rem; }
+  .wordmark { gap: .35rem; }.wordmark img { width: 26px; height: 26px; }
+  .nav-toggle:not([hidden]) { padding-inline: .45rem; gap: .3rem; }
+  .header-action { padding-inline: .55rem; }
 }
